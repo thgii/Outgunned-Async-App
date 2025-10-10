@@ -5,7 +5,7 @@ compatibility_date = "2024-11-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "action-thread-db"
-database_id = "local" # replaced on deploy
+database_id = "c62ecc8e-151f-4f7f-ae8c-51eeda20fec0"
 
 [vars]
 # Add any default vars here
