@@ -3,7 +3,7 @@ import { one } from "../utils/db";
 
 export const characters = new Hono<{ Bindings: { DB: D1Database } }>();
 
-characters.get("/characters/:id", async (c) => {
+characters.get("/:id", async (c) => {
   const id = c.req.param("id");
   const row = await one(c.env.DB, "SELECT * FROM characters WHERE id = ?", [id]);
   if (!row) return c.notFound();
@@ -14,7 +14,7 @@ characters.get("/characters/:id", async (c) => {
   return c.json(row);
 });
 
-characters.patch("/characters/:id", async (c) => {
+characters.patch("/:id", async (c) => {
   const id = c.req.param("id");
   const body = await c.req.json();
   const fields = {

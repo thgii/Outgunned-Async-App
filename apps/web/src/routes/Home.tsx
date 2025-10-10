@@ -5,7 +5,7 @@ export default function Home() {
       <h1 className="text-3xl font-bold mb-4">Action Thread</h1>
       <p className="mb-4">Chat-first tabletop for Outgunned/Adventure.</p>
       <div className="space-x-4">
-        <Link to="/campaign/demo" className="text-blue-600 underline">Demo Campaign</Link>
+        <Link to="/campaign/demo-camp" className="text-blue-600 underline">Demo Campaign</Link>
       </div>
     </div>
   );
