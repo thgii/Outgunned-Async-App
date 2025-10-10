@@ -1,0 +1,11 @@
+name = "action-thread-api"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "action-thread-db"
+database_id = "local" # replaced on deploy
+
+[vars]
+# Add any default vars here

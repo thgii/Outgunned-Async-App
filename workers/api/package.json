@@ -1,0 +1,20 @@
+{
+  "name": "api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "build": "tsc -p tsconfig.json",
+    "d1:prepare": "wrangler d1 execute action-thread-db --file ./src/utils/schema.sql && wrangler d1 execute action-thread-db --file ./src/utils/seed.sql"
+  },
+  "dependencies": {
+    "@action-thread/types": "workspace:*",
+    "hono": "^4.6.7"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241022.0",
+    "typescript": "^5.6.3",
+    "wrangler": "^3.80.0"
+  }
+}

@@ -1,0 +1,2 @@
+-- This file is optional if you're using schema.sql directly.
+-- Keep incremental changes here as you iterate.
