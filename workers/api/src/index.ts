@@ -10,6 +10,9 @@ type Env = { DB: D1Database };
 
 const app = new Hono<{ Bindings: Env }>();
 
+// Router ping
+characters.get("/__ping", (c) => c.text("OK: characters router mounted"));
+
 // CORS (safe even if same-origin)
 app.use(
   "*",
