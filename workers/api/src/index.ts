@@ -10,7 +10,15 @@ type Env = { DB: D1Database };
 
 const app = new Hono<{ Bindings: Env }>();
 
-app.use("*", cors());
+// CORS (safe even if same-origin)
+app.use(
+  "*",
+  cors({
+    origin: "*",
+    allowMethods: ["GET", "POST", "PATCH", "OPTIONS"],
+    allowHeaders: ["content-type", "authorization"],
+  })
+);
 
 app.route("/campaigns", campaigns);
 app.route("/games", games);
@@ -19,6 +27,12 @@ app.route("/characters", characters);
 app.route("api/characters", characters);
 app.route("/", rolls);        // also uses absolute path /games/:id/rolls
 
-app.get("/", (c) => c.json({ ok: true }));
+// 🔎 Catch-all echo to help diagnose 404s during testing
+app.all("*", (c) => c.json({ error: "Not found here", method: c.req.method, path: new URL(c.req.url).pathname }, 404));
+
+
+// 🔎 HEALTH / DEBUG
+app.get("/", (c) => c.text("OK: root"));
+app.get("/__whoami", (c) => c.json({ ok: true, worker: "action-thread-api", mounts: ["/characters", "/api/characters"] }));
 
 export default app;
