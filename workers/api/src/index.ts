@@ -1,38 +1,22 @@
-import { Hono } from "hono";
-import { cors } from "hono/cors";
-import { campaigns } from "./routes/campaigns";
-import { games } from "./routes/games";
-import { messages } from "./routes/messages";
-import { characters } from "./routes/characters";
-import { rolls } from "./routes/rolls";
+export default {
+  async fetch(req: Request): Promise<Response> {
+    const url = new URL(req.url);
 
-type Env = { DB: D1Database };
+    if (url.pathname === "/") {
+      return new Response("OK: action-thread-api root", {
+        headers: { "content-type": "text/plain" },
+      });
+    }
 
-const app = new Hono<{ Bindings: Env }>();
+    if (url.pathname === "/characters/__ping") {
+      return new Response("OK: characters ping (root-level)", {
+        headers: { "content-type": "text/plain" },
+      });
+    }
 
-// CORS (safe even if same-origin)
-app.use(
-  "*",
-  cors({
-    origin: "*",
-    allowMethods: ["GET", "POST", "PATCH", "OPTIONS"],
-    allowHeaders: ["content-type", "authorization"],
-  })
-);
-
-app.route("/campaigns", campaigns);
-app.route("/games", games);
-app.route("/", messages);     // these already use absolute paths like /games/:id/messages
-app.route("/characters", characters);
-app.route("api/characters", characters);
-app.route("/", rolls);        // also uses absolute path /games/:id/rolls
-
-// 🔎 Catch-all echo to help diagnose 404s during testing
-app.all("*", (c) => c.json({ error: "Not found here", method: c.req.method, path: new URL(c.req.url).pathname }, 404));
-
-
-// 🔎 HEALTH / DEBUG
-app.get("/", (c) => c.text("OK: root"));
-app.get("/__whoami", (c) => c.json({ ok: true, worker: "action-thread-api", mounts: ["/characters", "/api/characters"] }));
-
-export default app;
+    return new Response(
+      JSON.stringify({ error: "Not found", path: url.pathname }),
+      { status: 404, headers: { "content-type": "application/json" } }
+    );
+  },
+};
