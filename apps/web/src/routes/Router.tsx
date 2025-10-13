@@ -3,8 +3,8 @@ import Home from "./Home";
 import Campaign from "./Campaign";
 import Game from "./Game";
 import Character from "./Character";
-import CharacterCreator from "./pages/CharacterCreator";
-import CharactersList from "./pages/CharactersList";
+import CharacterCreator from "./CharacterCreator";
+import CharactersList from "./CharactersList";
 
 export const Router = () => (
   <BrowserRouter>
