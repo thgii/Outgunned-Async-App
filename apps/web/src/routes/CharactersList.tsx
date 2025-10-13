@@ -21,12 +21,16 @@ export default function CharactersList() {
         <div className="grid md:grid-cols-2 gap-4">
           {characters.map((c) => (
             <div key={c.id ?? c.name} className="border rounded p-3">
-              <div className="font-semibold text-lg">{c.name}</div>
-              <div className="text-sm opacity-80">{c.role?.name ?? c.role}</div>
-              <div className="text-sm">Age: {c.age}</div>
-              {!!c.feats?.length && <div className="text-xs mt-2">Feats: {c.feats.join(", ")}</div>}
-              {!!c.gear?.length && <div className="text-xs mt-1">Gear: {c.gear.join(", ")}</div>}
-            </div>
+  <div className="font-semibold text-lg">{c.name}</div>
+  <div className="text-sm opacity-80">{c.role?.name ?? c.role}</div>
+  <div className="text-sm">Age: {c.age ?? "—"}</div>
+  <div className="text-xs mt-1">Job: {c.job ?? "—"}</div>
+  <div className="text-xs">Catchphrase: {c.catchphrase ?? "—"}</div>
+  <div className="text-xs">Flaw: {c.flaw ?? "—"}</div>
+  {!!c.feats?.length && <div className="text-xs mt-2">Feats: {c.feats.join(", ")}</div>}
+  {!!c.gear?.length && <div className="text-xs mt-1">Gear: {c.gear.join(", ")}</div>}
+</div>
+
           ))}
         </div>
       )}
