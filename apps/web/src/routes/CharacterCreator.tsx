@@ -186,7 +186,7 @@ export default function CharacterCreator() {
   };
 
   // ------- Save --------
-  onSave = async () => {
+  const onSave = async () => {
   setSaving(true);
   try {
     const payload = {
@@ -209,7 +209,7 @@ export default function CharacterCreator() {
     });
 
     // ✅ redirect to Home after successful save
-    navigate("/");
+    navigate("/characters");
   } catch (e: any) {
     console.error(e);
     alert("Save failed. Check console for details.");
