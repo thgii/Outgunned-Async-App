@@ -56,9 +56,21 @@
         "Telephone or Radio",
         "Weapon of choice"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Soldier",
+        "Marine",
+        "Mercenary"
+      ],
+      "flaws_options": [
+        "I don’t trust anyone",
+        "I think everyone else is weak",
+        "I never know when to back down"
+      ],
+      "catchphrases_options": [
+        "Stay back, I got this",
+        "Nobody left behind",
+        "If it bleeds, we can defeat it"
+      ]
     },
     {
       "name": "The Fighter",
@@ -101,9 +113,21 @@
       "gear_options": [
         "One $1 item of your choice"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Martial Arts Teacher",
+        "Bodyguard",
+        "Bouncer"
+      ],
+      "flaws_options": [
+        "I don’t believe in myself",
+        "This old wound won’t let me be",
+        "I’m too hot-headed"
+      ],
+      "catchphrases_options": [
+        "Let’s get to the bottom of this. You and me, one on one",
+        "There’s no need to fight",
+        "It doesn’t hurt!"
+      ]
     },
     {
       "name": "The Ace",
@@ -148,9 +172,21 @@
         "Ride with Speed 1",
         "Pistor or Shotgun"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Pilot",
+        "Courier",
+        "Private Driver"
+      ],
+      "flaws_options": [
+        "I can never refuse a challenge",
+        "I can’t stand laws and rules",
+        "I’m absent-minded and flaky"
+      ],
+      "catchphrases_options": [
+        "Freedom is priceless",
+        "Family always comes first",
+        "I feel a need for speed!"
+      ]
     },
     {
       "name": "The Agent",
@@ -199,9 +235,21 @@
         "Badge",
         "Telephone or Radio"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Police Officer",
+        "Government Agent",
+        "Double Agent"
+      ],
+      "flaws_options": [
+        "I’m too arrogant and overconfident",
+        "I always trust the wrong people",
+        "I never accept help and don’t work well with others"
+      ],
+      "catchphrases_options": [
+        "Not in my city",
+        "Give it here, I’ll do it",
+        "I’m not a hero, I’m just doing my job"
+      ]
     },
     {
       "name": "The Face",
@@ -246,9 +294,21 @@
         "Elegant Clothes",
         "Precious item of choice"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "White-collar Worker",
+        "Actor",
+        "Professional Gambler"
+      ],
+      "flaws_options": [
+        "I underestimate my enemies",
+        "I’m too vain",
+        "I’m a sucker for a pretty face"
+      ],
+      "catchphrases_options": [
+        "Trust me",
+        "Do you know who you’re talking to?",
+        "Surely we can reach an agreement"
+      ]
     },
     {
       "name": "The Nobody",
@@ -291,9 +351,21 @@
       "gear_options": [
         "One $1 item of your choice or Old ride with Speed 0"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Employee",
+        "Cashier",
+        "Nurse"
+      ],
+      "flaws_options": [
+        "I can’t fend for myself",
+        "I trust everyone",
+        "I’m afraid of guns"
+      ],
+      "catchphrases_options": [
+        "I didn’t even want to come here!",
+        "Everyone can do their part",
+        "My kids are not gonna believe this!"
+      ]
     },
     {
       "name": "The Brain",
@@ -340,9 +412,21 @@
         "Notebook",
         "Pencil"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Researcher",
+        "Professor",
+        "Hacker"
+      ],
+      "flaws_options": [
+        "I think too much before acting",
+        "I’m really out of shape",
+        "Without my glasses, I am nearly blind"
+      ],
+      "catchphrases_options": [
+        "Hear me out. I have a plan!",
+        "Have I ever been wrong before?",
+        "With the right lever, I shall move the world"
+      ]
     },
     {
       "name": "The Sleuth",
@@ -387,9 +471,21 @@
         "One $1 item of your choice",
         "Pistal or Rifle or Shotgun"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Detective",
+        "Reporter",
+        "Private Eye"
+      ],
+      "flaws_options": [
+        "I don’t know when to shut up",
+        "I’m a slave to my vices",
+        "I’m not comfortable with children"
+      ],
+      "catchphrases_options": [
+        "You can run but you cannot hide",
+        "The truth always comes out in the end",
+        "You can’t run from your past"
+      ]
     },
     {
       "name": "The Criminal",
@@ -434,9 +530,21 @@
         "Pistol",
         "Knife or Lockpicking Set or Handcuffs"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Thief",
+        "Convict",
+        "Informer"
+      ],
+      "flaws_options": [
+        "I take nothing seriously",
+        "I’m too greedy and self-serving",
+        "I’m too anxious to prove myself"
+      ],
+      "catchphrases_options": [
+        "In and out. It’s a piece of cake",
+        "I’m not going back to prison",
+        "If you want something, you have to take it"
+      ]
     },
     {
       "name": "The Spy",
@@ -483,9 +591,21 @@
         "Pistol with Silencer",
         "Item of Choice"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "MI6 Agent",
+        "CIA Agent",
+        "KGB Spy"
+      ],
+      "flaws_options": [
+        "Everybody lies",
+        "I don’t tolerate mistakes",
+        "I push myself too hard for the mission"
+      ],
+      "catchphrases_options": [
+        "There’s no time. I’ll explain later",
+        "The enemy of my enemy is my friend",
+        "It might be impossible, but we have to do it"
+      ]
     },
     {
       "name": "The Samurai",
@@ -530,9 +650,21 @@
         "Sword (Katana)",
         "One $1 item of your choice"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Bodyguard",
+        "Yakuza",
+        "Blacksmith"
+      ],
+      "flaws_options": [
+        "I never leave my sword",
+        "My entire story is tattooed on my body",
+        "I never refuse a challenge"
+      ],
+      "catchphrases_options": [
+        "You leave me no choice",
+        "I swear it on my honor",
+        "I shall finish what I started"
+      ]
     },
     {
       "name": "The Hired Gun",
@@ -579,9 +711,21 @@
         "Telephone",
         "Weapon of choice"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Mercenary",
+        "Bounty Hunter",
+        "Enforcer"
+      ],
+      "flaws_options": [
+        "I have a debt to repay",
+        "I follow a strict moral code",
+        "I never share with others"
+      ],
+      "catchphrases_options": [
+        "What’s in it for me?",
+        "That’s not my problem",
+        "One bullet is enough"
+      ]
     },
     {
       "name": "The Aristocrat",
@@ -626,9 +770,21 @@
         "Elegant Clothes",
         "Your choice of items adding up to $5."
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Family Associate",
+        "Heir",
+        "Belmont"
+      ],
+      "flaws_options": [
+        "I feel untouchable",
+        "I believe everything has a price",
+        "I have a reputation to uphold"
+      ],
+      "catchphrases_options": [
+        "There’s no need to get heated",
+        "Just name the price",
+        "They will hear about this"
+      ]
     },
     {
       "name": "The Dog Trainer",
@@ -673,9 +829,21 @@
         "Trained Dog",
         "Pistor or Rifle or Shotgun"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Bounty Hunter",
+        "Unemployed",
+        "Canine Unit"
+      ],
+      "flaws_options": [
+        "I can’t stand cats",
+        "I’m far too protective",
+        "I can’t say no"
+      ],
+      "catchphrases_options": [
+        "If he’s not allowed, I won’t go",
+        "Who’s a good boy?",
+        "Luna doesn’t like guns"
+      ]
     },
     {
       "name": "The Derelict",
@@ -718,9 +886,21 @@
       "gear_options": [
         "Nothing"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Homeless",
+        "Rat",
+        "Unemployed"
+      ],
+      "flaws_options": [
+        "I’m a hopeless liar",
+        "I live in the past",
+        "I don’t know how to behave in society"
+      ],
+      "catchphrases_options": [
+        "Nothing personal",
+        "Follow me, I know my way around here",
+        "Depends who you ask"
+      ]
     },
     {
       "name": "Special: The Assassin",
@@ -779,9 +959,19 @@
       "gear_options": [
         "Concealed Blade"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Assassin"
+      ],
+      "flaws_options": [
+        "I never open up to others",
+        "I’m impatient",
+        "Everybody is expendable"
+      ],
+      "catchphrases_options": [
+        "Rest in peace",
+        "I live by the code",
+        "They’ll never see me coming"
+      ]
     },
     {
       "name": "The Star Raider",
@@ -826,9 +1016,21 @@
         "Starship with Speed 1",
         "Laser Pistol"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Smuggler",
+        "Pirate",
+        "Captain"
+      ],
+      "flaws_options": [
+        "I’m too ambitious",
+        "I openly defy the law",
+        "I care too much about my ship"
+      ],
+      "catchphrases_options": [
+        "My crew is my family",
+        "To infinity and beyond!",
+        "This is my ship"
+      ]
     },
     {
       "name": "The Martial Artist",
@@ -871,9 +1073,21 @@
       "gear_options": [
         "Weapon of Choice or One $1 item of choice"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Mercenary",
+        "Martial Arts Teacher",
+        "Humble Artisan"
+      ],
+      "flaws_options": [
+        "I never accept defeat",
+        "My anger gets the better of me",
+        "I lost my eyesight"
+      ],
+      "catchphrases_options": [
+        "I will not fight you",
+        "Think thrice before acting",
+        "Appear weak when you are strong"
+      ]
     },
     {
       "name": "The Swashbuckler",
@@ -920,9 +1134,21 @@
         "Elegant Clothes",
         "Muzzle-loading Pistol or Bow"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Musketeer",
+        "Noble",
+        "Bandit"
+      ],
+      "flaws_options": [
+        "I solve all problems with a sword",
+        "I can’t resist temptation",
+        "I’m too honorable"
+      ],
+      "catchphrases_options": [
+        "At your service",
+        "I challenge you to a duel",
+        "Honor is the highest virtue"
+      ]
     },
     {
       "name": "The Loser",
@@ -965,9 +1191,21 @@
       "gear_options": [
         "One Toy Weapon of choice or One $1 item of choice"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Student",
+        "Employee",
+        "Unemployed"
+      ],
+      "flaws_options": [
+        "I’m too curious for my own good",
+        "I’m awkward and clumsy",
+        "I’m gullible"
+      ],
+      "catchphrases_options": [
+        "We must stick together",
+        "Meh, I’m used to it",
+        "I’m gonna be the very best"
+      ]
     },
     {
       "name": "The Apprentice",
@@ -1010,9 +1248,21 @@
       "gear_options": [
         "One $1 item of choice or Ride with Speed 1"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Student",
+        "Personal Assistant",
+        "Auror"
+      ],
+      "flaws_options": [
+        "I’m too impatient",
+        "I don’t believe in myself",
+        "I lie to my friends"
+      ],
+      "catchphrases_options": [
+        "It’s a piece of cake!",
+        "I won’t disappoint you",
+        "I must make my own way"
+      ]
     },
     {
       "name": "The Slayer",
@@ -1059,9 +1309,21 @@
         "Memento",
         "Silver Blade or Stake or Revolver equipped with Silver or Radiant Bullets"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Monster hunter",
+        "Exorcist",
+        "Student"
+      ],
+      "flaws_options": [
+        "I’m tied to a monster",
+        "I have no qualms involving innocents",
+        "I’m obsessed with my nemesis"
+      ],
+      "catchphrases_options": [
+        "Come and get me",
+        "This hunt never ends",
+        "Greater or lesser evil? Same difference"
+      ]
     },
     {
       "name": "The Solo",
@@ -1108,9 +1370,21 @@
         "Phone or Radio",
         "$1 Cyberware"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Detective",
+        "Mercenary",
+        "Bounty Hunter"
+      ],
+      "flaws_options": [
+        "I don’t know who I am",
+        "I drink way too much",
+        "I have no friends"
+      ],
+      "catchphrases_options": [
+        "Just doing my job",
+        "I’ll be back",
+        "Everybody lies"
+      ]
     },
     {
       "name": "Special: Master of the Multiverse",
@@ -1167,9 +1441,19 @@
       "gear_options": [
         "3 pieces of Gear of your choice"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Master of the Multiverse"
+      ],
+      "flaws_options": [
+        "I think too much before acting",
+        "I only believe in myself",
+        "I don’t know this World"
+      ],
+      "catchphrases_options": [
+        "There’s only one way",
+        "You don’t understand",
+        "It’s wibbly-wobbly multi-dimensional stuff"
+      ]
     },
     {
       "name": "The Daredevil",
@@ -1216,9 +1500,21 @@
         "Knife",
         "Rope"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Former Soldier",
+        "Explorer",
+        "Tomb Robber"
+      ],
+      "flaws_options": [
+        "Leave it to me",
+        "Nothing ventured nothing gained",
+        "I only gamble with my life"
+      ],
+      "catchphrases_options": [
+        "I act without thinking",
+        "I never back down from a challenge",
+        "I hide a dangerous secret"
+      ]
     },
     {
       "name": "The Guardian",
@@ -1263,9 +1559,21 @@
         "Weapon of Choice",
         "One $1 item of choice"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Bodyguard",
+        "Field Medic",
+        "Ancient Order"
+      ],
+      "flaws_options": [
+        "If it were to fall into the wrong hands…",
+        "Nobody gets left behind",
+        "Go! I'll take care of this"
+      ],
+      "catchphrases_options": [
+        "I never change my mind",
+        "I don't cooperate with the enemy",
+        "My mission comes first"
+      ]
     },
     {
       "name": "The Hunter",
@@ -1312,9 +1620,21 @@
         "Hunting rifle or Hunting bow",
         "Knife"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Saved by Natives",
+        "Poacher",
+        "Military Veteran"
+      ],
+      "flaws_options": [
+        "Try not to do anything stupid",
+        "I don't like the silence",
+        "You can never win against nature"
+      ],
+      "catchphrases_options": [
+        "I'm obsessed with the past",
+        "I never listen to advice",
+        "I have an old wound"
+      ]
     },
     {
       "name": "The Captain",
@@ -1361,9 +1681,21 @@
         "Old Ride",
         "Compass"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Aviator",
+        "Ship Captain",
+        "Veteran"
+      ],
+      "flaws_options": [
+        "I chart my own course",
+        "Of course I can drive that",
+        "First time for everything"
+      ],
+      "catchphrases_options": [
+        "I can't resist a challenge",
+        "I have a debt to repay",
+        "I have a peg-leg"
+      ]
     },
     {
       "name": "The Heart",
@@ -1408,9 +1740,21 @@
         "One $1 item of choice",
         "One $2 item of choice"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Musician",
+        "Cook",
+        "University Professor"
+      ],
+      "flaws_options": [
+        "We can do this. Together",
+        "We won't let this stop us",
+        "You're stronger than you think"
+      ],
+      "catchphrases_options": [
+        "I believe I can save everyone",
+        "I feel like a burden",
+        "I always have to do what's right"
+      ]
     },
     {
       "name": "The Star",
@@ -1455,9 +1799,21 @@
         "Elegant Clothes",
         "Precious item of choice (e.g. piece of jewelry or golden lighter)"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Heir",
+        "Great Performer",
+        "Aristrocrat"
+      ],
+      "flaws_options": [
+        "I performed in the greatest theaters",
+        "No one says no to me",
+        "Everything has a price"
+      ],
+      "catchphrases_options": [
+        "I hate getting dirty",
+        "I’m afraid of bugs",
+        "I'm picky about food"
+      ]
     },
     {
       "name": "The Professor",
@@ -1500,9 +1856,21 @@
       "gear_options": [
         "Diary and pencil"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "University Professor",
+        "Librarian",
+        "Researcher"
+      ],
+      "flaws_options": [
+        "I've read it in a book",
+        "We never stop learning",
+        "The pen is mightier than the sword"
+      ],
+      "catchphrases_options": [
+        "I always have a theory to test",
+        "I don't know when to shut up",
+        "Without my glasses, I am nearly blind"
+      ]
     },
     {
       "name": "The Technician",
@@ -1549,9 +1917,21 @@
         "Tool-bag",
         "Knife or Lighter"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Mechanic",
+        "Demolition Expert",
+        "Sapper"
+      ],
+      "flaws_options": [
+        "It doesn't work like that…",
+        "What did I tell you?",
+        "Step back a little"
+      ],
+      "catchphrases_options": [
+        "I don't take advice",
+        "I’m a fatalist and a pessimist",
+        "I can't swim"
+      ]
     },
     {
       "name": "The Smuggler",
@@ -1598,9 +1978,21 @@
         "Rope",
         "Lockpicking Set"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Archaeologist",
+        "Grave Robber",
+        "Pilot"
+      ],
+      "flaws_options": [
+        "Who d'you think you're talking to?",
+        "They don't need it anymore",
+        "Either I do this, or somebody else will"
+      ],
+      "catchphrases_options": [
+        "I need money",
+        "I have unfinished business",
+        "I don't believe in my friends"
+      ]
     },
     {
       "name": "The Scoundrel",
@@ -1647,9 +2039,21 @@
         "Lighter",
         "One $1 item of choice"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Criminal",
+        "Former Soldier",
+        "Salesperson"
+      ],
+      "flaws_options": [
+        "Do you trust me?",
+        "I've never seen this man before",
+        "It's fine, they will never find us"
+      ],
+      "catchphrases_options": [
+        "I never tell the whole truth",
+        "I have a secret",
+        "I never go first"
+      ]
     },
     {
       "name": "Special: The Fortune Seeker",
@@ -1712,9 +2116,19 @@
         "Compass",
         "Item of choice"
       ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      "jobs_options": [
+        "Fortune Seeker"
+      ],
+      "flaws_options": [
+        "Could we talk about it later?",
+        "I'm sorry, I have to do this",
+        "I am the master of my own destiny"
+      ],
+      "catchphrases_options": [
+        "I never know when to stop",
+        "I always put the Treasure first",
+        "I have an eye-patch"
+      ]
     },
     {
       "name": "The Star Knight",
@@ -1756,10 +2170,7 @@
       ],
       "gear_options": [
         "Star Sword or Double Star Sword"
-      ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      ]
     },
     {
       "name": "The Nightmare Investigator",
@@ -1801,10 +2212,7 @@
       ],
       "gear_options": [
         "Pistol"
-      ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      ]
     },
     {
       "name": "The Gunslinger",
@@ -1850,10 +2258,7 @@
         "Revolver",
         "Knife",
         "Horse"
-      ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      ]
     },
     {
       "name": "The Emissary",
@@ -1901,10 +2306,7 @@
       "gear_options": [
         "Elegant Clothes",
         "One $1 item of choice"
-      ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      ]
     },
     {
       "name": "The Barbarian",
@@ -1946,10 +2348,7 @@
       ],
       "gear_options": [
         "2 Weapons of choice or Weapon of choice and Shield"
-      ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      ]
     },
     {
       "name": "The Rookie",
@@ -1991,10 +2390,7 @@
       ],
       "gear_options": [
         "1 item of choice"
-      ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      ]
     },
     {
       "name": "The Dweller",
@@ -2036,10 +2432,7 @@
       ],
       "gear_options": [
         "Nothing"
-      ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      ]
     },
     {
       "name": "Special: The N.P.C.",
@@ -2097,10 +2490,7 @@
       ],
       "gear_options": [
         "2 pieces of Gear of your choice"
-      ],
-      "jobs_options": [],
-      "catchphrases_options": [],
-      "flaws_options": []
+      ]
     }
   ],
   "tropes": [
