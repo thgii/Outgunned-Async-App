@@ -1,22 +1,30 @@
-export default {
-  async fetch(req: Request): Promise<Response> {
-    const url = new URL(req.url);
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { campaigns } from "./routes/campaigns";
+import { games } from "./routes/games";
+import { messages } from "./routes/messages";
+import { characters } from "./routes/characters";
+import { rolls } from "./routes/rolls";
 
-    if (url.pathname === "/") {
-      return new Response("OK: action-thread-api root", {
-        headers: { "content-type": "text/plain" },
-      });
-    }
+type Env = { DB: D1Database };
 
-    if (url.pathname === "/characters/__ping") {
-      return new Response("OK: characters ping (root-level)", {
-        headers: { "content-type": "text/plain" },
-      });
-    }
+const app = new Hono<{ Bindings: Env }>();
 
-    return new Response(
-      JSON.stringify({ error: "Not found", path: url.pathname }),
-      { status: 404, headers: { "content-type": "application/json" } }
-    );
-  },
-};
+// CORS (safe even if same-origin)
+app.use(
+  "*",
+  cors({
+    origin: "*",
+    allowMethods: ["GET", "POST", "PATCH", "OPTIONS"],
+    allowHeaders: ["content-type", "authorization"],
+  })
+);
+
+app.route("/campaigns", campaigns);
+app.route("/games", games);
+app.route("/", messages);     // these already use absolute paths like /games/:id/messages
+app.route("/characters", characters);
+app.route("api/characters", characters);
+app.route("/", rolls);        // also uses absolute path /games/:id/rolls
+
+export default app;
