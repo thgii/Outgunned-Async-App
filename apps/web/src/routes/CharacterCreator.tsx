@@ -38,7 +38,7 @@ export default function CharacterCreator() {
     setSaving(true);
     setMsg("");
     try {
-      await api("/characters", { method: "POST", body: JSON.stringify(ch) });
+      await api("/characters", { method: "POST", json: ch });
       setMsg("✅ Character created!");
     } catch (e) {
       console.error(e);
