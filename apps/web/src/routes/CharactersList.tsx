@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 
 type Character = {
   id?: string | number;
@@ -46,7 +45,12 @@ export default function CharactersList() {
     <div className="max-w-5xl mx-auto p-6">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-3xl font-bold">All Characters</h1>
-        <Button onClick={() => navigate("/characters/new")}>Create Character</Button>
+ <button
+   onClick={() => navigate("/characters/new")}
+   className="px-3 py-2 rounded bg-black text-white hover:opacity-90"
+ >
+   Create Character
+ </button>
       </div>
 
       {err && <div className="text-red-600 text-center mb-3">{err}</div>}
@@ -56,9 +60,12 @@ export default function CharactersList() {
       ) : !characters.length ? (
         <div className="text-center opacity-70">
           <p>No characters yet.</p>
-          <Button className="mt-3" onClick={() => navigate("/characters/new")}>
-            Create your first character
-          </Button>
+ <button
+   className="mt-3 px-3 py-2 rounded bg-black text-white hover:opacity-90"
+   onClick={() => navigate("/characters/new")}
+ >
+    Create your first character
+</button>
         </div>
       ) : (
         <div className="grid md:grid-cols-2 gap-4">
@@ -84,19 +91,20 @@ export default function CharactersList() {
                 )}
 
                 <div className="mt-3 flex gap-2">
-                  <Button
-                    variant="outline"
-                    disabled={!charId}
-                    onClick={() => navigate(`/characters/${charId}/view`)}
-                  >
-                    View Sheet
-                  </Button>
-                  <Button
-                    disabled={!charId}
-                    onClick={() => navigate(`/characters/${charId}/edit`)}
-                  >
-                    Edit
-                  </Button>
+                   <button
+   disabled={!charId}
+   onClick={() => navigate(`/characters/${charId}/view`)}
+   className="px-3 py-1.5 rounded border border-gray-300 hover:bg-gray-50 disabled:opacity-50"
+ >
+   View Sheet
+ </button>
+                  <button
+   disabled={!charId}
+   onClick={() => navigate(`/characters/${charId}/edit`)}
+   className="px-3 py-1.5 rounded bg-black text-white hover:opacity-90 disabled:opacity-50"
+ >
+   Edit
+ </button>
                 </div>
               </div>
             );
