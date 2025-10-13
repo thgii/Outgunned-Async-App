@@ -40,17 +40,19 @@ export default function CharacterCreator() {
     try {
       await api("/characters", {
   method: "POST",
-  json: {
-    ...ch,                       // your wizard state
-    campaignId: ch.campaignId ?? "demo-camp", // required by DB if NOT NULL
-    ownerId: ch.ownerId ?? "demo-user",       // required by DB if NOT NULL
-    attributes: ch.attributes ?? {},          // ensure JSON object
-    skills: ch.skills ?? {},                  // ensure JSON object
-    resources: ch.resources ?? {},            // optional, but normalized
-    gear: ch.gear ?? [],                      // optional array
-    feats: ch.feats ?? [],                    // optional array
-  },
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({
+    ...ch,
+    campaignId: ch.campaignId ?? "demo-camp",
+    ownerId: ch.ownerId ?? "demo-user",
+    attributes: ch.attributes ?? {},
+    skills: ch.skills ?? {},
+    resources: ch.resources ?? {},
+    gear: ch.gear ?? [],
+    feats: ch.feats ?? [],
+  }),
 });
+
 
       setMsg("✅ Character created!");
     } catch (e) {
