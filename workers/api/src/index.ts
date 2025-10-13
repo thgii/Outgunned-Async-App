@@ -16,6 +16,7 @@ app.route("/campaigns", campaigns);
 app.route("/games", games);
 app.route("/", messages);     // these already use absolute paths like /games/:id/messages
 app.route("/characters", characters);
+app.route("api/characters", characters);
 app.route("/", rolls);        // also uses absolute path /games/:id/rolls
 
 app.get("/", (c) => c.json({ ok: true }));
