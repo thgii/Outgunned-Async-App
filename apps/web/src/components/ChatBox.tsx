@@ -14,20 +14,44 @@ export default function ChatBox({ gameId }: Props) {
   useEffect(() => {
   let timer: number | undefined;
   let interval = 8000; // start at 8s
+  let ids = new Set<string>();
+
+  // RESET when gameId changes
+  setMessages([]);
+  sinceRef.current = null;
+  ids.clear();
 
   const poll = async () => {
     try {
       const qs = sinceRef.current ? `?since=${encodeURIComponent(sinceRef.current)}` : "";
       const delta = await api(`/games/${gameId}/messages${qs}`);
+
       if (delta.length) {
-        setMessages((m) => [...m, ...delta]);
-        sinceRef.current = delta[delta.length - 1].createdAt;
+        // de-dupe just in case
+        const fresh = delta.filter((m: any) => {
+          if (ids.has(m.id)) return false;
+          ids.add(m.id);
+          return true;
+        });
+        if (fresh.length) {
+          setMessages((m) => [...m, ...fresh]);
+          sinceRef.current = delta[delta.length - 1].createdAt;
+        }
         interval = 8000; // reset on activity
       } else {
-        interval = Math.min(interval + 2000, 30000); // gentle backoff to 30s
+        // gentle idle backoff (max 30s)
+        interval = Math.min(interval + 2000, 30000);
       }
+    } catch {
+      // network hiccup: back off more aggressively
+      interval = Math.min(interval + 5000, 30000);
     } finally {
-      if (!document.hidden) timer = window.setTimeout(poll, interval);
+      if (!document.hidden) {
+        timer = window.setTimeout(poll, interval);
+      } else if (timer) {
+        clearTimeout(timer);
+        timer = undefined;
+      }
     }
   };
 
@@ -38,8 +62,13 @@ export default function ChatBox({ gameId }: Props) {
 
   document.addEventListener("visibilitychange", onVis);
   poll();
-  return () => { if (timer) clearTimeout(timer); document.removeEventListener("visibilitychange", onVis); };
+
+  return () => {
+    if (timer) clearTimeout(timer);
+    document.removeEventListener("visibilitychange", onVis);
+  };
 }, [gameId]);
+
 
 
   const send = async () => {
