@@ -3,7 +3,10 @@ import { q, one } from "../utils/db";
 
 export const characters = new Hono<{ Bindings: { DB: D1Database } }>();
 
-// List characters (optionally by campaignId)
+// 🔎 quick ping: GET /characters/__ping  (also works if mounted at /api/characters)
+characters.get("/__ping", (c) => c.text("OK: characters router mounted"));
+
+// LIST (optional ?campaignId=...)
 characters.get("/", async (c) => {
   const campaignId = c.req.query("campaignId");
   const rows = campaignId
@@ -17,7 +20,7 @@ characters.get("/", async (c) => {
   return c.json(rows);
 });
 
-// Get one
+// GET one
 characters.get("/:id", async (c) => {
   const id = c.req.param("id");
   const row = await one(c.env.DB, "SELECT * FROM characters WHERE id = ?", [id]);
@@ -28,7 +31,7 @@ characters.get("/:id", async (c) => {
   return c.json(row);
 });
 
-// Create
+// CREATE
 characters.post("/", async (c) => {
   const body = await c.req.json();
 
@@ -40,7 +43,7 @@ characters.post("/", async (c) => {
   const name       = body.name?.trim();
   if (!name) return c.json({ error: "name is required" }, 400);
 
-  // Normalize role/trope to string names (avoid [object Object])
+  // Normalize role/trope to string names (avoid "[object Object]")
   const role  = typeof body.role  === "string" ? body.role  : body.role?.name ?? null;
   const trope = typeof body.trope === "string" ? body.trope : body.trope?.name ?? null;
 
@@ -73,15 +76,14 @@ characters.post("/", async (c) => {
   return c.json(row, 201);
 });
 
-// Update (safe: only set provided fields)
+// UPDATE (only set provided fields; keeps NOT NULLs safe)
 characters.patch("/:id", async (c) => {
   const id = c.req.param("id");
   const body = await c.req.json();
 
   const sets: string[] = [];
   const vals: any[] = [];
-
-  function set(col: string, val: any) { sets.push(`${col}=?`); vals.push(val); }
+  const set = (col: string, val: any) => { sets.push(`${col}=?`); vals.push(val); };
 
   if (body.name !== undefined) set("name", body.name);
 
@@ -102,8 +104,7 @@ characters.patch("/:id", async (c) => {
   if (body.conditions  !== undefined) set("conditions", JSON.stringify(body.conditions ?? []));
   if (body.notes       !== undefined) set("notes",      body.notes ?? null);
 
-  if (sets.length === 0) return c.json({ error: "no fields to update" }, 400);
-
+  if (!sets.length) return c.json({ error: "no fields to update" }, 400);
   set("revision", (body.revision ?? 1) + 1);
 
   vals.push(id);
