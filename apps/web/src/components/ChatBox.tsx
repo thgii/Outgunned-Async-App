@@ -12,19 +12,35 @@ export default function ChatBox({ gameId }: Props) {
 
   // Simple polling; upgrade to SSE or Durable Objects later
   useEffect(() => {
-    let t: number;
-    const poll = async () => {
+  let timer: number | undefined;
+  let interval = 8000; // start at 8s
+
+  const poll = async () => {
+    try {
       const qs = sinceRef.current ? `?since=${encodeURIComponent(sinceRef.current)}` : "";
       const delta = await api(`/games/${gameId}/messages${qs}`);
       if (delta.length) {
         setMessages((m) => [...m, ...delta]);
         sinceRef.current = delta[delta.length - 1].createdAt;
+        interval = 8000; // reset on activity
+      } else {
+        interval = Math.min(interval + 2000, 30000); // gentle backoff to 30s
       }
-      t = window.setTimeout(poll, 1500);
-    };
-    poll();
-    return () => clearTimeout(t);
-  }, [gameId]);
+    } finally {
+      if (!document.hidden) timer = window.setTimeout(poll, interval);
+    }
+  };
+
+  const onVis = () => {
+    if (!document.hidden && !timer) poll();
+    if (document.hidden && timer) { clearTimeout(timer); timer = undefined; }
+  };
+
+  document.addEventListener("visibilitychange", onVis);
+  poll();
+  return () => { if (timer) clearTimeout(timer); document.removeEventListener("visibilitychange", onVis); };
+}, [gameId]);
+
 
   const send = async () => {
     if (!content.trim()) return;
