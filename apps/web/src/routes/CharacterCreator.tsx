@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import data from "../data/outgunned_data.json"; // <-- this is your updated file (with *_options)
-import { api } from "../../lib/api";
+import { api } from "../lib/api";
 
 type Role = {
   name: string;
