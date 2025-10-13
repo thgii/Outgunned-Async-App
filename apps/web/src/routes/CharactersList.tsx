@@ -1,37 +1,106 @@
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+
+type Character = {
+  id?: string | number;
+  _id?: string;
+  name: string;
+  role?: { name?: string } | string;
+  age?: string;
+  job?: string;
+  catchphrase?: string;
+  flaw?: string;
+  feats?: string[];
+  gear?: string[];
+};
 
 export default function CharactersList() {
-  const [characters, setCharacters] = useState<any[]>([]);
+  const navigate = useNavigate();
+  const [characters, setCharacters] = useState<Character[]>([]);
   const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api("/characters")
-      .then(setCharacters)
-      .catch((e) => { console.error(e); setErr("Failed to load characters."); });
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await api("/characters");
+        // Accept either an array or {items: []}
+        const list = Array.isArray(res) ? res : res?.items ?? [];
+        if (mounted) setCharacters(list);
+      } catch (e) {
+        console.error(e);
+        if (mounted) setErr("Failed to load characters.");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return (
     <div className="max-w-5xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-4 text-center">All Characters</h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-3xl font-bold">All Characters</h1>
+        <Button onClick={() => navigate("/characters/new")}>Create Character</Button>
+      </div>
+
       {err && <div className="text-red-600 text-center mb-3">{err}</div>}
-      {!characters.length ? (
-        <div className="text-center opacity-70">No characters yet.</div>
+
+      {loading ? (
+        <div className="text-center opacity-70">Loading…</div>
+      ) : !characters.length ? (
+        <div className="text-center opacity-70">
+          <p>No characters yet.</p>
+          <Button className="mt-3" onClick={() => navigate("/characters/new")}>
+            Create your first character
+          </Button>
+        </div>
       ) : (
         <div className="grid md:grid-cols-2 gap-4">
-          {characters.map((c) => (
-            <div key={c.id ?? c.name} className="border rounded p-3">
-  <div className="font-semibold text-lg">{c.name}</div>
-  <div className="text-sm opacity-80">{c.role?.name ?? c.role}</div>
-  <div className="text-sm">Age: {c.age ?? "—"}</div>
-  <div className="text-xs mt-1">Job: {c.job ?? "—"}</div>
-  <div className="text-xs">Catchphrase: {c.catchphrase ?? "—"}</div>
-  <div className="text-xs">Flaw: {c.flaw ?? "—"}</div>
-  {!!c.feats?.length && <div className="text-xs mt-2">Feats: {c.feats.join(", ")}</div>}
-  {!!c.gear?.length && <div className="text-xs mt-1">Gear: {c.gear.join(", ")}</div>}
-</div>
+          {characters.map((c) => {
+            const key = (c.id as string) ?? c._id ?? c.name;
+            const roleName =
+              typeof c.role === "string" ? c.role : c.role?.name ?? "—";
+            const charId = (c.id as string) ?? c._id; // used for routes
 
-          ))}
+            return (
+              <div key={key} className="border rounded p-3 flex flex-col gap-2">
+                <div className="font-semibold text-lg">{c.name}</div>
+                <div className="text-sm opacity-80">{roleName}</div>
+                <div className="text-sm">Age: {c.age ?? "—"}</div>
+                <div className="text-xs mt-1">Job: {c.job ?? "—"}</div>
+                <div className="text-xs">Catchphrase: {c.catchphrase ?? "—"}</div>
+                <div className="text-xs">Flaw: {c.flaw ?? "—"}</div>
+                {!!c.feats?.length && (
+                  <div className="text-xs mt-2">Feats: {c.feats.join(", ")}</div>
+                )}
+                {!!c.gear?.length && (
+                  <div className="text-xs mt-1">Gear: {c.gear.join(", ")}</div>
+                )}
+
+                <div className="mt-3 flex gap-2">
+                  <Button
+                    variant="outline"
+                    disabled={!charId}
+                    onClick={() => navigate(`/characters/${charId}/view`)}
+                  >
+                    View Sheet
+                  </Button>
+                  <Button
+                    disabled={!charId}
+                    onClick={() => navigate(`/characters/${charId}/edit`)}
+                  >
+                    Edit
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

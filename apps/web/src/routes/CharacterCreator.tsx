@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import data from "../data/outgunned_data.json"; // <-- this is your updated file (with *_options)
 import { api } from "../lib/api";
+import { useNavigate } from "react-router-dom";
 
 type Role = {
   name: string;
@@ -79,6 +80,7 @@ const Pill: React.FC<{
 );
 
 export default function CharacterCreator() {
+  const navigate = useNavigate();
   const [step, setStep] = useState<number>(0);
   const [saving, setSaving] = useState(false);
 
@@ -184,34 +186,38 @@ export default function CharacterCreator() {
   };
 
   // ------- Save --------
-  const onSave = async () => {
-    setSaving(true);
-    try {
-      const payload = {
-        name: ch.name?.trim() || "New Hero",
-        role: ch.role ? { name: ch.role.name } : null,
-        trope: ch.trope ? { name: ch.trope.name } : null,
-        tropeAttribute: ch.tropeAttribute || null,
-        age: ch.age || null,
-        job: ch.job || null,
-        catchphrase: ch.catchphrase || null,
-        flaw: ch.flaw || null,
-        feats: ch.feats,
-        gear: ch.gear,
-      };
-      await api("/characters", {
-        method: "POST",
-        body: JSON.stringify(payload),
-        headers: { "Content-Type": "application/json" },
-      });
-      alert("Character saved!");
-    } catch (e: any) {
-      console.error(e);
-      alert("Save failed. Check console for details.");
-    } finally {
-      setSaving(false);
-    }
-  };
+  onSave = async () => {
+  setSaving(true);
+  try {
+    const payload = {
+      name: ch.name?.trim() || "New Hero",
+      role: ch.role ? { name: ch.role.name } : null,
+      trope: ch.trope ? { name: ch.trope.name } : null,
+      tropeAttribute: ch.tropeAttribute || null,
+      age: ch.age || null,
+      job: ch.job || null,
+      catchphrase: ch.catchphrase || null,
+      flaw: ch.flaw || null,
+      feats: ch.feats,
+      gear: ch.gear,
+    };
+
+    await api("/characters", {
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    // ✅ redirect to Home after successful save
+    navigate("/");
+  } catch (e: any) {
+    console.error(e);
+    alert("Save failed. Check console for details.");
+  } finally {
+    setSaving(false);
+  }
+};
+
 
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-6">
