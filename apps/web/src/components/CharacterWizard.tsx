@@ -129,24 +129,62 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
     setGearChosen(prev => prev.includes(g) ? prev.filter(x=>x!==g) : [...prev, g]);
   }
 
-  const reviewDTO = useMemo(() => buildDerivedDTO({
-    name: name.trim(),
-    role, trope,
-    age,
-    tropeAttribute,
-    selectedFeats,
-    skillBumps,
-    jobOrBackground: jobOrBackground.trim(),
-    flaw: flaw.trim(),
-    catchphrase: catchphrase.trim(),
-    gearChosen,
-  }), [name, role, trope, age, tropeAttribute, selectedFeats, skillBumps, jobOrBackground, flaw, catchphrase, gearChosen]);
+// Can we legally build yet?
+const canBuild = useMemo(() => {
+  if (!name.trim()) return false;
+  if (!role) return false;
+  if (!trope) return false;
+  if (tropeNeedsAttr && !tropeAttribute) return false;
+  return true;
+}, [name, role, trope, tropeNeedsAttr, tropeAttribute]);
+
+// Only build when it's safe (and preferably only when needed)
+const reviewDTO = useMemo(() => {
+  if (!canBuild) return null;
+  try {
+    return buildDerivedDTO({
+      name: name.trim(),
+      role,
+      trope,
+      age,
+      tropeAttribute,
+      selectedFeats,
+      skillBumps,
+      jobOrBackground: jobOrBackground.trim(),
+      flaw: flaw.trim(),
+      catchphrase: catchphrase.trim(),
+      gearChosen,
+    });
+  } catch {
+    return null; // never throw during render
+  }
+  // You can also narrow this to step === "review" if you want:
+  // }, [step, canBuild, name, role, trope, age, tropeAttribute, selectedFeats, skillBumps, jobOrBackground, flaw, catchphrase, gearChosen]);
+}, [canBuild, name, role, trope, age, tropeAttribute, selectedFeats, skillBumps, jobOrBackground, flaw, catchphrase, gearChosen]);
+
 
   async function save() {
-    // hit the worker API just like CharacterForm does
-    const created = await api("/characters", { method: "POST", json: reviewDTO });
+  try {
+    const dto = buildDerivedDTO({
+      name: name.trim(),
+      role,
+      trope,
+      age,
+      tropeAttribute,
+      selectedFeats,
+      skillBumps,
+      jobOrBackground: jobOrBackground.trim(),
+      flaw: flaw.trim(),
+      catchphrase: catchphrase.trim(),
+      gearChosen,
+    });
+    const created = await api("/characters", { method: "POST", json: dto });
     onComplete?.(created);
+  } catch (err: any) {
+    alert(err?.message || "Failed to save character.");
   }
+}
+
 
   // Basic UI: (Tailwind present; keep it minimal and readable)
   return (
@@ -269,11 +307,18 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
         </Card>
       )}
 
-      {step === "review" && (
-        <Card title="Review & Save">
-          <Preview dto={reviewDTO} />
-        </Card>
-      )}
+{step === "review" && (
+  <Card title="Review & Save">
+    {reviewDTO ? (
+      <Preview dto={reviewDTO} />
+    ) : (
+      <p className="text-sm text-red-600">
+        Something’s missing. Go back and complete all required selections.
+      </p>
+    )}
+  </Card>
+)}
+
 
       {/* Nav */}
       <div className="flex gap-2 pt-2">
