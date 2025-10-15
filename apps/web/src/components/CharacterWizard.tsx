@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import type { CharacterDTO, SkillKey, AttrKey } from "@action-thread/types";
 import { api } from "../lib/api";
 import { DATA, findRole, findTrope, buildDerivedDTO, featsAllowanceByAge, roleOptionLists } from "../data/wizard";
+import { useEffect } from "react";
 
 type Step =
   | "identity"
@@ -39,6 +40,10 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
   // Data derived from selections
   const roleDef = useMemo(() => role ? findRole(role) : null, [role]);
   const tropeDef = useMemo(() => trope ? findTrope(trope) : null, [trope]);
+  useEffect(() => {
+  const needs = !!(tropeDef?.attribute_options?.length && !tropeDef?.attribute);
+  if (!needs) setTropeAttribute(undefined);
+}, [tropeDef]);
 
   const tropeNeedsAttr = !!(tropeDef?.attribute_options?.length && !tropeDef?.attribute);
   const featAllowance = featsAllowanceByAge(age);
@@ -50,7 +55,7 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
       case "identity":
         return name.trim().length > 0;
       case "roleTrope":
-        return !!role; // trope optional
+        return !!role && !!trope;
       case "tropeAttr":
         return !tropeNeedsAttr || !!tropeAttribute;
       case "age":
@@ -157,7 +162,17 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
       {step === "roleTrope" && (
         <Card title="Role & Trope">
           <Select label="Role *" value={role} onChange={setRole} options={["", ...DATA.roles.map(r=>r.name)]} />
-          <Select label="Trope (optional)" value={trope} onChange={setTrope} options={["", ...DATA.tropes.map(t=>t.name)]} />
+          <Select label="Trope *" value={trope} onChange={setTrope} options={["", ...DATA.tropes.map(t=>t.name)]} />
+{roleDef && (
+  <p className="text-sm mt-1 italic text-muted-foreground">
+    {roleDef.description || "No description available for this role."}
+  </p>
+)}
+{tropeDef && (
+  <p className="text-sm mt-1 italic text-muted-foreground">
+    {tropeDef.description || "No description available for this trope."}
+  </p>
+)}
         </Card>
       )}
 

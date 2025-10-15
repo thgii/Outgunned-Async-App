@@ -3,6 +3,7 @@ import type { CharacterDTO, AttrKey, SkillKey } from "@action-thread/types";
 
 type RoleDef = {
   name: string;
+  description?: string;
   attribute: string;           // "Brawn" etc
   skills: string[];            // ["Endure", ...]
   feats: string[];
@@ -14,6 +15,7 @@ type RoleDef = {
 
 type TropeDef = {
   name: string;
+  description?: string;
   attribute?: string;
   attribute_options?: string[];
   skills: string[];
@@ -24,7 +26,7 @@ type TropeDef = {
 export const DATA = {
   roles: (raw.roles as RoleDef[]),
   tropes: (raw.tropes as TropeDef[]),
-  ages: raw.ages.map(a => a.age), // ["Young","Adult","Old"]
+  ages: (raw.ages || []).map((a: any) => a.age), // ["Young","Adult","Old"]
 };
 
 export function findRole(name: string) {
@@ -50,7 +52,7 @@ const SKILL_MAP: Record<string, SkillKey> = {
 export function buildDerivedDTO(base: Partial<CharacterDTO> & {
   name: string;
   role: string;
-  trope?: string;
+  trope: string;
   age: "Young" | "Adult" | "Old";
   tropeAttribute?: AttrKey; // required when trope has attribute_options
   selectedFeats: string[];  // user-chosen feats (not including auto TYtD)
@@ -64,19 +66,19 @@ export function buildDerivedDTO(base: Partial<CharacterDTO> & {
     id: undefined,
     name: base.name,
     role: base.role,
-    trope: base.trope ?? "",
+    trope: base.trope,
     age: base.age,
     jobOrBackground: base.jobOrBackground ?? "",
     catchphrase: base.catchphrase ?? "",
     flaw: base.flaw ?? "",
 
-    attributes: { brawn:0, nerves:0, smooth:0, focus:0, crime:0 },
+    attributes: { brawn:2, nerves:2, smooth:2, focus:2, crime:2 },
     skills: {
-      endure:0, fight:0, force:0, stunt:0,
-      cool:0, drive:0, shoot:0, survival:0,
-      flirt:0, leadership:0, speech:0, style:0,
-      detect:0, fix:0, heal:0, know:0,
-      awareness:0, dexterity:0, stealth:0, streetwise:0,
+      endure:1, fight:1, force:1, stunt:1,
+      cool:1, drive:1, shoot:1, survival:1,
+      flirt:1, leadership:1, speech:1, style:1,
+      detect:1, fix:1, heal:1, know:1,
+      awareness:1, dexterity:1, stealth:1, streetwise:1,
     },
 
     grit: { current: 6, max: 6 },
@@ -111,34 +113,43 @@ export function buildDerivedDTO(base: Partial<CharacterDTO> & {
     if (key) dtoTemplate.skills[key] += 1;
   }
 
-  // Trope (optional)
-  if (base.trope) {
-    const trope = findTrope(base.trope);
-    if (trope) {
-      const tAttr =
-        trope.attribute
-          ? ATTR_MAP[trope.attribute]
-          : (base.tropeAttribute ? base.tropeAttribute : undefined);
-      if (tAttr) dtoTemplate.attributes[tAttr] += 1;
-      for (const s of trope.skills) {
-        const key = SKILL_MAP[s];
-        if (key) dtoTemplate.skills[key] += 1;
-      }
-    }
+  // Trope (required)
+  const trope = findTrope(base.trope);
+  if (!trope) throw new Error("Invalid trope.");
+
+  const tropeNeedsAttr = !!(trope.attribute_options?.length && !trope.attribute);
+  if (tropeNeedsAttr && !base.tropeAttribute) {
+    throw new Error("Select an attribute for the chosen trope.");
+  }
+
+  const tAttr = trope.attribute ? ATTR_MAP[trope.attribute] : base.tropeAttribute;
+  if (tAttr) dtoTemplate.attributes[tAttr] += 1;
+
+  for (const s of trope.skills || []) {
+    const key = SKILL_MAP[s];
+    if (key) dtoTemplate.skills[key] += 1;
+  }
   }
 
   // Age → feats count rules from your requested flow:
   // Adult: choose 2 feats
   // Young: choose 1 feat + auto "Too Young to Die"
   // Old:   choose 3 feats and start with 2 lethal bullets filled
-  const chosen = [...base.selectedFeats];
-  if (base.age === "Young") {
-    // ensure auto TYtD is in list
-    if (!chosen.includes("Too Young to Die")) chosen.unshift("Too Young to Die");
-  } else if (base.age === "Old") {
+  const picksByAge = base.age === "Young" ? 1 : base.age === "Old" ? 3 : 2;
+  const autoYoung = base.age === "Young" ? ["Too Young to Die"] : [];
+
+  const cleaned = Array.from(new Set(base.selectedFeats))
+    .filter(f => base.age === "Young" ? true : f !== "Too Young to Die");
+
+  const chosen = (base.age === "Young")
+    ? [...autoYoung, ...cleaned.slice(0, picksByAge)]
+    : cleaned.slice(0, picksByAge);
+
+  dtoTemplate.feats = chosen;
+
+  if (base.age === "Old") {
     dtoTemplate.deathRoulette = [true, true, false, false, false, false];
   }
-  dtoTemplate.feats = chosen.slice(0, 6);
 
   // Two extra skill bumps (+1 each; enforce unique)
   const uniq = Array.from(new Set(base.skillBumps)).slice(0, 2);
