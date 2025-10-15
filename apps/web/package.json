@@ -5,9 +5,12 @@
   "private": true,
   "dependencies": {
     "@action-thread/types": "workspace:*",
+    "@hookform/resolvers": "^5.2.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-hook-form": "^7.65.0",
     "react-router-dom": "^6.27.0",
+    "zod": "^4.1.12",
     "zustand": "^4.5.2"
   },
   "devDependencies": {

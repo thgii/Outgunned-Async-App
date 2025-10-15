@@ -93,3 +93,5 @@ export interface Clock {
   max: number;
   value: number;
 }
+
+export * from "./character";

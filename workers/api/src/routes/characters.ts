@@ -1,6 +1,10 @@
 import { Hono } from "hono";
 import { q, one } from "../utils/db";
-import ogData from "../lib/outgunned_data.server.json"; // <— static JSON for validation
+import {
+  characterSchema,
+  normalizeYouLook,
+  type CharacterDTO
+} from "@action-thread/types";
 
 export const characters = new Hono<{ Bindings: { DB: D1Database } }>();
 
@@ -32,61 +36,60 @@ characters.get("/:id", async (c) => {
   return c.json(row);
 });
 
-// CREATE
+// CREATE (schema-first)
 characters.post("/", async (c) => {
-  const body = await c.req.json();
+  let body: any = null;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: "bad_request", message: "Invalid JSON" }, 400);
+  }
+
+  // Validate & normalize against canonical sheet schema
+  let dto: CharacterDTO;
+  try {
+    // allow campaign/owner/tropeAttribute to pass through unvalidated:
+    const base = { ...body };
+    dto = normalizeYouLook(characterSchema.parse(base));
+  } catch (e: any) {
+    return c.json({ error: "validation_error", issues: e?.errors ?? String(e) }, 422);
+  }
 
   const id        = crypto.randomUUID();
   const createdAt = new Date().toISOString();
 
-  const campaignId = body.campaignId ?? "demo-camp";
-  const ownerId    = body.ownerId    ?? "demo-user";
-  const name       = body.name?.trim();
-  if (!name) return c.json({ error: "name is required" }, 400);
-
-  // Normalize role/trope to string names
-  const role  = typeof body.role  === "string" ? body.role  : body.role?.name ?? null;
-  const trope = typeof body.trope === "string" ? body.trope : body.trope?.name ?? null;
-
-  // NEW: normalize simple scalars
-  const age            = body.age ?? null;
-  const job            = body.job ?? null;
-  const catchphrase    = body.catchphrase ?? null;
-  const flaw           = body.flaw ?? null;
+  // Pass-through meta (not in schema)
+  const campaignId    = body.campaignId ?? "demo-camp";
+  const ownerId       = body.ownerId    ?? "demo-user";
   const tropeAttribute = body.tropeAttribute ?? null;
 
-  // OPTIONAL: lightweight validation (using static ogData import)
-  try {
-    const roles  = (ogData as any).roles ?? [];
-    const tropes = (ogData as any).tropes ?? [];
+  // Split canonical DTO into your DB columns
+  const name        = dto.name.trim();
+  const role        = dto.role;
+  const trope       = dto.trope ?? null;
+  const age         = dto.age ?? null;
+  const job         = dto.jobOrBackground ?? null;
+  const catchphrase = dto.catchphrase ?? null;
+  const flaw        = dto.flaw ?? null;
 
-    const roleObj  = roles.find((r: any) => r.name === role) ?? null;
-    const tropeObj = tropes.find((t: any) => t.name === trope) ?? null;
+  const feats       = JSON.stringify(dto.feats ?? []);
+  const attributes  = JSON.stringify(dto.attributes ?? {});
+  const skills      = JSON.stringify(dto.skills ?? {});
+  const resources   = JSON.stringify({
+    grit: dto.grit,
+    adrenaline: dto.adrenaline,
+    spotlight: dto.spotlight,
+    luck: dto.luck,
+    youLookSelected: dto.youLookSelected,
+    isBroken: dto.isBroken,
+    deathRoulette: dto.deathRoulette,
+    cash: dto.cash,
+  });
+  const gear        = JSON.stringify(dto.storage ?? { backpack:[], bag:[], gunsAndGear:[] });
+  const conditions  = JSON.stringify(dto.youLookSelected ?? []);
+  const notes       = dto.missionOrTreasure ?? null;
 
-    const allowedFeats = new Set<string>([
-      ...((roleObj?.feat_options ?? roleObj?.feats) ?? []),
-      ...((tropeObj?.feat_options ?? tropeObj?.feats) ?? []),
-    ]);
-    const invalidFeats = (body.feats ?? []).filter((f: string) => !allowedFeats.has(f));
-    if (invalidFeats.length) {
-      return c.json({ error: "validation", message: `Invalid feats: ${invalidFeats.join(", ")}` }, 400);
-    }
-
-    if (job && !(roleObj?.jobs_options ?? roleObj?.jobs ?? []).includes(job)) {
-      return c.json({ error: "validation", message: "Invalid job for role." }, 400);
-    }
-    if (catchphrase && !(roleObj?.catchphrases_options ?? roleObj?.catchphrases ?? []).includes(catchphrase)) {
-      return c.json({ error: "validation", message: "Invalid catchphrase for role." }, 400);
-    }
-    if (flaw && !(roleObj?.flaws_options ?? roleObj?.flaws ?? []).includes(flaw)) {
-      return c.json({ error: "validation", message: "Invalid flaw for role." }, 400);
-    }
-    if (tropeAttribute && tropeObj?.attribute_options?.length && !tropeObj.attribute_options.includes(tropeAttribute)) {
-      return c.json({ error: "validation", message: "Invalid tropeAttribute for trope." }, 400);
-    }
-  } catch {
-    // If ogData import fails in build, just skip validation
-  }
+  if (!name) return c.json({ error: "name is required" }, 400);
 
   await c.env.DB.prepare(
     `INSERT INTO characters
@@ -105,18 +108,17 @@ characters.post("/", async (c) => {
     catchphrase,
     flaw,
     tropeAttribute,
-    JSON.stringify(body.feats ?? []),
-    JSON.stringify(body.attributes ?? {}),
-    JSON.stringify(body.skills ?? {}),
-    JSON.stringify(body.resources ?? {}),
-    JSON.stringify(body.gear ?? []),
-    JSON.stringify(body.conditions ?? []),
-    body.notes ?? null,
+    feats,
+    attributes,
+    skills,
+    resources,
+    gear,
+    conditions,
+    notes,
     1,
     createdAt
   ).run();
 
-  // return the new row
   const row = await one<any>(c.env.DB, "SELECT * FROM characters WHERE id = ?", [id]);
   for (const k of ["attributes","skills","resources","feats","gear","conditions"]) {
     if (row[k]) row[k] = JSON.parse(row[k]);
@@ -124,39 +126,84 @@ characters.post("/", async (c) => {
   return c.json(row, 201);
 });
 
-// UPDATE (partial)
+// UPDATE (partial, schema-coerced)
 characters.patch("/:id", async (c) => {
   const id = c.req.param("id");
   const existing = await one<any>(c.env.DB, "SELECT * FROM characters WHERE id = ?", [id]);
   if (!existing) return c.notFound();
 
-  const body = await c.req.json();
+  let body: any = null;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: "bad_request", message: "Invalid JSON" }, 400);
+  }
 
-  const name           = body.name ?? existing.name;
-  const role           = typeof body.role  === "string" ? body.role  : body.role?.name ?? existing.role;
-  const trope          = typeof body.trope === "string" ? body.trope : body.trope?.name ?? existing.trope;
-  const age            = body.age ?? existing.age;
-  const job            = body.job ?? existing.job;
-  const catchphrase    = body.catchphrase ?? existing.catchphrase;
-  const flaw           = body.flaw ?? existing.flaw;
-  const tropeAttribute = body.tropeAttribute ?? existing.tropeAttribute;
+  // Rebuild a DTO-like object from existing row (so we can parse with defaults)
+  const existingDTO: Partial<CharacterDTO> = {
+    id: existing.id,
+    name: existing.name,
+    role: existing.role,
+    trope: existing.trope ?? "",
+    age: existing.age ?? "Adult",
+    jobOrBackground: existing.job ?? "",
+    catchphrase: existing.catchphrase ?? "",
+    flaw: existing.flaw ?? "",
+    // unpack JSON columns
+    ...(existing.attributes ? { attributes: JSON.parse(existing.attributes) } : {}),
+    ...(existing.skills ? { skills: JSON.parse(existing.skills) } : {}),
+    ...(existing.resources ? JSON.parse(existing.resources) : {}),
+    storage: existing.gear ? JSON.parse(existing.gear) : { backpack:[], bag:[], gunsAndGear:[] },
+    feats: existing.feats ? JSON.parse(existing.feats) : [],
+    missionOrTreasure: existing.notes ?? "",
+  };
 
-  const feats      = JSON.stringify(body.feats      ?? (existing.feats      ? JSON.parse(existing.feats)      : []));
-  const attributes = JSON.stringify(body.attributes ?? (existing.attributes ? JSON.parse(existing.attributes) : {}));
-  const skills     = JSON.stringify(body.skills     ?? (existing.skills     ? JSON.parse(existing.skills)     : {}));
-  const resources  = JSON.stringify(body.resources  ?? (existing.resources  ? JSON.parse(existing.resources)  : {}));
-  const gear       = JSON.stringify(body.gear       ?? (existing.gear       ? JSON.parse(existing.gear)       : []));
-  const conditions = JSON.stringify(body.conditions ?? (existing.conditions ? JSON.parse(existing.conditions) : []));
+  // Merge PATCH body over the reconstructed DTO and validate
+  let dto: CharacterDTO;
+  try {
+    dto = normalizeYouLook(
+      characterSchema.parse({ ...existingDTO, ...body })
+    );
+  } catch (e: any) {
+    return c.json({ error: "validation_error", issues: e?.errors ?? String(e) }, 422);
+  }
+
+  // Column splits (same as POST)
+  const name        = dto.name.trim();
+  const role        = dto.role;
+  const trope       = dto.trope ?? null;
+  const age         = dto.age ?? null;
+  const job         = dto.jobOrBackground ?? null;
+  const catchphrase = dto.catchphrase ?? null;
+  const flaw        = dto.flaw ?? null;
+  const tropeAttribute = body.tropeAttribute ?? existing.tropeAttribute ?? null;
+
+  const feats       = JSON.stringify(dto.feats ?? []);
+  const attributes  = JSON.stringify(dto.attributes ?? {});
+  const skills      = JSON.stringify(dto.skills ?? {});
+  const resources   = JSON.stringify({
+    grit: dto.grit,
+    adrenaline: dto.adrenaline,
+    spotlight: dto.spotlight,
+    luck: dto.luck,
+    youLookSelected: dto.youLookSelected,
+    isBroken: dto.isBroken,
+    deathRoulette: dto.deathRoulette,
+    cash: dto.cash,
+  });
+  const gear        = JSON.stringify(dto.storage ?? { backpack:[], bag:[], gunsAndGear:[] });
+  const conditions  = JSON.stringify(dto.youLookSelected ?? []);
+  const notes       = dto.missionOrTreasure ?? null;
 
   await c.env.DB.prepare(
     `UPDATE characters SET
       name=?, role=?, trope=?, age=?, job=?, catchphrase=?, flaw=?, tropeAttribute=?,
-      feats=?, attributes=?, skills=?, resources=?, gear=?, conditions=?,
+      feats=?, attributes=?, skills=?, resources=?, gear=?, conditions=?, notes=?,
       revision=COALESCE(revision,0)+1
      WHERE id=?`
   ).bind(
     name, role, trope, age, job, catchphrase, flaw, tropeAttribute,
-    feats, attributes, skills, resources, gear, conditions,
+    feats, attributes, skills, resources, gear, conditions, notes,
     id
   ).run();
 
@@ -166,3 +213,5 @@ characters.patch("/:id", async (c) => {
   }
   return c.json(row);
 });
+
+export default characters;
