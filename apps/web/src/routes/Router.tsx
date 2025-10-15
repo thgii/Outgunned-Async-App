@@ -7,7 +7,7 @@ import CharacterCreator from "./CharacterCreator";
 import CharactersList from "./CharactersList";
 import CharacterEdit from "./CharacterEdit";
 
-import Header from "./components/Header";
+import Header from "../components/Header";
 
 export const Router = () => (
   <BrowserRouter>
