@@ -8,7 +8,15 @@
       "Ages",
       "Personal Data",
       "Gear"
-    ]
+    ],
+    "enriched": {
+      "added_fields": [
+        "description"
+      ],
+      "normalized_fields": [
+        "skills (minor typo fixes)"
+      ]
+    }
   },
   "roles": [
     {
@@ -70,7 +78,8 @@
         "Stay back, I got this",
         "Nobody left behind",
         "If it bleeds, we can defeat it"
-      ]
+      ],
+      "description": "An elite soldier who solves problems head‑on with grit and training."
     },
     {
       "name": "The Fighter",
@@ -127,7 +136,8 @@
         "Let’s get to the bottom of this. You and me, one on one",
         "There’s no need to fight",
         "It doesn’t hurt!"
-      ]
+      ],
+      "description": "A disciplined martial artist who dominates up close."
     },
     {
       "name": "The Ace",
@@ -186,7 +196,8 @@
         "Freedom is priceless",
         "Family always comes first",
         "I feel a need for speed!"
-      ]
+      ],
+      "description": "A daredevil driver and pilot whose life is lived at full speed."
     },
     {
       "name": "The Agent",
@@ -249,7 +260,8 @@
         "Not in my city",
         "Give it here, I’ll do it",
         "I’m not a hero, I’m just doing my job"
-      ]
+      ],
+      "description": "A trained operative skilled in investigation, tactics, and survival."
     },
     {
       "name": "The Face",
@@ -308,7 +320,8 @@
         "Trust me",
         "Do you know who you’re talking to?",
         "Surely we can reach an agreement"
-      ]
+      ],
+      "description": "A smooth talker who wins with charm, style, and social savvy."
     },
     {
       "name": "The Nobody",
@@ -365,7 +378,8 @@
         "I didn’t even want to come here!",
         "Everyone can do their part",
         "My kids are not gonna believe this!"
-      ]
+      ],
+      "description": "An ordinary person thrust into extraordinary events—resourceful and lucky."
     },
     {
       "name": "The Brain",
@@ -426,7 +440,8 @@
         "Hear me out. I have a plan!",
         "Have I ever been wrong before?",
         "With the right lever, I shall move the world"
-      ]
+      ],
+      "description": "A brilliant planner and problem‑solver armed with knowledge."
     },
     {
       "name": "The Sleuth",
@@ -485,7 +500,8 @@
         "You can run but you cannot hide",
         "The truth always comes out in the end",
         "You can’t run from your past"
-      ]
+      ],
+      "description": "A dogged investigator who follows clues wherever they lead."
     },
     {
       "name": "The Criminal",
@@ -544,7 +560,8 @@
         "In and out. It’s a piece of cake",
         "I’m not going back to prison",
         "If you want something, you have to take it"
-      ]
+      ],
+      "description": "A rogue operating outside the law with shady contacts."
     },
     {
       "name": "The Spy",
@@ -605,7 +622,8 @@
         "There’s no time. I’ll explain later",
         "The enemy of my enemy is my friend",
         "It might be impossible, but we have to do it"
-      ]
+      ],
+      "description": "A master of disguise and infiltration who keeps secrets close."
     },
     {
       "name": "The Samurai",
@@ -664,7 +682,8 @@
         "You leave me no choice",
         "I swear it on my honor",
         "I shall finish what I started"
-      ]
+      ],
+      "description": "An honorable warrior bound by steel and oath."
     },
     {
       "name": "The Hired Gun",
@@ -725,7 +744,8 @@
         "What’s in it for me?",
         "That’s not my problem",
         "One bullet is enough"
-      ]
+      ],
+      "description": "A professional trigger puller who gets the job done."
     },
     {
       "name": "The Aristocrat",
@@ -784,7 +804,8 @@
         "There’s no need to get heated",
         "Just name the price",
         "They will hear about this"
-      ]
+      ],
+      "description": "Refined and well‑connected; money and manners open doors."
     },
     {
       "name": "The Dog Trainer",
@@ -843,7 +864,8 @@
         "If he’s not allowed, I won’t go",
         "Who’s a good boy?",
         "Luna doesn’t like guns"
-      ]
+      ],
+      "description": "A handler whose trained companion is a force multiplier."
     },
     {
       "name": "The Derelict",
@@ -900,7 +922,8 @@
         "Nothing personal",
         "Follow me, I know my way around here",
         "Depends who you ask"
-      ]
+      ],
+      "description": "A down‑and‑out survivor who knows how to get by."
     },
     {
       "name": "Special: The Assassin",
@@ -971,7 +994,8 @@
         "Rest in peace",
         "I live by the code",
         "They’ll never see me coming"
-      ]
+      ],
+      "description": "A methodical eliminator who strikes from the shadows."
     },
     {
       "name": "The Star Raider",
@@ -1030,7 +1054,8 @@
         "My crew is my family",
         "To infinity and beyond!",
         "This is my ship"
-      ]
+      ],
+      "description": "A bold spacefarer who lives and hustles among the stars."
     },
     {
       "name": "The Martial Artist",
@@ -1087,7 +1112,8 @@
         "I will not fight you",
         "Think thrice before acting",
         "Appear weak when you are strong"
-      ]
+      ],
+      "description": "A devoted student of ancient styles and kinetic grace."
     },
     {
       "name": "The Swashbuckler",
@@ -1148,7 +1174,8 @@
         "At your service",
         "I challenge you to a duel",
         "Honor is the highest virtue"
-      ]
+      ],
+      "description": "A gallant duelist who fights with flair and panache."
     },
     {
       "name": "The Loser",
@@ -1205,7 +1232,8 @@
         "We must stick together",
         "Meh, I’m used to it",
         "I’m gonna be the very best"
-      ]
+      ],
+      "description": "An awkward underdog with hidden reserves of grit."
     },
     {
       "name": "The Apprentice",
@@ -1262,7 +1290,8 @@
         "It’s a piece of cake!",
         "I won’t disappoint you",
         "I must make my own way"
-      ]
+      ],
+      "description": "A promising novice who’s just discovering their power."
     },
     {
       "name": "The Slayer",
@@ -1323,7 +1352,8 @@
         "Come and get me",
         "This hunt never ends",
         "Greater or lesser evil? Same difference"
-      ]
+      ],
+      "description": "A relentless hunter of monsters and the occult."
     },
     {
       "name": "The Solo",
@@ -1384,7 +1414,8 @@
         "Just doing my job",
         "I’ll be back",
         "Everybody lies"
-      ]
+      ],
+      "description": "A lone antihero walking neon‑lit streets with a heavy past."
     },
     {
       "name": "Special: Master of the Multiverse",
@@ -1453,7 +1484,8 @@
         "There’s only one way",
         "You don’t understand",
         "It’s wibbly-wobbly multi-dimensional stuff"
-      ]
+      ],
+      "description": "A reality‑hopping prodigy balancing impossible possibilities."
     },
     {
       "name": "The Daredevil",
@@ -1514,7 +1546,8 @@
         "I act without thinking",
         "I never back down from a challenge",
         "I hide a dangerous secret"
-      ]
+      ],
+      "description": "A reckless treasure hunter with courage to spare, always first into danger."
     },
     {
       "name": "The Guardian",
@@ -1523,7 +1556,7 @@
       "skills": [
         "Endure",
         "Fight",
-        "Forces",
+        "Force",
         "Cool",
         "Survival",
         "Leadership",
@@ -1573,7 +1606,8 @@
         "I never change my mind",
         "I don't cooperate with the enemy",
         "My mission comes first"
-      ]
+      ],
+      "description": "A stalwart protector sworn to defend allies or sacred relics at any cost."
     },
     {
       "name": "The Hunter",
@@ -1634,7 +1668,8 @@
         "I'm obsessed with the past",
         "I never listen to advice",
         "I have an old wound"
-      ]
+      ],
+      "description": "A patient tracker and survivalist who knows the wilds better than any city."
     },
     {
       "name": "The Captain",
@@ -1695,7 +1730,8 @@
         "I can't resist a challenge",
         "I have a debt to repay",
         "I have a peg-leg"
-      ]
+      ],
+      "description": "A seasoned leader and pilot who keeps the expedition on course."
     },
     {
       "name": "The Heart",
@@ -1754,7 +1790,8 @@
         "I believe I can save everyone",
         "I feel like a burden",
         "I always have to do what's right"
-      ]
+      ],
+      "description": "An empathic teammate who lifts spirits and keeps the group together."
     },
     {
       "name": "The Star",
@@ -1813,7 +1850,8 @@
         "I hate getting dirty",
         "I’m afraid of bugs",
         "I'm picky about food"
-      ]
+      ],
+      "description": "A charismatic performer used to the spotlight and getting their way."
     },
     {
       "name": "The Professor",
@@ -1870,7 +1908,8 @@
         "I always have a theory to test",
         "I don't know when to shut up",
         "Without my glasses, I am nearly blind"
-      ]
+      ],
+      "description": "A learned scholar and expert in ancient lore and languages."
     },
     {
       "name": "The Technician",
@@ -1931,7 +1970,8 @@
         "I don't take advice",
         "I’m a fatalist and a pessimist",
         "I can't swim"
-      ]
+      ],
+      "description": "An inventor or demolitions expert who fixes, builds, and improvises."
     },
     {
       "name": "The Smuggler",
@@ -1942,7 +1982,7 @@
         "Cool",
         "Drive",
         "Shoot",
-        "Survivial",
+        "Survival",
         "Leadership",
         "Detect",
         "Know",
@@ -1992,7 +2032,8 @@
         "I need money",
         "I have unfinished business",
         "I don't believe in my friends"
-      ]
+      ],
+      "description": "A shady trader who always knows a way in—or out—of trouble."
     },
     {
       "name": "The Scoundrel",
@@ -2053,7 +2094,8 @@
         "I never tell the whole truth",
         "I have a secret",
         "I never go first"
-      ]
+      ],
+      "description": "A charming rogue who lives by wit, luck, and sleight of hand."
     },
     {
       "name": "Special: The Fortune Seeker",
@@ -2128,7 +2170,8 @@
         "I never know when to stop",
         "I always put the Treasure first",
         "I have an eye-patch"
-      ]
+      ],
+      "description": "An exceptional adventurer destined for glory; the quintessential pulp hero."
     },
     {
       "name": "The Star Knight",
@@ -2170,7 +2213,8 @@
       ],
       "gear_options": [
         "Star Sword or Double Star Sword"
-      ]
+      ],
+      "description": "A mystic warrior wielding a blade of light and inner focus."
     },
     {
       "name": "The Nightmare Investigator",
@@ -2212,7 +2256,8 @@
       ],
       "gear_options": [
         "Pistol"
-      ]
+      ],
+      "description": "A hardened gumshoe who stares down cosmic terrors."
     },
     {
       "name": "The Gunslinger",
@@ -2258,7 +2303,8 @@
         "Revolver",
         "Knife",
         "Horse"
-      ]
+      ],
+      "description": "A quick‑draw legend feared and respected on the frontier."
     },
     {
       "name": "The Emissary",
@@ -2306,7 +2352,8 @@
       "gear_options": [
         "Elegant Clothes",
         "One $1 item of choice"
-      ]
+      ],
+      "description": "A diplomat touched by the divine—and the infernal."
     },
     {
       "name": "The Barbarian",
@@ -2315,7 +2362,7 @@
       "skills": [
         "Endure",
         "Fight",
-        "Forces",
+        "Force",
         "Cool",
         "Survival",
         "Leadership",
@@ -2348,7 +2395,8 @@
       ],
       "gear_options": [
         "2 Weapons of choice or Weapon of choice and Shield"
-      ]
+      ],
+      "description": "A savage champion who triumphs through might and fury."
     },
     {
       "name": "The Rookie",
@@ -2390,7 +2438,8 @@
       ],
       "gear_options": [
         "1 item of choice"
-      ]
+      ],
+      "description": "A green cop with a badge, big heart, and bigger dreams."
     },
     {
       "name": "The Dweller",
@@ -2432,7 +2481,8 @@
       ],
       "gear_options": [
         "Nothing"
-      ]
+      ],
+      "description": "A wasteland survivor who thrives in dust and diesel."
     },
     {
       "name": "Special: The N.P.C.",
@@ -2490,7 +2540,8 @@
       ],
       "gear_options": [
         "2 pieces of Gear of your choice"
-      ]
+      ],
+      "description": "A meta‑hero built to fit any story role—by design."
     }
   ],
   "tropes": [
@@ -2523,7 +2574,8 @@
         "Parkour",
         "Proven Driver",
         "Shadow"
-      ]
+      ],
+      "description": "Bad to the Bone: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Cheater",
@@ -2554,7 +2606,8 @@
         "Lockpick",
         "Shadow",
         "Silver Tongue"
-      ]
+      ],
+      "description": "Cheater: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Cool But Distressed",
@@ -2585,7 +2638,8 @@
         "Gunslinger",
         "Proven Driver",
         "Silver Tongue"
-      ]
+      ],
+      "description": "Cool But Distressed: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Diehard",
@@ -2616,7 +2670,8 @@
         "Hard to Kill",
         "Martial Arts",
         "Military Background"
-      ]
+      ],
+      "description": "Diehard: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Free Spirit",
@@ -2647,7 +2702,8 @@
         "Parkour",
         "Pickpocket",
         "That's All?"
-      ]
+      ],
+      "description": "Free Spirit: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Genius Bruiser",
@@ -2678,7 +2734,8 @@
         "High Culture",
         "Scientist",
         "That's All?"
-      ]
+      ],
+      "description": "Genius Bruiser: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Good Samaritan",
@@ -2709,7 +2766,8 @@
         "High Culture",
         "Physician",
         "Selfless"
-      ]
+      ],
+      "description": "Good Samaritan: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Hot Stuff",
@@ -2740,7 +2798,8 @@
         "Cash Flow",
         "Heartbreaker",
         "I'll Make a Phone Call"
-      ]
+      ],
+      "description": "Hot Stuff: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Hunk",
@@ -2771,7 +2830,8 @@
         "Combo",
         "Intimidation",
         "Selfless"
-      ]
+      ],
+      "description": "Hunk: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Jerk with a Heart of Gold",
@@ -2802,7 +2862,8 @@
         "Martial Arts",
         "Parkour",
         "Silver Tongue"
-      ]
+      ],
+      "description": "Jerk with a Heart of Gold: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Last Boy Scout/ Girl Scout",
@@ -2833,7 +2894,8 @@
         "Hunter",
         "Military Background",
         "Selfless"
-      ]
+      ],
+      "description": "Last Boy Scout/ Girl Scout: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Leader",
@@ -2864,7 +2926,8 @@
         "Get Down!",
         "Head on a Swivel",
         "Mastermind"
-      ]
+      ],
+      "description": "Leader: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Lone Wolf",
@@ -2895,7 +2958,8 @@
         "Head on a Swivel",
         "Martial Arts",
         "That's All?"
-      ]
+      ],
+      "description": "Lone Wolf: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Mentor",
@@ -2926,7 +2990,8 @@
         "Mastermind",
         "Pep Talk",
         "Silver Tongue"
-      ]
+      ],
+      "description": "Mentor: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Neurotic geek",
@@ -2957,7 +3022,8 @@
         "Intuition",
         "Outsmart",
         "Scientist"
-      ]
+      ],
+      "description": "Neurotic geek: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Party Killer",
@@ -2988,7 +3054,8 @@
         "Marksman",
         "Mastermind",
         "Pep Talk"
-      ]
+      ],
+      "description": "Party Killer: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Trusty Sidekick",
@@ -3019,7 +3086,8 @@
         "Mechanic",
         "Physician",
         "Proven Driver"
-      ]
+      ],
+      "description": "Trusty Sidekick: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Vigilante",
@@ -3050,7 +3118,8 @@
         "Martial Arts",
         "Parkour",
         "Shadow"
-      ]
+      ],
+      "description": "Vigilante: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Battle Butler",
@@ -3081,7 +3150,8 @@
         "Elegance",
         "Martial Arts",
         "Selfless"
-      ]
+      ],
+      "description": "Battle Butler: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Gone Rogue",
@@ -3112,7 +3182,8 @@
         "Military Background",
         "Pass the Buck",
         "Proven Driver"
-      ]
+      ],
+      "description": "Gone Rogue: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Great Performer",
@@ -3143,7 +3214,8 @@
         "Knife Thrower",
         "Master of Disguise",
         "Parkour"
-      ]
+      ],
+      "description": "Great Performer: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Honorable Demon",
@@ -3174,7 +3246,8 @@
         "Elegance",
         "Knife Thrower",
         "Selfless"
-      ]
+      ],
+      "description": "Honorable Demon: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Just Wicked",
@@ -3205,7 +3278,8 @@
         "Determination",
         "Gun Fu",
         "Shadow"
-      ]
+      ],
+      "description": "Just Wicked: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Magnificent Bastard",
@@ -3236,7 +3310,8 @@
         "Pass the Buck",
         "Proven Driver",
         "Silver Tongue"
-      ]
+      ],
+      "description": "Magnificent Bastard: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Old Fashioned",
@@ -3267,7 +3342,8 @@
         "Military Background",
         "Outsmart",
         "Sword Fighter"
-      ]
+      ],
+      "description": "Old Fashioned: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Professional",
@@ -3298,7 +3374,8 @@
         "Hacker",
         "Marksman",
         "Scientist"
-      ]
+      ],
+      "description": "Professional: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Saint",
@@ -3329,7 +3406,8 @@
         "Gun Fu",
         "Pep Talk",
         "Silver Tongue"
-      ]
+      ],
+      "description": "Saint: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Special: The Assassin",
@@ -3346,7 +3424,8 @@
       ],
       "feat_options": [
         "Included with Role"
-      ]
+      ],
+      "description": "Special: The Assassin: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Logical Thinker",
@@ -3377,7 +3456,8 @@
         "Mastermind",
         "Outsmart",
         "Scientist"
-      ]
+      ],
+      "description": "Logical Thinker: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Lonely Stranger",
@@ -3408,7 +3488,8 @@
         "Hard to Kill",
         "Intimidation",
         "Marksman"
-      ]
+      ],
+      "description": "Lonely Stranger: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Lovable Scoundrel",
@@ -3439,7 +3520,8 @@
         "Hyperflight Evasion",
         "Pep Talk",
         "Shoot First"
-      ]
+      ],
+      "description": "Lovable Scoundrel: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Daring Noble",
@@ -3470,7 +3552,8 @@
         "Cash Flow",
         "Archer",
         "High Culture"
-      ]
+      ],
+      "description": "Daring Noble: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Shifu",
@@ -3501,7 +3584,8 @@
         "Lie to Me",
         "Outsmart",
         "Pep Talk"
-      ]
+      ],
+      "description": "Shifu: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Vengeful Ghost",
@@ -3532,7 +3616,8 @@
         "Knife Thrower",
         "Parkour",
         "Shadow"
-      ]
+      ],
+      "description": "Vengeful Ghost: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Wild Warrior",
@@ -3563,7 +3648,8 @@
         "Military Background",
         "Punch Reolad",
         "That's All?"
-      ]
+      ],
+      "description": "Wild Warrior: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Cool Veteran",
@@ -3594,7 +3680,8 @@
         "Military Background",
         "Pep Talk",
         "Rider"
-      ]
+      ],
+      "description": "Cool Veteran: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Friendly Brute",
@@ -3625,7 +3712,8 @@
         "Intimidation",
         "Punch Reload",
         "That's All?"
-      ]
+      ],
+      "description": "Friendly Brute: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Witty Casanova",
@@ -3656,7 +3744,8 @@
         "Outsmart",
         "Parkour",
         "Silver Tongue"
-      ]
+      ],
+      "description": "Witty Casanova: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Bespectacled Reporter",
@@ -3687,7 +3776,8 @@
         "Parkour",
         "Reporter",
         "Silver Tongue"
-      ]
+      ],
+      "description": "Bespectacled Reporter: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Billionaire Philanthropist",
@@ -3718,7 +3808,8 @@
         "Heartbreaker",
         "Scientist",
         "Silver Tongue"
-      ]
+      ],
+      "description": "Billionaire Philanthropist: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Butler of All Trades",
@@ -3749,7 +3840,8 @@
         "Physician",
         "Selfless",
         "Silver Tongue"
-      ]
+      ],
+      "description": "Butler of All Trades: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Chatty Mercenary",
@@ -3780,7 +3872,8 @@
         "Gunslinger",
         "Parkour",
         "Silver Tongue"
-      ]
+      ],
+      "description": "Chatty Mercenary: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Dark Knight",
@@ -3811,7 +3904,8 @@
         "Knife Thrower",
         "Martial Arts",
         "Shadow"
-      ]
+      ],
+      "description": "Dark Knight: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Boasting Jock",
@@ -3842,7 +3936,8 @@
         "Intimidation",
         "Popular",
         "Sporty"
-      ]
+      ],
+      "description": "Boasting Jock: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Nosy Nerd",
@@ -3873,7 +3968,8 @@
         "Outsmart",
         "Reporter",
         "Scientist"
-      ]
+      ],
+      "description": "Nosy Nerd: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Practically Perfect",
@@ -3904,7 +4000,8 @@
         "Cash Flow",
         "Popular",
         "Sporty"
-      ]
+      ],
+      "description": "Practically Perfect: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Charming Bookworm",
@@ -3935,7 +4032,8 @@
         "Outsmart",
         "Reporter",
         "Silver Tongue"
-      ]
+      ],
+      "description": "Charming Bookworm: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Chosen One",
@@ -3966,7 +4064,8 @@
         "Pep Talk",
         "Selfless",
         "That's All?"
-      ]
+      ],
+      "description": "Chosen One: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Silly Marauder",
@@ -3997,7 +4096,8 @@
         "Master of Disguise",
         "Pickpocket",
         "Silver Tongue"
-      ]
+      ],
+      "description": "Silly Marauder: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Misunderstood Genius",
@@ -4028,7 +4128,8 @@
         "Physician",
         "Scientist",
         "Watch Out!"
-      ]
+      ],
+      "description": "Misunderstood Genius: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Scarred Survivor",
@@ -4059,7 +4160,8 @@
         "In the Face of Danger",
         "Know your Enemy",
         "Not Today"
-      ]
+      ],
+      "description": "Scarred Survivor: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Super Soldier",
@@ -4090,7 +4192,8 @@
         "In the Face of Danger",
         "Marksman",
         "Military Background"
-      ]
+      ],
+      "description": "Super Soldier: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Heroic Patsy",
@@ -4121,7 +4224,8 @@
         "Intuition",
         "Paranormal Knowledge",
         "Shadow"
-      ]
+      ],
+      "description": "Heroic Patsy: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Only Sane One",
@@ -4152,7 +4256,8 @@
         "Military Background",
         "That's All?",
         "Unimpressed"
-      ]
+      ],
+      "description": "Only Sane One: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Parascientist",
@@ -4183,7 +4288,8 @@
         "Mechanic",
         "Paranormal Knowledge",
         "Unimpressed"
-      ]
+      ],
+      "description": "Parascientist: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Hot-Head",
@@ -4214,7 +4320,8 @@
         "Parkour",
         "Silver Tongue",
         "That's All?"
-      ]
+      ],
+      "description": "Hot-Head: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Librarian",
@@ -4245,7 +4352,8 @@
         "High Culture",
         "Lie to Me",
         "Occult Knowledge"
-      ]
+      ],
+      "description": "Librarian: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Relentless Avenger",
@@ -4276,7 +4384,8 @@
         "Gunslinger",
         "Hard to Kill",
         "Military Background"
-      ]
+      ],
+      "description": "Relentless Avenger: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Heartbroken Badass",
@@ -4307,7 +4416,8 @@
         "Hard to Kill",
         "Sprawl",
         "Tormented by the Past"
-      ]
+      ],
+      "description": "Heartbroken Badass: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Psycho-Punk",
@@ -4338,7 +4448,8 @@
         "Bodybuilder",
         "Cyberpunk",
         "Tormented by the Past"
-      ]
+      ],
+      "description": "Psycho-Punk: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Techno Wizard",
@@ -4369,7 +4480,8 @@
         "Hacker",
         "Physician",
         "Sprawl"
-      ]
+      ],
+      "description": "Techno Wizard: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Special: Master of the Multiverse",
@@ -4386,7 +4498,8 @@
       ],
       "feat_options": [
         "Included with Role"
-      ]
+      ],
+      "description": "Special: Master of the Multiverse: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Action Archaeologist",
@@ -4417,7 +4530,8 @@
         "Eye for Details",
         "Fast Reflexes",
         "Thrill Seeker"
-      ]
+      ],
+      "description": "A scholar who thrives in the field, balancing theory with adventure."
     },
     {
       "name": "Adventuring Author",
@@ -4448,7 +4562,8 @@
         "Eye for Details",
         "Linguist",
         "Silver Tongue"
-      ]
+      ],
+      "description": "Adventuring Author: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Born Rebel",
@@ -4479,7 +4594,8 @@
         "Gunslinger",
         "Maverick",
         "Teamwork"
-      ]
+      ],
+      "description": "Born Rebel: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Cold and Distant",
@@ -4510,7 +4626,8 @@
         "Guide",
         "Gunslinger",
         "Quick and Nimble"
-      ]
+      ],
+      "description": "Cold and Distant: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Cowardly Lion",
@@ -4541,7 +4658,8 @@
         "Quick and Nimble",
         "Saddle Up",
         "Silver Tongue"
-      ]
+      ],
+      "description": "Cowardly Lion: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Dreamer",
@@ -4572,7 +4690,8 @@
         "I Meant to Do That!",
         "Reassure",
         "Watch and Learn"
-      ]
+      ],
+      "description": "Dreamer: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Flying Steamroller",
@@ -4603,7 +4722,8 @@
         "Hardened",
         "Heartbreaker",
         "Pilot"
-      ]
+      ],
+      "description": "Flying Steamroller: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Gentle Giant",
@@ -4634,7 +4754,8 @@
         "Bodyguard",
         "Chin Up",
         "Fighter"
-      ]
+      ],
+      "description": "Gentle Giant: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Indispensible Rogue",
@@ -4665,7 +4786,8 @@
         "Lockpicker",
         "Quick Fingers",
         "Trailblazer"
-      ]
+      ],
+      "description": "Indispensible Rogue: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Parental Figure",
@@ -4696,7 +4818,8 @@
         "Chin Up",
         "Reassure",
         "Silver Tongue"
-      ]
+      ],
+      "description": "Parental Figure: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Proper Gentleman/Lady",
@@ -4727,7 +4850,8 @@
         "Favored Weapon",
         "Heartbreaker",
         "Moneybags"
-      ]
+      ],
+      "description": "Proper Gentleman/Lady: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Real Bastard",
@@ -4758,7 +4882,8 @@
         "Linguist",
         "Quick Fingers",
         "Subterfuge"
-      ]
+      ],
+      "description": "Real Bastard: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Reluctant Hero",
@@ -4789,7 +4914,8 @@
         "Reassure",
         "That Was Close!",
         "Thrill Seeker"
-      ]
+      ],
+      "description": "A hesitant savior who answers the call despite doubts."
     },
     {
       "name": "Salty Dog",
@@ -4820,7 +4946,8 @@
         "Fix-it",
         "Hardened",
         "Sailor"
-      ]
+      ],
+      "description": "A seasoned sailor or traveler hardened by the elements."
     },
     {
       "name": "Wild at Heart",
@@ -4851,7 +4978,8 @@
         "Favored Weapon",
         "Guide",
         "Skulker"
-      ]
+      ],
+      "description": "A rugged spirit of the wild—untamed and instinctive."
     },
     {
       "name": "Special: The Fortune Seeker",
@@ -4868,7 +4996,8 @@
       ],
       "feat_options": [
         "Included with Role"
-      ]
+      ],
+      "description": "Special: The Fortune Seeker: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Troubled Apprentice",
@@ -4899,7 +5028,8 @@
         "Fix-it",
         "Lightning Reflexes",
         "Proven Driver"
-      ]
+      ],
+      "description": "Troubled Apprentice: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Good Teacher",
@@ -4930,7 +5060,8 @@
         "Detective",
         "Inner Peace",
         "Outsmart"
-      ]
+      ],
+      "description": "Good Teacher: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Charming Mentor",
@@ -4961,7 +5092,8 @@
         "Get Down!",
         "Proven Driver",
         "Silver Tongue"
-      ]
+      ],
+      "description": "Charming Mentor: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "From the Sea",
@@ -4992,7 +5124,8 @@
         "Fighter",
         "Memory of a Dream",
         "Straight-Faced"
-      ]
+      ],
+      "description": "From the Sea: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Esoteric Scholar",
@@ -5023,14 +5156,15 @@
         "Heartbreaker",
         "Memory of a Dream",
         "Straight-Faced"
-      ]
+      ],
+      "description": "Esoteric Scholar: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Jolly Loon",
       "source": "OGAF2-OO",
       "attribute": "Smooth or Crime",
       "skills": [
-        "Forces",
+        "Force",
         "Stunt",
         "Drive",
         "Survival",
@@ -5054,7 +5188,8 @@
         "Memory of a Dream",
         "On the Brink",
         "Silver Tongue"
-      ]
+      ],
+      "description": "Jolly Loon: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Hero With No Name",
@@ -5085,7 +5220,8 @@
         "Fast Reload",
         "Gunslinger",
         "Hair-trigger"
-      ]
+      ],
+      "description": "Hero With No Name: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Friendly Brute",
@@ -5116,7 +5252,8 @@
         "Eyes of Steel",
         "Fighter",
         "Hardened"
-      ]
+      ],
+      "description": "Friendly Brute: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Right Hand of the Devil",
@@ -5147,7 +5284,8 @@
         "Gunslinger",
         "Hair-trigger",
         "Silver Tongue"
-      ]
+      ],
+      "description": "Right Hand of the Devil: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Anguished Cynic",
@@ -5182,7 +5320,8 @@
         "Holy",
         "Unholy Weapon",
         "Otherworldly Knowledge"
-      ]
+      ],
+      "description": "Anguished Cynic: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Too Sweet",
@@ -5190,7 +5329,7 @@
       "attribute": "Smooth or Focus",
       "skills": [
         "Endure",
-        "Drvie",
+        "Drive",
         "Speech",
         "Style",
         "Heal",
@@ -5215,7 +5354,8 @@
         "Otherworldly Knowledge",
         "Otherworldly Connection",
         "Outsmart"
-      ]
+      ],
+      "description": "Too Sweet: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Grumpy Rebel",
@@ -5250,7 +5390,8 @@
         "Hardened",
         "Holy",
         "Unholy Weapon"
-      ]
+      ],
+      "description": "Grumpy Rebel: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Honorable Savage",
@@ -5281,7 +5422,8 @@
         "Big and Strong",
         "Hardened",
         "Mythical Warrior"
-      ]
+      ],
+      "description": "Honorable Savage: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Old Code",
@@ -5312,7 +5454,8 @@
         "Detective",
         "Mythical Warrior",
         "Outsmart"
-      ]
+      ],
+      "description": "Old Code: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Warrior Prince/Princess",
@@ -5343,7 +5486,8 @@
         "Mythical Warrior",
         "Silver Tongue",
         "Trick Shot"
-      ]
+      ],
+      "description": "Warrior Prince/Princess: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Detective Nerd",
@@ -5374,7 +5518,8 @@
         "Get Down!",
         "Outsmart",
         "Rank"
-      ]
+      ],
+      "description": "Detective Nerd: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "By the Book",
@@ -5405,7 +5550,8 @@
         "Gunslinger",
         "Rank",
         "They Owe Me One"
-      ]
+      ],
+      "description": "By the Book: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Loose Cannon",
@@ -5436,7 +5582,8 @@
         "Gunslinger",
         "Silver Tongue",
         "They Own Me One"
-      ]
+      ],
+      "description": "Loose Cannon: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Animal Lover",
@@ -5467,7 +5614,8 @@
         "Paleontology",
         "Runner",
         "Veterinarian"
-      ]
+      ],
+      "description": "Animal Lover: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Action Paleontologist",
@@ -5498,7 +5646,8 @@
         "Paleontology",
         "Runner",
         "Survivial Instinct"
-      ]
+      ],
+      "description": "Action Paleontologist: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Chaos Theorist",
@@ -5507,11 +5656,11 @@
       "skills": [
         "Cool",
         "Drive",
-        "Slirt",
+        "Flirt",
         "Speech",
         "Style",
         "Detect",
-        "Known",
+        "Know",
         "Stealth"
       ],
       "feats": [
@@ -5529,7 +5678,8 @@
         "Runner",
         "Survival Instinct",
         "Told You So"
-      ]
+      ],
+      "description": "Chaos Theorist: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Furious Fighter",
@@ -5560,7 +5710,8 @@
         "Gunslinger",
         "Road Warrior",
         "Witness!"
-      ]
+      ],
+      "description": "Furious Fighter: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Last Knight",
@@ -5591,7 +5742,8 @@
         "Hardened",
         "Jackal",
         "Road Warrior"
-      ]
+      ],
+      "description": "Last Knight: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Unwavering Optimist",
@@ -5622,7 +5774,8 @@
         "Get Down!",
         "Jackal",
         "Silver Tongue"
-      ]
+      ],
+      "description": "Unwavering Optimist: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Housewares Clerk",
@@ -5653,7 +5806,8 @@
         "Fearless",
         "Fix-it",
         "Heartbreaker"
-      ]
+      ],
+      "description": "Housewares Clerk: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Next-Door Hero",
@@ -5684,7 +5838,8 @@
         "Fighter",
         "Get Down!",
         "Spirit of Sacrifice"
-      ]
+      ],
+      "description": "Next-Door Hero: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Final Girl",
@@ -5715,7 +5870,8 @@
         "Fearless",
         "Heartbreaker",
         "Immune"
-      ]
+      ],
+      "description": "Final Girl: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Stingy Uncle",
@@ -5746,7 +5902,8 @@
         "Flip Out",
         "Outsmart",
         "Silver Tongue"
-      ]
+      ],
+      "description": "Stingy Uncle: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Three's a Company",
@@ -5777,7 +5934,8 @@
         "Clumsy",
         "Get Down!",
         "Teeny"
-      ]
+      ],
+      "description": "Three's a Company: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Surly Sailor",
@@ -5788,7 +5946,7 @@
         "Force",
         "Drive",
         "Shoot",
-        "Slirt",
+        "Flirt",
         "Heal",
         "Stealth",
         "Streetwise"
@@ -5808,7 +5966,8 @@
         "Clumsy",
         "Flip Out",
         "I Never Learned Physics"
-      ]
+      ],
+      "description": "Surly Sailor: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Brilliant Inventor",
@@ -5839,7 +5998,8 @@
         "Flying",
         "Private Lab",
         "Proven Driver"
-      ]
+      ],
+      "description": "Brilliant Inventor: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Lucky Dandy",
@@ -5870,7 +6030,8 @@
         "Dumb Luck",
         "Heartbreaker",
         "Imposing"
-      ]
+      ],
+      "description": "Lucky Dandy: an archetypal trope tailored for Outgunned stories."
     },
     {
       "name": "Special: The N.P.C.",
@@ -5887,7 +6048,8 @@
       ],
       "feat_options": [
         "Included with Role"
-      ]
+      ],
+      "description": "Special: The N.P.C.: an archetypal trope tailored for Outgunned stories."
     }
   ],
   "feats": [
