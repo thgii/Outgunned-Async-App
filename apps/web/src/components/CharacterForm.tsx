@@ -13,13 +13,47 @@ type Props = { initial?: Partial<CharacterDTO>; onSubmit: (dto: CharacterDTO) =>
 
 export default function CharacterForm({ initial, onSubmit }: Props) {
   const defaults: CharacterDTO = {
-    ...characterSchema.parse({
-      name: "", role: "",
-      attributes: { brawn:0, nerves:0, smooth:0, focus:0, crime:0 },
-      skills: Object.fromEntries(SKILLS.map(k => [k,0])) as any,
-    }),
-    ...initial,
-  };
+  id: undefined,
+  name: "",            // empty is OK for the form; Zod will enforce on submit
+  role: "",
+  trope: "",
+  jobOrBackground: "",
+  age: "Adult",
+  catchphrase: "",
+  flaw: "",
+
+  attributes: { brawn: 0, nerves: 0, smooth: 0, focus: 0, crime: 0 },
+  skills: {
+    endure: 0, fight: 0, force: 0, stunt: 0,
+    cool: 0, drive: 0, shoot: 0, survival: 0,
+    flirt: 0, leadership: 0, speech: 0, style: 0,
+    detect: 0, fix: 0, heal: 0, know: 0,
+    awareness: 0, dexterity: 0, stealth: 0, streetwise: 0,
+  },
+
+  grit: { current: 6, max: 6 },
+  adrenaline: 0,
+  spotlight: 0,
+  luck: 0,
+
+  experiences: [],
+  feats: [],
+
+  youLookSelected: [],
+  isBroken: false,
+  deathRoulette: [false, false, false, false, false, false],
+
+  cash: 1,
+  storage: { backpack: [], bag: [], gunsAndGear: [] },
+  ride: { name: "", speed: 0, armor: 0, tags: [] },
+
+  missionOrTreasure: "",
+  achievementsBondsScarsReputations: "",
+  createdAt: undefined,
+  updatedAt: undefined,
+  ...(initial ?? {}),
+};
+
 
   const methods = useForm<CharacterDTO>({
     resolver: zodResolver(characterSchema),
@@ -33,10 +67,22 @@ export default function CharacterForm({ initial, onSubmit }: Props) {
 
   return (
     <FormProvider {...methods}>
-      <form className="space-y-6 p-4" onSubmit={handleSubmit(async (data) => {
-        if (new Set(data.youLookSelected).size >= 3) data.isBroken = true;
-        await onSubmit(data);
-      })}>
+      <form
+  onSubmit={handleSubmit(async (data) => {
+    // basic validation before hitting the API
+    if (!data.name.trim() || !data.role.trim()) {
+      alert("Please enter both a Name and a Role before saving your character.");
+      return; // stop the submit, don’t call onSubmit
+    }
+
+    if (new Set(data.youLookSelected).size >= 3) data.isBroken = true;
+    await onSubmit({
+      ...data,
+      name: data.name.trim(),
+      role: data.role.trim(),
+    });
+  })}
+>
 
         {/* Identity */}
         <section className="grid gap-3 md:grid-cols-3">

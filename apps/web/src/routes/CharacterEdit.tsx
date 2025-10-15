@@ -43,6 +43,7 @@ function toDTO(row: any): CharacterDTO {
     deathRoulette: resources.deathRoulette ?? [false,false,false,false,false,false],
     cash: resources.cash ?? 1,
     storage,
+    ride: row.ride ?? { name: "", speed: 0, armor: 0, tags: [] },
     feats: row.feats ?? [],
     missionOrTreasure: row.notes ?? "",
     achievementsBondsScarsReputations: row.achievementsBondsScarsReputations ?? "",

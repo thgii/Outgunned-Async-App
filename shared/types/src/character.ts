@@ -41,7 +41,12 @@ export const characterSchema = z.object({
   skills: skillsBlock,
 
   // Resources
-  grit: z.object({ current: _0to6.default(6), max: _0to6.default(6) }),
+  grit: z
+  .object({
+    current: _0to6.default(6),
+    max: _0to6.default(6),
+  })
+  .default({ current: 6, max: 6 }),
   adrenaline: _0to6.default(0),
   spotlight: _0to6.default(0),
   luck: _0to6.default(0),
@@ -59,23 +64,37 @@ export const characterSchema = z.object({
 
   // Inventory
   cash: z.number().int().min(0).max(5).default(1),
-  storage: z.object({
+  storage: z
+  .object({
     backpack: z.array(z.string()).default([]),
     bag: z.array(z.string()).default([]),
-    gunsAndGear: z.array(z.object({
-      name: z.string(),
-      tags: z.array(z.string()).default([]),
-      ranges: z.object({ melee: z.string().optional(), close: z.string().optional(),
-                         medium: z.string().optional(), long: z.string().optional() }).partial(),
-    })).default([]),
-  }),
+    gunsAndGear: z
+      .array(
+        z.object({
+          name: z.string(),
+          tags: z.array(z.string()).default([]),
+          ranges: z
+            .object({
+              melee: z.string().optional(),
+              close: z.string().optional(),
+              medium: z.string().optional(),
+              long: z.string().optional(),
+            })
+            .partial(),
+        })
+      )
+      .default([]),
+  })
+  .default({ backpack: [], bag: [], gunsAndGear: [] }),
 
-  ride: z.object({
+ride: z
+  .object({
     name: z.string().optional().default(""),
     speed: z.number().int().min(0).max(5).optional().default(0),
     armor: z.number().int().min(0).max(5).optional().default(0),
     tags: z.array(z.string()).default([]),
-  }),
+  })
+  .default({ name: "", speed: 0, armor: 0, tags: [] }),
 
   // Notes
   missionOrTreasure: z.string().optional().default(""),
