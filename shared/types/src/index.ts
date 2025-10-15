@@ -94,4 +94,4 @@ export interface Clock {
   value: number;
 }
 
-export * from "./character";
+export * from "./character.js";
