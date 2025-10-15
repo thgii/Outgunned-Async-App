@@ -75,7 +75,7 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
       case "review":
         return true;
     }
-  }, [step, name, role, tropeNeedsAttr, tropeAttribute, age, selectedFeats, featAllowance.picks, skillBumps]);
+  }, [step, name, role, trope, tropeNeedsAttr, tropeAttribute, age, selectedFeats, featAllowance.picks, skillBumps]);
 
   function next() {
     if (!canContinue) return;
