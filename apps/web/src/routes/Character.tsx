@@ -111,7 +111,7 @@ function normalizeForSheet(c: any): Character {
   const luck = asNumber(fromResources("luck", 0), 0);
   const cash = asNumber(fromResources("cash", 0), 0);
 
-  const storage = c?.storage ?? c?.resources?.storage;
+  const storage = sanitizeStorage(c?.storage ?? c?.resources?.storage);
 
   // Ensure resources exists and mirror normalized fields into it
   const resources: any = { ...(c?.resources ?? {}) };
@@ -152,12 +152,17 @@ function mapToServerPayload(next: Character): any {
   payload.resources.luck = asNumber(next.luck, 0);
   payload.resources.cash = asNumber(next.cash, 0);
 
-  // Mirror storage if present
-  if (next.storage ?? payload.resources.storage) {
-    const storage = next.storage ?? payload.resources.storage;
-    payload.storage = storage;
-    payload.resources.storage = storage;
-  }
+  // Mirror storage if present, and sanitize it for the Worker
+const rawStorage = next.storage ?? payload.resources.storage;
+const storage = sanitizeStorage(rawStorage);
+if (storage) {
+  payload.storage = storage;
+  payload.resources.storage = storage;
+} else {
+  delete payload.storage;
+  delete payload.resources?.storage;
+}
+
 
   // Push job/background back to a single field the API accepts.
   // If your Worker expects "background", keep this; if it expects "job", swap it.
