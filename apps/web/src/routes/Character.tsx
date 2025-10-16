@@ -1,145 +1,281 @@
 // apps/web/src/routes/Character.tsx
-import { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../lib/api";
-import CharacterSheetV2 from "../components/CharacterSheetv2";
+import CharacterSheetv2 from "../components/CharacterSheetv2";
 
-const AUTOSAVE_DELAY_MS = 700;
+/** ---------- Types (keep in sync with the rest of the app) ---------- */
+type Meter = { current?: number; max?: number };
+type MaybeNamed = { name?: string; value?: any };
 
-export default function Character() {
-  const { id } = useParams();
-  const [loading, setLoading] = useState(true);
+type Character = {
+  id: string;
+  name: string;
+  role: string | MaybeNamed;
+  trope: string | MaybeNamed;
+  age?: string | number;
+  background?: string | MaybeNamed;
+  job?: string | MaybeNamed;
+  jobOrBackground?: string;
+  flaw?: string | MaybeNamed;
+  catchphrase?: string | MaybeNamed;
+  attributes?: Record<string, number | MaybeNamed>;
+  skills?: Record<string, number | MaybeNamed>;
+  feats?: Array<string | MaybeNamed>;
+  gear?: Array<string | MaybeNamed>;
+  resources?: Record<string, number | Meter | MaybeNamed>;
+  storage?: any;
+  grit?: Meter;
+  adrenaline?: number;
+  spotlight?: number;
+  luck?: number;
+  cash?: number;
+  ride?: string | MaybeNamed;
+  notes?: string;
+};
+
+type SavingState = "idle" | "saving" | "saved" | "error";
+
+/** ---------- Helpers ---------- */
+function asNumber(v: any, fallback = 0): number {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function getMaybeName(v: any): string | undefined {
+  if (v == null) return undefined;
+  if (typeof v === "object") return v.name ?? v.value ?? undefined;
+  if (typeof v === "string") return v || undefined;
+  return String(v);
+}
+
+/** Normalize server payload -> shape the sheet expects (top-level fields). */
+function normalizeForSheet(c: any): Character {
+  const fromResources = (k: string, fallback?: any) =>
+    c?.[k] ?? c?.resources?.[k] ?? fallback;
+
+  // Prefer an explicit job, else a background, and stringify MaybeNamed objects.
+  const jobOrBackgroundRaw =
+    c.job ??
+    c.background ??
+    c.jobOrBackground ??
+    c?.resources?.job ??
+    c?.resources?.background;
+
+  const jobOrBackground = getMaybeName(jobOrBackgroundRaw) ?? "";
+
+  // Grit may be on top-level or inside resources (as a meter)
+  const gritObj = c.grit ?? c.resources?.grit ?? {};
+  const grit: Meter = {
+    current: asNumber(gritObj.current, 0),
+    // server validates max <= 6 (was the cause of your 422), so clamp here
+    max: Math.min(6, asNumber(gritObj.max, 6)),
+  };
+
+  // Numbers commonly stored under resources
+  const adrenaline = asNumber(fromResources("adrenaline", 0), 0);
+  const spotlight = asNumber(fromResources("spotlight", 0), 0);
+  const luck = asNumber(fromResources("luck", 0), 0);
+  const cash = asNumber(fromResources("cash", 0), 0);
+
+  const storage = c.storage ?? c.resources?.storage;
+
+  return {
+    ...c,
+    jobOrBackground,
+    grit,
+    adrenaline,
+    spotlight,
+    luck,
+    cash,
+    storage,
+  };
+}
+
+/** Map sheet state -> server payload (put meters/numbers under resources). */
+function mapToServerPayload(next: Character): any {
+  const payload: any = { ...next };
+
+  // Ensure resources exists
+  payload.resources = { ...(payload.resources ?? {}) };
+
+  // Move resource-like fields under resources (and clamp grit.max)
+  payload.resources.grit = {
+    current: asNumber(next.grit?.current, 0),
+    max: Math.min(6, asNumber(next.grit?.max, 6)),
+  };
+  payload.resources.adrenaline = asNumber(next.adrenaline, 0);
+  payload.resources.spotlight = asNumber(next.spotlight, 0);
+  payload.resources.luck = asNumber(next.luck, 0);
+  payload.resources.cash = asNumber(next.cash, 0);
+
+  // Mirror storage both places for compatibility (remove either if not needed)
+  if (next.storage ?? payload.resources.storage) {
+    const storage = next.storage ?? payload.resources.storage;
+    payload.storage = storage;
+    payload.resources.storage = storage;
+  }
+
+  // Push job/background back to a single field the API accepts.
+  // If your worker expects "background" use that; if it expects "job", swap it here.
+  if (!payload.background && !payload.job && next.jobOrBackground) {
+    payload.background = next.jobOrBackground;
+  }
+
+  // Clean up top-level duplicates so server gets a tidy object
+  delete payload.jobOrBackground;
+  delete payload.grit;
+  delete payload.adrenaline;
+  delete payload.spotlight;
+  delete payload.luck;
+  delete payload.cash;
+
+  return payload;
+}
+
+/** ---------- Route Component ---------- */
+export default function CharacterRoute() {
+  const navigate = useNavigate();
+  const params = useParams();
+  // Support either /characters/:id or /characters/:characterId
+  const id = params.id || params.characterId || "";
+
+  const [character, setCharacter] = useState<Character | null>(null);
+  const [saving, setSaving] = useState<SavingState>("idle");
   const [error, setError] = useState<string | null>(null);
-  const [character, setCharacter] = useState<any>(null);
 
-  // status: idle | saving | saved
-  const [saving, setSaving] = useState<"idle" | "saving" | "saved">("idle");
-
-  // keep the latest draft & dirty flag in refs (won’t be reset by re-renders)
-  const latestRef = useRef<any>(null);
+  const timerRef = useRef<number | null>(null);
   const isDirtyRef = useRef(false);
+  const latestRef = useRef<Character | null>(null);
 
-  // timer ref: works in both browser and node typings
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // load
+  // Load character
   useEffect(() => {
     let cancel = false;
-    (async () => {
-      if (!id) return;
-      setLoading(true);
+
+    async function load() {
       setError(null);
       try {
         const c = await api(`/characters/${id}`);
-        if (!cancel) {
-          setCharacter(c);
-          latestRef.current = c;
-          isDirtyRef.current = false;
-          setSaving("idle");
-        }
+        if (cancel) return;
+        const normalized = normalizeForSheet(c);
+        setCharacter(normalized);
+        latestRef.current = normalized;
+        isDirtyRef.current = false;
+        setSaving("idle");
       } catch (e: any) {
-        if (!cancel) setError(e?.message || "Failed to load character");
-      } finally {
-        if (!cancel) setLoading(false);
+        if (cancel) return;
+        setError(e?.message ?? "Failed to load character.");
+        setSaving("error");
       }
-    })();
+    }
+
+    if (id) load();
     return () => {
       cancel = true;
-      if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [id]);
 
-  // PATCH helper
-  const saveNow = async (payload: any) => {
-    if (!id) return;
-    setSaving("saving");
-    try {
-      await api(`/characters/${id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json", // <-- important if your api() doesn’t add this
-        },
-        body: JSON.stringify(payload),
-      });
-      latestRef.current = payload;
-      isDirtyRef.current = false;
-      setSaving("saved");
-      // fade “saved”
-      window.setTimeout(() => setSaving("idle"), 1000);
-    } catch (e) {
-      console.error("Save failed", e);
-      // stay “idle” but keep Edited badge visible
-      setSaving("idle");
-    }
-  };
-
   // AUTOSAVE: debounce onChange calls
-  const onChange = (next: any) => {
+  const onChange = (next: Character) => {
     setCharacter(next);
     latestRef.current = next;
     isDirtyRef.current = true;
-
-    // show explicit “Saving…” while debouncing (optional UX)
     setSaving("saving");
-
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      // guard: if nothing changed since we scheduled, skip
-      if (!isDirtyRef.current) {
-        setSaving("idle");
-        return;
-      }
-      saveNow(latestRef.current);
-    }, AUTOSAVE_DELAY_MS);
+    if (timerRef.current) window.clearTimeout(timerRef.current);
+    timerRef.current = window.setTimeout(() => {
+      void saveNow(next);
+    }, 600); // adjust debounce as desired
   };
 
-  // Flush pending save when the tab/window is hidden or page unloads
-  useEffect(() => {
-    const onHide = () => {
-      if (timerRef.current && isDirtyRef.current && latestRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-        // fire-and-forget (no await on page hide)
-        saveNow(latestRef.current);
-      }
-    };
-    document.addEventListener("visibilitychange", onHide);
-    window.addEventListener("beforeunload", onHide);
-    return () => {
-      document.removeEventListener("visibilitychange", onHide);
-      window.removeEventListener("beforeunload", onHide);
-    };
-  }, []);
+  // Manual "Save now" (also used by debounce)
+  async function saveNow(next: Character) {
+    try {
+      setSaving("saving");
+      const payload = mapToServerPayload(next);
+      await api(`/characters/${next.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      });
+      isDirtyRef.current = false;
+      setSaving("saved");
+      // Flip back to idle after a short confirmation pulse
+      window.setTimeout(() => setSaving("idle"), 800);
+    } catch (e: any) {
+      console.error("Save failed", e);
+      setSaving("error");
+      setError(
+        typeof e === "object" && e
+          ? JSON.stringify(e)
+          : "Save failed. See console for details."
+      );
+    }
+  }
 
-  // Manual “Save now” (handy for testing)
-  const handleSaveClick = () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    if (latestRef.current) saveNow(latestRef.current);
-  };
+  const headerRight = useMemo(() => {
+    switch (saving) {
+      case "saving":
+        return <span className="text-sm text-amber-600">Saving…</span>;
+      case "saved":
+        return <span className="text-sm text-green-600">Saved</span>;
+      case "error":
+        return <span className="text-sm text-red-600">Save failed</span>;
+      default:
+        return isDirtyRef.current ? (
+          <span className="text-sm text-amber-600">Edited</span>
+        ) : (
+          <span className="text-sm text-slate-500">Up to date</span>
+        );
+    }
+  }, [saving]);
 
-  if (!id) return <div className="max-w-4xl mx-auto p-6">No character id.</div>;
-  if (loading) return <div className="max-w-4xl mx-auto p-6">Loading…</div>;
-  if (error) return <div className="max-w-4xl mx-auto p-6 text-red-600">{error}</div>;
-  if (!character) return <div className="max-w-4xl mx-auto p-6">Not found.</div>;
+  if (error && !character) {
+    return (
+      <div className="p-6 space-y-3">
+        <h1 className="text-xl font-semibold">Character</h1>
+        <p className="text-red-700">{error}</p>
+        <button
+          className="px-3 py-1 rounded bg-slate-200 hover:bg-slate-300"
+          onClick={() => navigate(-1)}
+        >
+          Go back
+        </button>
+      </div>
+    );
+  }
+
+  if (!character) {
+    return (
+      <div className="p-6">
+        <h1 className="text-xl font-semibold">Loading…</h1>
+      </div>
+    );
+  }
 
   return (
-    <div className="mx-auto max-w-5xl p-4">
-      <div className="mb-2 flex items-center justify-end gap-3 text-sm">
-        <button
-          className="rounded-md border border-zinc-300 px-2 py-1 text-zinc-700 hover:bg-zinc-50"
-          onClick={handleSaveClick}
-          disabled={!isDirtyRef.current || saving === "saving"}
-          title="Save now"
-        >
-          Save now
-        </button>
-        <span className="rounded-md border px-2 py-1 text-zinc-600">
-          {saving === "saving" && "Saving…"}
-          {saving === "saved" && "Saved"}
-          {saving === "idle" && (isDirtyRef.current ? "Edited" : "Up to date")}
-        </span>
+    <div className="p-4 md:p-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl md:text-2xl font-semibold">
+          {character.name || "Unnamed Character"}
+        </h1>
+        <div className="flex items-center gap-3">
+          {headerRight}
+          <button
+            className="px-3 py-1 rounded bg-slate-200 hover:bg-slate-300"
+            onClick={() => saveNow(latestRef.current ?? character)}
+          >
+            Save now
+          </button>
+        </div>
       </div>
-      <CharacterSheetV2 character={character} onChange={onChange} />
+
+      {/* Pass the normalized character down. CharacterSheetv2 should call onChange(next) */}
+      <CharacterSheetv2 value={character} onChange={onChange} />
+
+      {error && (
+        <div className="text-sm text-red-700 break-words">
+          <strong>Error:</strong> {error}
+        </div>
+      )}
     </div>
   );
 }
