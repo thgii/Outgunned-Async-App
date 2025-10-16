@@ -67,10 +67,9 @@ function normalizeForSheet(c: any): Character {
   // Grit may be on top-level or inside resources (as a meter)
   const gritObj = c.grit ?? c.resources?.grit ?? {};
   const grit: Meter = {
-    current: asNumber(gritObj.current, 0),
-    // server validates max <= 6 (was the cause of your 422), so clamp here
-    max: Math.min(6, asNumber(gritObj.max, 6)),
-  };
+  current: asNumber(gritObj.current, 0),
+  max: asNumber(gritObj.max, 12), // ← was Math.min(6, ...)
+};
 
   // Numbers commonly stored under resources
   const adrenaline = asNumber(fromResources("adrenaline", 0), 0);
@@ -79,6 +78,18 @@ function normalizeForSheet(c: any): Character {
   const cash = asNumber(fromResources("cash", 0), 0);
 
   const storage = c.storage ?? c.resources?.storage;
+
+// 🔧 NEW: ensure resources always exists and mirror normalized fields into it
+  const resources: any = { ...(c.resources ?? {}) };
+  resources.grit = {
+    current: grit.current ?? 0,
+    max: grit.max ?? 12,
+  };
+  resources.adrenaline = adrenaline;
+  resources.spotlight = spotlight;
+  resources.luck = luck;
+  resources.cash = cash;
+  if (storage !== undefined) resources.storage = storage;
 
   return {
     ...c,
@@ -102,7 +113,7 @@ function mapToServerPayload(next: Character): any {
   // Move resource-like fields under resources (and clamp grit.max)
   payload.resources.grit = {
     current: asNumber(next.grit?.current, 0),
-    max: Math.min(6, asNumber(next.grit?.max, 6)),
+    max: asNumber(next.grit?.max, 12),
   };
   payload.resources.adrenaline = asNumber(next.adrenaline, 0);
   payload.resources.spotlight = asNumber(next.spotlight, 0);
