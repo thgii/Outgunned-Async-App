@@ -31,9 +31,7 @@ function formatValue(v: unknown): string | number {
   if (Array.isArray(v)) return v.map(formatValue).join(", ");
   if (typeof v === "object") {
     const obj = v as Record<string, any>;
-    if (typeof obj.current === "number" && typeof obj.max === "number") {
-      return `${obj.current} / ${obj.max}`;
-    }
+    if (typeof obj.current === "number" && typeof obj.max === "number") return `${obj.current} / ${obj.max}`;
     if (typeof obj.value === "number" || typeof obj.value === "string") return obj.value;
     if (typeof obj.name === "string") return obj.name;
     try { return JSON.stringify(obj); } catch { return String(obj); }
@@ -44,40 +42,45 @@ function formatValue(v: unknown): string | number {
 /** Canonical order for Outgunned-like attributes. */
 const ATTR_ORDER = ["Brawn", "Nerves", "Smooth", "Focus", "Crime"];
 
-/** Optional skill suggestions by attribute (we only render those that exist). */
-const SKILLS_BY_ATTR: Record<string, string[]> = {
-  Brawn: ["Athletics", "Brawling", "Endurance", "Melee", "Toughness", "Heavy Weapons"],
-  Nerves: ["Cool", "Driving", "Piloting", "Reaction", "Initiative", "Guts"],
-  Smooth: ["Charm", "Deceive", "Intimidate", "Performance", "Persuasion", "Disguise"],
-  Focus: ["Awareness", "Investigation", "Medicine", "Science", "Tech", "Tactics"],
-  Crime: ["Hacking", "Lockpicking", "Pickpocket", "Skulduggery", "Stealth", "Sabotage"],
+/** Skill suggestions by attribute (keys are lowercased so mapping is case-insensitive). */
+const SKILLS_BY_ATTR_RAW: Record<string, string[]> = {
+  Brawn: ["Athletics","Brawling","Endurance","Melee","Toughness","Heavy Weapons"],
+  Nerves: ["Cool","Driving","Piloting","Reaction","Initiative","Guts"],
+  Smooth: ["Charm","Deceive","Intimidate","Performance","Persuasion","Disguise"],
+  Focus: ["Awareness","Investigation","Medicine","Science","Tech","Tactics"],
+  Crime: ["Hacking","Lockpicking","Pickpocket","Skulduggery","Stealth","Sabotage"],
 };
 
-/** Group any present skills by attribute, falling back to "Other". */
+// Build a reverse map: skillName(lowercased) -> Attribute
+const SKILL_TO_ATTR: Record<string, string> = {};
+for (const [attr, list] of Object.entries(SKILLS_BY_ATTR_RAW)) {
+  for (const s of list) SKILL_TO_ATTR[s.toLowerCase()] = attr;
+}
+
+// Normalize keys to compare case-insensitively and with minor punctuation differences
+const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ").replace(/[-_]/g, " ");
+
+/** Group any present skills by attribute using the reverse map, falling back to "Other". */
 function computeGroupedSkills(
   skills: Record<string, any> | undefined
 ): Record<string, Array<[string, any]>> {
   const grouped: Record<string, Array<[string, any]>> = {};
   if (!skills) return grouped;
 
-  // First, include the known mapping but filter only existing keys.
-  for (const attr of ATTR_ORDER) {
-    const names = SKILLS_BY_ATTR[attr] || [];
-    const pairs: Array<[string, any]> = [];
-    for (const k of names) {
-      if (k in skills) pairs.push([k, skills[k]]);
-    }
-    if (pairs.length) grouped[attr] = pairs;
-  }
-
-  // Then, catch any extra skills not listed above.
-  const consumed = new Set(Object.values(grouped).flat().map(([k]) => k));
-  const leftovers: Array<[string, any]> = [];
+  // First pass: assign by reverse map (case-insensitive).
+  const other: Array<[string, any]> = [];
   for (const [k, v] of Object.entries(skills)) {
-    if (!consumed.has(k)) leftovers.push([k, v]);
+    const mappedAttr = SKILL_TO_ATTR[norm(k)];
+    if (mappedAttr) {
+      if (!grouped[mappedAttr]) grouped[mappedAttr] = [];
+      grouped[mappedAttr].push([k, v]);
+    } else {
+      other.push([k, v]);
+    }
   }
-  if (leftovers.length) grouped["Other"] = leftovers;
+  if (other.length) grouped["Other"] = other;
 
+  // Ensure order keys exist even if empty (but we won't render empty cards)
   return grouped;
 }
 
@@ -107,8 +110,8 @@ export default function CharacterDetails({ id }: { id: string }) {
     [character?.skills]
   );
 
-  if (loading) return <p>Loading character...</p>;
-  if (!character) return <p>Character not found.</p>;
+  if (loading) return <p className="text-gray-900">Loading character...</p>;
+  if (!character) return <p className="text-gray-900">Character not found.</p>;
 
   const {
     name,
@@ -135,7 +138,7 @@ export default function CharacterDetails({ id }: { id: string }) {
         {Object.entries(obj).map(([key, val]) => (
           <div
             key={key}
-            className="rounded-2xl bg-gray-50 border px-3 py-2 flex items-center justify-between text-sm shadow-sm"
+            className="rounded-2xl bg-white text-gray-900 border px-3 py-2 flex items-center justify-between text-sm shadow-sm"
           >
             <span className="font-semibold break-words">{key}</span>
             <span className="ml-3 tabular-nums">{formatValue(val)}</span>
@@ -148,7 +151,7 @@ export default function CharacterDetails({ id }: { id: string }) {
   const renderList = (arr?: Array<any>) => {
     if (!arr || arr.length === 0) return null;
     return (
-      <ul className="list-disc list-inside space-y-1">
+      <ul className="list-disc list-inside space-y-1 text-gray-900">
         {arr.map((item, i) => (
           <li key={i}>{formatValue(item)}</li>
         ))}
@@ -157,14 +160,19 @@ export default function CharacterDetails({ id }: { id: string }) {
   };
 
   const renderAttributeCards = () => {
-    if (!attributes && !character?.skills) return null;
-
-    // Build a stable list of cards in canonical order, plus "Other" (if any), plus any ad-hoc attributes.
     const presentAttrNames = attributes ? Object.keys(attributes) : [];
-    const knownInOrder = ATTR_ORDER.filter(a => presentAttrNames.includes(a) || groupedSkills[a]?.length);
-    const unknownAttrs = presentAttrNames.filter(a => !ATTR_ORDER.includes(a));
-    const order = [...knownInOrder, ...unknownAttrs];
-    if (groupedSkills["Other"] && groupedSkills["Other"].length) order.push("Other");
+    const order: string[] = [];
+
+    // Known attributes in canonical order IF present or IF they have any skills grouped
+    for (const a of ATTR_ORDER) {
+      if ((attributes && a in attributes) || groupedSkills[a]?.length) order.push(a);
+    }
+    // Add any unknown attributes from payload
+    for (const a of presentAttrNames) if (!order.includes(a)) order.push(a);
+    // Add Other (unmapped skills)
+    if (groupedSkills["Other"]?.length) order.push("Other");
+
+    if (order.length === 0) return null;
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -173,14 +181,11 @@ export default function CharacterDetails({ id }: { id: string }) {
           const skillsForCard = groupedSkills[attrName] || [];
 
           return (
-            <div
-              key={attrName}
-              className="rounded-2xl border shadow-sm bg-white overflow-hidden"
-            >
+            <div key={attrName} className="rounded-2xl border shadow-sm bg-white text-gray-900 overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 bg-gray-100">
                 <div className="text-lg font-semibold">{attrName}</div>
                 {attrVal !== undefined && attrName !== "Other" && (
-                  <div className="inline-flex items-center rounded-xl border bg-white px-3 py-1 text-base font-bold tabular-nums">
+                  <div className="inline-flex items-center rounded-xl border bg-white text-gray-900 px-3 py-1 text-base font-bold tabular-nums">
                     {formatValue(attrVal)}
                   </div>
                 )}
@@ -190,14 +195,9 @@ export default function CharacterDetails({ id }: { id: string }) {
                 <div className="px-4 py-3">
                   <div className="grid grid-cols-2 gap-3">
                     {skillsForCard.map(([skillName, value]) => (
-                      <div
-                        key={skillName}
-                        className="flex items-center justify-between rounded-xl bg-gray-50 border px-3 py-2 text-sm"
-                      >
+                      <div key={skillName} className="flex items-center justify-between rounded-xl bg-gray-50 text-gray-900 border px-3 py-2 text-sm">
                         <span className="mr-3">{skillName}</span>
-                        <span className="font-semibold tabular-nums">
-                          {formatValue(value)}
-                        </span>
+                        <span className="font-semibold tabular-nums">{formatValue(value)}</span>
                       </div>
                     ))}
                   </div>
@@ -213,12 +213,12 @@ export default function CharacterDetails({ id }: { id: string }) {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 text-gray-900">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b pb-4 gap-3">
         <div className="space-y-1">
           <h1 className="text-3xl font-bold">{name}</h1>
-          <p className="text-gray-600">
+          <p className="text-gray-700">
             {formatValue(role)} — {formatValue(trope)}
           </p>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
@@ -249,7 +249,7 @@ export default function CharacterDetails({ id }: { id: string }) {
       {ride && (
         <section>
           <h2 className="text-xl font-semibold mb-2">Ride</h2>
-          <p className="bg-gray-50 border rounded-2xl px-4 py-3 shadow-sm">
+          <p className="bg-white text-gray-900 border rounded-2xl px-4 py-3 shadow-sm">
             {formatValue(ride)}
           </p>
         </section>
@@ -265,7 +265,7 @@ export default function CharacterDetails({ id }: { id: string }) {
       {feats && feats.length > 0 && (
         <section>
           <h2 className="text-xl font-semibold mb-2">Feats</h2>
-          <div className="rounded-2xl border bg-white px-4 py-3 shadow-sm">
+          <div className="rounded-2xl border bg-white text-gray-900 px-4 py-3 shadow-sm">
             {renderList(feats)}
           </div>
         </section>
@@ -275,7 +275,7 @@ export default function CharacterDetails({ id }: { id: string }) {
       {gear && gear.length > 0 && (
         <section>
           <h2 className="text-xl font-semibold mb-2">Gear</h2>
-          <div className="rounded-2xl border bg-white px-4 py-3 shadow-sm">
+          <div className="rounded-2xl border bg-white text-gray-900 px-4 py-3 shadow-sm">
             {renderList(gear)}
           </div>
         </section>
@@ -285,7 +285,7 @@ export default function CharacterDetails({ id }: { id: string }) {
       {notes && (
         <section>
           <h2 className="text-xl font-semibold mb-2">Notes</h2>
-          <p className="whitespace-pre-wrap bg-gray-50 border rounded-2xl px-4 py-3 shadow-sm">
+          <p className="whitespace-pre-wrap bg-gray-50 text-gray-900 border rounded-2xl px-4 py-3 shadow-sm">
             {notes}
           </p>
         </section>

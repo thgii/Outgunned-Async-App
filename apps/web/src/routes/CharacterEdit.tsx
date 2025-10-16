@@ -1,111 +1,48 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import CharacterForm from "../components/CharacterForm";
 import { api } from "../lib/api";
-import {
-  characterSchema,
-  type CharacterDTO,
-} from "@action-thread/types";
-
-// Rebuild a canonical DTO from a row returned by the API.
-// Your GET /characters/:id already JSON.parse's attributes, skills, resources, feats, gear, conditions.
-function toDTO(row: any): CharacterDTO {
-  // row.resources may contain grit, adrenaline, spotlight, luck, youLookSelected, isBroken, deathRoulette, cash
-  const resources = row.resources ?? {};
-  const attributes = row.attributes ?? { brawn:0, nerves:0, smooth:0, focus:0, crime:0 };
-  const skills = row.skills ?? {
-    endure:0, fight:0, force:0, stunt:0,
-    cool:0, drive:0, shoot:0, survival:0,
-    flirt:0, leadership:0, speech:0, style:0,
-    detect:0, fix:0, heal:0, know:0,
-    awareness:0, dexterity:0, stealth:0, streetwise:0
-  };
-  const storage = row.gear ?? { backpack:[], bag:[], gunsAndGear:[] };
-
-  // Parse through schema to apply defaults / validation
-  return characterSchema.parse({
-    id: row.id,
-    name: row.name ?? "",
-    role: row.role ?? "",
-    trope: row.trope ?? "",
-    jobOrBackground: row.job ?? "",
-    age: row.age ?? "Adult",
-    catchphrase: row.catchphrase ?? "",
-    flaw: row.flaw ?? "",
-    attributes,
-    skills,
-    grit: resources.grit ?? { current:6, max:6 },
-    adrenaline: resources.adrenaline ?? 0,
-    spotlight: resources.spotlight ?? 0,
-    luck: resources.luck ?? 0,
-    youLookSelected: resources.youLookSelected ?? row.conditions ?? [],
-    isBroken: resources.isBroken ?? false,
-    deathRoulette: resources.deathRoulette ?? [false,false,false,false,false,false],
-    cash: resources.cash ?? 1,
-    storage,
-    ride: row.ride ?? { name: "", speed: 0, armor: 0, tags: [] },
-    feats: row.feats ?? [],
-    missionOrTreasure: row.notes ?? "",
-    achievementsBondsScarsReputations: row.achievementsBondsScarsReputations ?? "",
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
-  });
-}
+import CharacterForm from "../components/CharacterForm";
 
 export default function CharacterEdit() {
   const { id } = useParams();
-  const nav = useNavigate();
-  const [initial, setInitial] = useState<CharacterDTO | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [character, setCharacter] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Load existing row
   useEffect(() => {
-    let alive = true;
-    (async () => {
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      setError(null);
       try {
-        setLoading(true);
-        const row = await api(`/characters/${id}`);
-        if (!alive) return;
-        const dto = toDTO(row);
-        setInitial(dto);
-        setError(null);
+        const data = await api(`/characters/${id}`);
+        if (!cancelled) setCharacter(data);
       } catch (e: any) {
-        setError(e?.message ?? "Failed to load character");
+        if (!cancelled) setError(e?.message || "Failed to load character");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
-    })();
-    return () => {
-      alive = false;
-    };
+    }
+    if (id) load();
+    return () => { cancelled = true; };
   }, [id]);
 
-  async function save(dto: CharacterDTO) {
-    // PATCH back to the worker; it validates & maps columns server-side
-    await api(`/characters/${id}`, { method: "PATCH", json: dto });
-    nav(`/characters/${id}`);
-  }
+  if (!id) return <div className="p-6 text-gray-900">Missing character id.</div>;
+  if (loading) return <div className="p-6 text-gray-900">Loading…</div>;
+  if (error) return <div className="p-6 text-red-700">Error: {error}</div>;
+  if (!character) return <div className="p-6 text-gray-900">Character not found.</div>;
 
-  const content = useMemo(() => {
-    if (loading) return <div className="p-6">Loading…</div>;
-    if (error) return <div className="p-6 text-red-600">{error}</div>;
-    if (!initial) return <div className="p-6">No data</div>;
-    return (
-      <>
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold">Edit Character</h1>
-          <button
-            onClick={() => nav(`/characters/${id}`)}
-            className="text-sm underline"
-          >
-            Cancel
-          </button>
-        </div>
-        <CharacterForm initial={initial} onSubmit={save} />
-      </>
-    );
-  }, [loading, error, initial, id, nav]);
+  // When form saves successfully, navigate back to the view page
+  const handleSaved = (savedId?: string) => {
+    navigate(`/character/${savedId || id}`);
+  };
 
-  return <div className="max-w-4xl mx-auto p-6">{content}</div>;
+  return (
+    <div className="max-w-4xl mx-auto p-6 text-gray-900">
+      <h1 className="text-2xl font-bold mb-4">Edit {character.name}</h1>
+      {/* IMPORTANT: pass initial data to pre-populate the form */}
+      <CharacterForm initialData={character} mode="edit" onSaved={handleSaved} />
+    </div>
+  );
 }
