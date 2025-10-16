@@ -42,6 +42,40 @@ function asNumber(v: any, fallback = 0): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
+/** Ensure storage shape matches Worker validator. */
+function sanitizeStorage(s: any) {
+  if (!s) return undefined;
+  const out: any = { ...s };
+
+  // Normalize gunsAndGear array
+  if (Array.isArray(out.gunsAndGear)) {
+    out.gunsAndGear = out.gunsAndGear
+      .filter(Boolean)
+      .map((item: any) => {
+        // Allow simple strings/MaybeNamed and coerce them to objects
+        if (item == null) return undefined;
+        if (typeof item === "string") {
+          return { name: item, qty: 1, ranges: {} };
+        }
+        if (typeof item === "object") {
+          const name =
+            typeof item.name === "string"
+              ? item.name
+              : (item?.value ?? item?.label ?? undefined);
+          const qty = Number(item.qty ?? 1);
+          const ranges =
+            item.ranges && typeof item.ranges === "object" ? item.ranges : {};
+          return { ...item, name, qty, ranges };
+        }
+        // Fallback
+        return { name: String(item), qty: 1, ranges: {} };
+      })
+      .filter(Boolean);
+  }
+
+  return out;
+}
+
 function getMaybeName(v: any): string | undefined {
   if (v == null) return undefined;
   if (typeof v === "object") return v.name ?? v.value ?? undefined;
