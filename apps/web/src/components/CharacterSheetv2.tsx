@@ -3,7 +3,9 @@ import React, { useEffect, useMemo, useState } from "react";
 /** Types aligned to your DTO (kept permissive for safety) */
 type Meter = { current?: number; max?: number };
 
-type GearItem = string | { name: string; tags?: string[]; ranges?: Record<string, string | undefined> };
+type GearItem =
+  | string
+  | { name: string; tags?: string[]; ranges?: Record<string, string | undefined> };
 
 type CharacterDTO = {
   id: string;
@@ -52,11 +54,20 @@ type CharacterDTO = {
 
   deathRoulette?: [boolean, boolean, boolean, boolean, boolean, boolean];
 
-  /** Storage block */
+  /** Preferred top-level storage */
   storage?: {
     gunsAndGear?: Array<{ name: string; tags?: string[]; ranges?: Record<string, string | undefined> }>;
     backpack?: string[];
     bag?: string[];
+  };
+
+  /** Some older/newer records keep storage inside resources */
+  resources?: {
+    storage?: {
+      gunsAndGear?: Array<{ name: string; tags?: string[]; ranges?: Record<string, string | undefined> }>;
+      backpack?: string[];
+      bag?: string[];
+    };
   };
 
   /** Some data sets store gear as a top-level array; we’ll support that too. */
@@ -163,7 +174,36 @@ const ATTR_GROUPS: Record<"Brawn" | "Nerves" | "Smooth" | "Focus" | "Crime", str
   Crime: ["awareness", "dexterity", "stealth", "streetwise"],
 };
 
-export default function CharacterSheetV2({ character, onChange }: { character: CharacterDTO; onChange: (c: CharacterDTO) => void }) {
+/** --- helpers to safely coerce gear shapes --- */
+function asStringArray(v: unknown): string[] {
+  if (Array.isArray(v)) {
+    return (v as any[])
+      .map((it) => {
+        if (typeof it === "string") return it;
+        if (it && typeof it === "object" && "name" in (it as any)) return String((it as any).name ?? "");
+        return typeof it === "number" ? String(it) : "";
+      })
+      .filter(Boolean);
+  }
+  if (typeof v === "string") return [v];
+  if (v && typeof v === "object" && "name" in (v as any)) return [String((v as any).name ?? "")].filter(Boolean);
+  if (v && typeof v === "object") {
+    try {
+      return Object.values(v as Record<string, unknown>).flatMap(asStringArray);
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+export default function CharacterSheetV2({
+  character,
+  onChange,
+}: {
+  character: CharacterDTO;
+  onChange: (c: CharacterDTO) => void;
+}) {
   const [local, setLocal] = useState<CharacterDTO>(character);
   useEffect(() => setLocal(character), [character?.id]);
 
@@ -176,8 +216,9 @@ export default function CharacterSheetV2({ character, onChange }: { character: C
     update({ [key]: value } as Partial<CharacterDTO>);
 
   /** ---------- Header bindings ---------- */
-  const setHeader = (k: keyof CharacterDTO) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    pathUpdate(k as any, e.target.value as any);
+  const setHeader =
+    (k: keyof CharacterDTO) => (e: React.ChangeEvent<HTMLInputElement>) =>
+      pathUpdate(k as any, e.target.value as any);
 
   /** ---------- Grit / Adrenaline / Spotlight ---------- */
   const gritCurrent = Math.max(0, Math.min(12, local.grit?.current ?? 0));
@@ -200,55 +241,87 @@ export default function CharacterSheetV2({ character, onChange }: { character: C
   /** ---------- You Look (bigger, darker text) ---------- */
   const youLookSelected = new Set(local.youLookSelected ?? []);
   const isBroken = !!local.isBroken;
-  const toggleYouLook = (k: "Hurt" | "Tired" | "Nervous" | "LikeAFool" | "Distracted" | "Scared") => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const next = new Set(youLookSelected);
-    if (e.target.checked) next.add(k);
-    else next.delete(k);
-    pathUpdate("youLookSelected", Array.from(next));
-  };
+  const toggleYouLook =
+    (k: "Hurt" | "Tired" | "Nervous" | "LikeAFool" | "Distracted" | "Scared") =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const next = new Set(youLookSelected);
+      if (e.target.checked) next.add(k);
+      else next.delete(k);
+      pathUpdate("youLookSelected", Array.from(next));
+    };
 
   /** ---------- Attributes + Skills combined ---------- */
-  const setAttr = (k: keyof NonNullable<CharacterDTO["attributes"]>) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const n = Math.max(0, Number(e.target.value || 0));
-    pathUpdate("attributes", { ...(local.attributes ?? {}), [k]: n });
-  };
-  const setSkill = (k: keyof NonNullable<CharacterDTO["skills"]>) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const n = Math.max(0, Number(e.target.value || 0));
-    pathUpdate("skills", { ...(local.skills ?? {}), [k]: n });
-  };
+  const setAttr =
+    (k: keyof NonNullable<CharacterDTO["attributes"]>) => (e: React.ChangeEvent<HTMLInputElement>) => {
+      const n = Math.max(0, Number(e.target.value || 0));
+      pathUpdate("attributes", { ...(local.attributes ?? {}), [k]: n });
+    };
+  const setSkill =
+    (k: keyof NonNullable<CharacterDTO["skills"]>) => (e: React.ChangeEvent<HTMLInputElement>) => {
+      const n = Math.max(0, Number(e.target.value || 0));
+      pathUpdate("skills", { ...(local.skills ?? {}), [k]: n });
+    };
 
-  /** ---------- Gear: load from BOTH places; write back to BOTH ---------- */
-  // Read/merge
-  const gearNamesFromTop = (local.gear ?? []).map((g) => (typeof g === "string" ? g : g?.name)).filter(Boolean) as string[];
-  const gearNamesFromStorage = (local.storage?.gunsAndGear ?? []).map((g) => g?.name).filter(Boolean) as string[];
+  /** ---------- Gear & Off-Person: support storage at top-level or under resources ---------- */
+  const topStorage = local.storage;
+  const resStorage = local.resources?.storage;
+  const effectiveStorage = topStorage ?? resStorage ?? {};
+
+  // GEAR list (merge any top-level `gear` array with storage.gunsAndGear)
+  const gearNamesFromTop = asStringArray(local.gear);
+  const gearNamesFromStorage = asStringArray(effectiveStorage.gunsAndGear);
   const mergedGearNames = useMemo(() => {
     const set = new Set<string>([...gearNamesFromTop, ...gearNamesFromStorage]);
     return Array.from(set);
-  }, [local.gear, local.storage?.gunsAndGear]);
+  }, [local.gear, effectiveStorage.gunsAndGear]);
 
   const gunsAndGearText = mergedGearNames.join("\n");
+
+  // writes to BOTH: `gear` (string[]) and `storage.gunsAndGear` at both locations
   const setGunsAndGearText = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const lines = e.target.value.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
 
-    // Write back to BOTH: top-level gear (as strings) and storage.gunsAndGear (as {name})
-    const nextGearTop: GearItem[] = lines.map((name) => name);
     const nextStorage = {
-      ...(local.storage ?? {}),
-      gunsAndGear: lines.map((name) => ({ name, tags: [] as string[], ranges: {} as Record<string, string> })),
+      ...(effectiveStorage || {}),
+      gunsAndGear: lines.map((name) => ({ name })),
     };
 
-    update({ gear: nextGearTop, storage: nextStorage });
+    update({
+      gear: lines, // top-level gear as string[]
+      storage: nextStorage,
+      resources: { ...(local.resources ?? {}), storage: nextStorage },
+    });
   };
 
-  // Off-Person Storage (bag list)
-  const offPersonText = (local.storage?.bag ?? []).join("\n");
+  // Off-Person Storage (bag)
+  const offPersonText = ((effectiveStorage?.bag ?? []) as string[]).join("\n");
   const setOffPersonText = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const lines = e.target.value.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
-    pathUpdate("storage", { ...(local.storage ?? {}), bag: lines });
+
+    const nextStorage = { ...(effectiveStorage || {}), bag: lines };
+
+    update({
+      storage: nextStorage,
+      resources: { ...(local.resources ?? {}), storage: nextStorage },
+    });
+  };
+
+  // Backpack
+  const backpackText = ((effectiveStorage?.backpack ?? []) as string[]).join("\n");
+  const setBackpackText = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const lines = e.target.value.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+
+    const nextStorage = { ...(effectiveStorage || {}), backpack: lines };
+
+    update({
+      storage: nextStorage,
+      resources: { ...(local.resources ?? {}), storage: nextStorage },
+    });
   };
 
   const cash = Number.isFinite(local.cash) ? Number(local.cash) : 0;
-  const setCash = (e: React.ChangeEvent<HTMLInputElement>) => pathUpdate("cash", Math.max(0, Number(e.target.value || 0)));
+  const setCash = (e: React.ChangeEvent<HTMLInputElement>) =>
+    pathUpdate("cash", Math.max(0, Number(e.target.value || 0)));
 
   const rideName = local.ride?.name ?? "";
   const setRideName = (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -273,7 +346,11 @@ export default function CharacterSheetV2({ character, onChange }: { character: C
             <Input value={local.trope || ""} onChange={setHeader("trope")} placeholder="Trope" />
           </Labeled>
           <Labeled label="Job">
-            <Input value={local.jobOrBackground || ""} onChange={setHeader("jobOrBackground")} placeholder="Job/Background" />
+            <Input
+              value={local.jobOrBackground || ""}
+              onChange={setHeader("jobOrBackground")}
+              placeholder="Job/Background"
+            />
           </Labeled>
           <Labeled label="Age">
             <Input value={local.age || ""} onChange={setHeader("age")} placeholder="Young / Adult / Old" />
@@ -401,7 +478,10 @@ export default function CharacterSheetV2({ character, onChange }: { character: C
                 ["Tired", "Tired"],
               ] as const
             ).map(([label, key]) => (
-              <label key={key} className="flex items-center gap-3 rounded-lg border border-zinc-200 p-2">
+              <label
+                key={key}
+                className="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-2"
+              >
                 <input
                   type="checkbox"
                   className="h-5 w-5 accent-indigo-600"
@@ -411,7 +491,7 @@ export default function CharacterSheetV2({ character, onChange }: { character: C
                 <span className="text-[15px] font-medium text-zinc-800">{label}</span>
               </label>
             ))}
-            <label className="flex items-center gap-3 rounded-lg border border-zinc-200 p-2">
+            <label className="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-2">
               <input
                 type="checkbox"
                 className="h-5 w-5 accent-indigo-600"
@@ -445,15 +525,31 @@ export default function CharacterSheetV2({ character, onChange }: { character: C
               placeholder="Pistol&#10;Rope&#10;Compass"
             />
           </Labeled>
+
           <Labeled label="Off-Person Storage (one per line)">
-            <TextArea value={offPersonText} onChange={setOffPersonText} placeholder="Locker key&#10;Spare ammo" />
+            <TextArea
+              value={offPersonText}
+              onChange={setOffPersonText}
+              placeholder="Locker key&#10;Spare ammo"
+            />
           </Labeled>
-          <Labeled label="Cash ($)">
-            <Input type="number" min={0} value={cash} onChange={setCash} />
+
+          <Labeled label="Backpack (one per line)">
+            <TextArea
+              value={backpackText}
+              onChange={setBackpackText}
+              placeholder="Rations&#10;Canteen&#10;Flashlight"
+            />
           </Labeled>
-          <Labeled label="Ride">
-            <Input value={rideName} onChange={setRideName} placeholder="Seaplane, Jeep, etc." />
-          </Labeled>
+
+          <div className="grid grid-cols-1 gap-4">
+            <Labeled label="Cash ($)">
+              <Input type="number" min={0} value={cash} onChange={setCash} />
+            </Labeled>
+            <Labeled label="Ride">
+              <Input value={rideName} onChange={setRideName} placeholder="Seaplane, Jeep, etc." />
+            </Labeled>
+          </div>
         </div>
       </Card>
     </div>
