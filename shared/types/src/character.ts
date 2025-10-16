@@ -13,6 +13,7 @@ export type AttrKey = typeof ATTRS[number];
 export type SkillKey = typeof SKILLS[number];
 
 const _0to6 = z.number().int().min(0).max(6);
+const _0to12 = z.number().int().min(0).max(12);
 
 const skillsBlock = z.object(
   Object.fromEntries(SKILLS.map(k => [k, _0to6])) as Record<SkillKey, z.ZodNumber>
@@ -43,10 +44,10 @@ export const characterSchema = z.object({
   // Resources
   grit: z
   .object({
-    current: _0to6.default(6),
-    max: _0to6.default(6),
+    current: _0to12.default(0),
+    max: _0to12.default(12),
   })
-  .default({ current: 6, max: 6 }),
+  .default({ current: 0, max: 12 }),
   adrenaline: _0to6.default(0),
   spotlight: _0to6.default(0),
   luck: _0to6.default(0),
