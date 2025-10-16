@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { api } from "../lib/api";
 
+//
 /** Types aligned to your DTO (loose to tolerate partials) */
 type Meter = { current?: number; max?: number };
 type CharacterDTO = {
