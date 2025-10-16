@@ -3,9 +3,7 @@
 @tailwind utilities;
 
 /* === Global Cinematic Gradient + Accent System === */
-html, body, #root {
-  height: 100%;
-}
+html, body, #root { height: 100%; }
 
 body {
   @apply text-gray-100;
@@ -13,12 +11,63 @@ body {
 }
 
 /* Accent variable (used by headers, cards, etc.) */
-:root {
-  --accent: 244 63 94; /* rose-500 hue */
-}
+:root { --accent: 244 63 94; /* rose-500 hue */ }
 
 /* Utility classes that read the accent variable */
 .accent-text { color: rgb(var(--accent)); }
 .accent-border { border-color: rgb(var(--accent)); }
 .accent-bg { background-color: rgb(var(--accent)); }
 /* === End Cinematic Styles === */
+
+/* === High-contrast defaults for forms & cards === */
+@layer base {
+  /* Text */
+  label { @apply text-slate-200; }
+
+  /* Inputs */
+  input[type="text"],
+  input[type="number"],
+  input[type="password"],
+  input[type="email"],
+  input:not([type]),
+  select,
+  textarea {
+    @apply bg-slate-900 text-slate-100 placeholder-slate-400 border border-slate-600 rounded-md px-3 py-2 shadow-sm;
+  }
+
+  /* Dropdown list items render with UA styles; ensure readable text */
+  select option { color: rgb(17 24 39); } /* text-gray-900 */
+
+  /* Checkboxes & radios */
+  input[type="checkbox"],
+  input[type="radio"] {
+    @apply align-middle h-4 w-4 rounded-sm border border-slate-600 bg-slate-900 accent-rose-500;
+  }
+
+  /* Focus states */
+  input:focus,
+  select:focus,
+  textarea:focus {
+    @apply outline-none ring-2 ring-offset-0 ring-rose-500 border-rose-500;
+  }
+
+  /* Buttons (optional helpers you can use) */
+  .btn {
+    @apply inline-flex items-center gap-2 px-3 py-2 rounded-md font-medium bg-rose-600 text-white hover:bg-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-secondary { @apply bg-slate-700 text-slate-100 hover:bg-slate-600; }
+
+  /* Cards (catch any <section class="border ..."> used as a card) */
+  section.border {
+    @apply bg-slate-800/80 border-slate-700 text-slate-100 rounded-xl shadow-md;
+  }
+  section.border h2,
+  section.border h3,
+  section.border h4 { @apply text-white; }
+
+  /* Tables */
+  table { @apply w-full text-sm text-slate-100; }
+  th { @apply bg-slate-800 text-slate-100 font-semibold; }
+  td, th { @apply border border-slate-700 px-3 py-2; }
+}
+/* === End high-contrast defaults === */
