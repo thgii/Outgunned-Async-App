@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api } from "../lib/api";
-import CharacterSheetV2 from "../components/CharacterSheetV2";
+import CharacterSheetV2 from "../components/CharacterSheetv2";
 
 const AUTOSAVE_DELAY_MS = 700;
 
