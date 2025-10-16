@@ -198,14 +198,57 @@ function asStringArray(v: unknown): string[] {
 }
 
 export default function CharacterSheetV2({
-  character,
+  value,
   onChange,
 }: {
-  character: CharacterDTO;
+  value: CharacterDTO | null | undefined;   // ← accepts undefined during first render
   onChange: (c: CharacterDTO) => void;
 }) {
-  const [local, setLocal] = useState<CharacterDTO>(character);
-  useEffect(() => setLocal(character), [character?.id]);
+  // Guard against the very first render while the route is still loading
+  if (!value) return null;
+
+  // Seed safe defaults so reads like local.grit.current never explode
+  const safe: CharacterDTO = {
+    ...value,
+    grit: value.grit ?? { current: 0, max: 12 },
+    adrenaline:
+      value.adrenaline ??
+      (value as any)?.resources?.adrenaline ??
+      0,
+    spotlight:
+      value.spotlight ??
+      (value as any)?.resources?.spotlight ??
+      0,
+    luck:
+      value.luck ??
+      (value as any)?.resources?.luck ??
+      0,
+    cash:
+      value.cash ??
+      (value as any)?.resources?.cash ??
+      0,
+    resources: {
+      ...((value as any)?.resources ?? {}),
+      grit:
+        (value as any)?.resources?.grit ??
+        (value.grit ?? { current: 0, max: 12 }),
+      adrenaline:
+        (value as any)?.resources?.adrenaline ??
+        (value.adrenaline ?? 0),
+      spotlight:
+        (value as any)?.resources?.spotlight ??
+        (value.spotlight ?? 0),
+      luck:
+        (value as any)?.resources?.luck ??
+        (value.luck ?? 0),
+      cash:
+        (value as any)?.resources?.cash ??
+        (value.cash ?? 0),
+    },
+  };
+
+  const [local, setLocal] = useState<CharacterDTO>(safe);
+  useEffect(() => setLocal(safe), [value?.id]);
 
   const update = (patch: Partial<CharacterDTO>) => {
     const next = { ...local, ...patch };
@@ -217,9 +260,8 @@ export default function CharacterSheetV2({
 
   /** ---------- Header bindings ---------- */
   const setHeader =
-    (k: keyof CharacterDTO) => (e: React.ChangeEvent<HTMLInputElement>) =>
-      pathUpdate(k as any, e.target.value as any);
-
+    (k: keyof CharacterDTO) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      pathUpdate(k, e.target.value as any);
   /** ---------- Grit / Adrenaline / Spotlight ---------- */
   const gritCurrent = Math.max(0, Math.min(12, local.grit?.current ?? 0));
   const setGrit = (n: number) => pathUpdate("grit", { current: Math.max(0, Math.min(12, n)), max: 12 });

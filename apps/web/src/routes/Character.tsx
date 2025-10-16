@@ -54,7 +54,7 @@ function normalizeForSheet(c: any): Character {
   const fromResources = (k: string, fallback?: any) =>
     c?.[k] ?? c?.resources?.[k] ?? fallback;
 
-  // Prefer an explicit job, else a background, and stringify MaybeNamed objects.
+  // Prefer job, then background, stringify MaybeNamed
   const jobOrBackgroundRaw =
     c.job ??
     c.background ??
@@ -65,11 +65,11 @@ function normalizeForSheet(c: any): Character {
   const jobOrBackground = getMaybeName(jobOrBackgroundRaw) ?? "";
 
   // Grit may be on top-level or inside resources (as a meter)
-  const gritObj = c.grit ?? c.resources?.grit ?? {};
+  const gritObj = c?.grit ?? c?.resources?.grit ?? {};
   const grit: Meter = {
-  current: asNumber(gritObj.current, 0),
-  max: asNumber(gritObj.max, 12), // ← was Math.min(6, ...)
-};
+    current: asNumber(gritObj.current, 0),
+    max: asNumber(gritObj.max, 12), // 0–12 per your spec
+  };
 
   // Numbers commonly stored under resources
   const adrenaline = asNumber(fromResources("adrenaline", 0), 0);
@@ -77,14 +77,11 @@ function normalizeForSheet(c: any): Character {
   const luck = asNumber(fromResources("luck", 0), 0);
   const cash = asNumber(fromResources("cash", 0), 0);
 
-  const storage = c.storage ?? c.resources?.storage;
+  const storage = c?.storage ?? c?.resources?.storage;
 
-// 🔧 NEW: ensure resources always exists and mirror normalized fields into it
-  const resources: any = { ...(c.resources ?? {}) };
-  resources.grit = {
-    current: grit.current ?? 0,
-    max: grit.max ?? 12,
-  };
+  // Ensure resources exists and mirror normalized fields into it
+  const resources: any = { ...(c?.resources ?? {}) };
+  resources.grit = { current: grit.current ?? 0, max: grit.max ?? 12 };
   resources.adrenaline = adrenaline;
   resources.spotlight = spotlight;
   resources.luck = luck;
@@ -92,7 +89,7 @@ function normalizeForSheet(c: any): Character {
   if (storage !== undefined) resources.storage = storage;
 
   return {
-    ...c,
+    ...(c ?? {}),
     jobOrBackground,
     grit,
     adrenaline,
@@ -100,6 +97,7 @@ function normalizeForSheet(c: any): Character {
     luck,
     cash,
     storage,
+    resources,
   };
 }
 
@@ -110,7 +108,7 @@ function mapToServerPayload(next: Character): any {
   // Ensure resources exists
   payload.resources = { ...(payload.resources ?? {}) };
 
-  // Move resource-like fields under resources (and clamp grit.max)
+  // Move resource-like fields under resources (grit 0–12)
   payload.resources.grit = {
     current: asNumber(next.grit?.current, 0),
     max: asNumber(next.grit?.max, 12),
@@ -120,7 +118,7 @@ function mapToServerPayload(next: Character): any {
   payload.resources.luck = asNumber(next.luck, 0);
   payload.resources.cash = asNumber(next.cash, 0);
 
-  // Mirror storage both places for compatibility (remove either if not needed)
+  // Mirror storage if present
   if (next.storage ?? payload.resources.storage) {
     const storage = next.storage ?? payload.resources.storage;
     payload.storage = storage;
@@ -128,7 +126,7 @@ function mapToServerPayload(next: Character): any {
   }
 
   // Push job/background back to a single field the API accepts.
-  // If your worker expects "background" use that; if it expects "job", swap it here.
+  // If your Worker expects "background", keep this; if it expects "job", swap it.
   if (!payload.background && !payload.job && next.jobOrBackground) {
     payload.background = next.jobOrBackground;
   }
@@ -149,7 +147,7 @@ export default function CharacterRoute() {
   const navigate = useNavigate();
   const params = useParams();
   // Support either /characters/:id or /characters/:characterId
-  const id = params.id || params.characterId || "";
+  const id = (params as any).id || (params as any).characterId || "";
 
   const [character, setCharacter] = useState<Character | null>(null);
   const [saving, setSaving] = useState<SavingState>("idle");
@@ -195,7 +193,7 @@ export default function CharacterRoute() {
     if (timerRef.current) window.clearTimeout(timerRef.current);
     timerRef.current = window.setTimeout(() => {
       void saveNow(next);
-    }, 600); // adjust debounce as desired
+    }, 600); // tweak debounce as needed
   };
 
   // Manual "Save now" (also used by debounce)
@@ -209,7 +207,7 @@ export default function CharacterRoute() {
       });
       isDirtyRef.current = false;
       setSaving("saved");
-      // Flip back to idle after a short confirmation pulse
+      // brief confirmation pulse
       window.setTimeout(() => setSaving("idle"), 800);
     } catch (e: any) {
       console.error("Save failed", e);
@@ -279,7 +277,7 @@ export default function CharacterRoute() {
         </div>
       </div>
 
-      {/* Pass the normalized character down. CharacterSheetv2 should call onChange(next) */}
+      {/* IMPORTANT: CharacterSheetv2 expects `value` prop in your codebase */}
       <CharacterSheetv2 value={character} onChange={onChange} />
 
       {error && (
