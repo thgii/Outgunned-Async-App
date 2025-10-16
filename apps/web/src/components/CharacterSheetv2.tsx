@@ -123,8 +123,7 @@ function ToggleBox({
   emphasis?: "bad" | "hot";
 }) {
   const base =
-    const base =
-  "inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-md border text-[10px] font-bold cursor-pointer select-none transition";
+    const base = "inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-md border text-[10px] font-bold cursor-pointer select-none transition";
   const styles = checked
     ? "bg-indigo-600 border-indigo-600 text-white"
     : "bg-white border-zinc-300 text-zinc-700 hover:border-indigo-400";
