@@ -44,69 +44,44 @@ type AttrName = typeof ATTR_ORDER[number];
 
 /** Base skill lists (canonical) */
 const SKILLS_BY_ATTR: Record<AttrName, string[]> = {
-  Brawn: ["Athletics","Brawling","Endurance","Melee","Toughness","Heavy Weapons"],
-  Nerves: ["Cool","Driving","Piloting","Reaction","Initiative","Guts"],
-  Smooth: ["Charm","Deceive","Intimidate","Performance","Persuasion","Disguise"],
-  Focus: ["Awareness","Investigation","Medicine","Science","Tech","Tactics"],
-  Crime: ["Hacking","Lockpicking","Pickpocket","Skulduggery","Stealth","Sabotage"],
+  Brawn: ["Endure","Fight","Force","Stunt"],
+  Nerves: ["Cool","Drive","Shoot","Survival"],
+  Smooth: ["Flirt","Leadership","Speech","Style"],
+  Focus: ["Detect","Fix","Heal","Know"],
+  Crime: ["Awareness","Dexterity","Stealth","Streetwise"],
 };
 
 /** Stronger mapping (case-insensitive; matches substrings & synonyms) */
 const CUSTOM_SKILL_TO_ATTR: Record<string, AttrName> = {
-  // Brawn
-  "athletics": "Brawn",
-  "brawl": "Brawn",
-  "brawling": "Brawn",
-  "endurance": "Brawn",
+  // --- Brawn ---
   "endure": "Brawn",
-  "melee": "Brawn",
-  "melee weapons": "Brawn",
-  "toughness": "Brawn",
-  "heavy weapons": "Brawn",
-  "lift": "Brawn",
-  "climb": "Brawn",
-  // Nerves
+  "fight": "Brawn",
+  "force": "Brawn",
+  "stunt": "Brawn",
+
+  // --- Nerves (reflexes / gunplay / dexterity) ---
   "cool": "Nerves",
   "drive": "Nerves",
-  "driving": "Nerves",
-  "pilot": "Nerves",
-  "piloting": "Nerves",
-  "reaction": "Nerves",
-  "initiative": "Nerves",
-  "guts": "Nerves",
-  "stunt": "Nerves",
-  // Smooth
-  "charm": "Smooth",
-  "deceive": "Smooth",
-  "deception": "Smooth",
-  "intimidate": "Smooth",
-  "performance": "Smooth",
-  "persuasion": "Smooth",
-  "persuade": "Smooth",
-  "disguise": "Smooth",
-  "fast talk": "Smooth",
-  // Focus
-  "awareness": "Focus",
-  "perception": "Focus",
-  "investigation": "Focus",
-  "investigate": "Focus",
-  "medicine": "Focus",
-  "first aid": "Focus",
-  "science": "Focus",
-  "tech": "Focus",
-  "tactics": "Focus",
-  "analysis": "Focus",
-  // Crime
-  "hacking": "Crime",
-  "computers": "Crime",
-  "lockpick": "Crime",
-  "lockpicking": "Crime",
-  "pickpocket": "Crime",
-  "skulduggery": "Crime",
+  "shoot": "Nerves",
+  "survival": "Nerves",
+
+  // --- Smooth (social / presence) ---
+  "flirt": "Smooth",
+  "leadership": "Smooth",
+  "speech": "Smooth",
+  "style": "Smooth",
+
+  // --- Focus (perception / knowledge / tech / survival / medicine) ---
+  "detect": "Focus",
+  "fix": "Focus",
+  "heal": "Focus",
+  "know": "Focus",
+
+  // --- Crime (streets / underworld) ---
+  "awareness": "Crime",
+  "dexterity": "Crime",
   "stealth": "Crime",
-  "sabotage": "Crime",
-  "sleight of hand": "Crime",
-  "burglary": "Crime",
+  "streetwise": "Crime",
 };
 
 const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ").replace(/[_-]/g, " ");
