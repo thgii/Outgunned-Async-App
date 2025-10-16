@@ -2,8 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 
-/** ---------- Types & helpers ---------- */
-
+/** ---------- Types ---------- */
 type Meter = { current?: number; max?: number };
 type MaybeNamed = { name?: string; value?: any };
 
@@ -25,6 +24,7 @@ type Character = {
   notes?: string;
 };
 
+/** ---------- Formatting helpers ---------- */
 function formatValue(v: unknown): string | number {
   if (v == null) return "";
   if (typeof v === "number" || typeof v === "string") return v;
@@ -39,11 +39,11 @@ function formatValue(v: unknown): string | number {
   return String(v);
 }
 
-/** Canonical order for Outgunned-like attributes. */
-const ATTR_ORDER = ["Brawn", "Nerves", "Smooth", "Focus", "Crime"];
+const ATTR_ORDER = ["Brawn", "Nerves", "Smooth", "Focus", "Crime"] as const;
+type AttrName = typeof ATTR_ORDER[number];
 
-/** Skill suggestions by attribute (keys are lowercased so mapping is case-insensitive). */
-const SKILLS_BY_ATTR_RAW: Record<string, string[]> = {
+/** Base skill lists (canonical) */
+const SKILLS_BY_ATTR: Record<AttrName, string[]> = {
   Brawn: ["Athletics","Brawling","Endurance","Melee","Toughness","Heavy Weapons"],
   Nerves: ["Cool","Driving","Piloting","Reaction","Initiative","Guts"],
   Smooth: ["Charm","Deceive","Intimidate","Performance","Persuasion","Disguise"],
@@ -51,41 +51,96 @@ const SKILLS_BY_ATTR_RAW: Record<string, string[]> = {
   Crime: ["Hacking","Lockpicking","Pickpocket","Skulduggery","Stealth","Sabotage"],
 };
 
-// Build a reverse map: skillName(lowercased) -> Attribute
-const SKILL_TO_ATTR: Record<string, string> = {};
-for (const [attr, list] of Object.entries(SKILLS_BY_ATTR_RAW)) {
-  for (const s of list) SKILL_TO_ATTR[s.toLowerCase()] = attr;
+/** Stronger mapping (case-insensitive; matches substrings & synonyms) */
+const CUSTOM_SKILL_TO_ATTR: Record<string, AttrName> = {
+  // Brawn
+  "athletics": "Brawn",
+  "brawl": "Brawn",
+  "brawling": "Brawn",
+  "endurance": "Brawn",
+  "endure": "Brawn",
+  "melee": "Brawn",
+  "melee weapons": "Brawn",
+  "toughness": "Brawn",
+  "heavy weapons": "Brawn",
+  "lift": "Brawn",
+  "climb": "Brawn",
+  // Nerves
+  "cool": "Nerves",
+  "drive": "Nerves",
+  "driving": "Nerves",
+  "pilot": "Nerves",
+  "piloting": "Nerves",
+  "reaction": "Nerves",
+  "initiative": "Nerves",
+  "guts": "Nerves",
+  "stunt": "Nerves",
+  // Smooth
+  "charm": "Smooth",
+  "deceive": "Smooth",
+  "deception": "Smooth",
+  "intimidate": "Smooth",
+  "performance": "Smooth",
+  "persuasion": "Smooth",
+  "persuade": "Smooth",
+  "disguise": "Smooth",
+  "fast talk": "Smooth",
+  // Focus
+  "awareness": "Focus",
+  "perception": "Focus",
+  "investigation": "Focus",
+  "investigate": "Focus",
+  "medicine": "Focus",
+  "first aid": "Focus",
+  "science": "Focus",
+  "tech": "Focus",
+  "tactics": "Focus",
+  "analysis": "Focus",
+  // Crime
+  "hacking": "Crime",
+  "computers": "Crime",
+  "lockpick": "Crime",
+  "lockpicking": "Crime",
+  "pickpocket": "Crime",
+  "skulduggery": "Crime",
+  "stealth": "Crime",
+  "sabotage": "Crime",
+  "sleight of hand": "Crime",
+  "burglary": "Crime",
+};
+
+const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ").replace(/[_-]/g, " ");
+
+/** Build reverse map from the canonical lists, too */
+const REVERSE_FROM_CANON: Record<string, AttrName> = {};
+for (const attr of ATTR_ORDER) {
+  for (const s of SKILLS_BY_ATTR[attr]) REVERSE_FROM_CANON[norm(s)] = attr;
 }
 
-// Normalize keys to compare case-insensitively and with minor punctuation differences
-const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ").replace(/[-_]/g, " ");
+/** Final resolver: CUSTOM (substring) > Canonical (exact after normalizing) */
+function resolveAttrForSkill(raw: string): AttrName | "Other" {
+  const n = norm(raw);
+  // substring match on CUSTOM map
+  for (const [needle, attr] of Object.entries(CUSTOM_SKILL_TO_ATTR)) {
+    if (n.includes(needle)) return attr;
+  }
+  // exact match on canonical known skills
+  if (REVERSE_FROM_CANON[n]) return REVERSE_FROM_CANON[n];
+  return "Other";
+}
 
-/** Group any present skills by attribute using the reverse map, falling back to "Other". */
-function computeGroupedSkills(
-  skills: Record<string, any> | undefined
-): Record<string, Array<[string, any]>> {
+function groupSkills(skills: Record<string, any> | undefined): Record<string, Array<[string, any]>> {
   const grouped: Record<string, Array<[string, any]>> = {};
   if (!skills) return grouped;
-
-  // First pass: assign by reverse map (case-insensitive).
-  const other: Array<[string, any]> = [];
   for (const [k, v] of Object.entries(skills)) {
-    const mappedAttr = SKILL_TO_ATTR[norm(k)];
-    if (mappedAttr) {
-      if (!grouped[mappedAttr]) grouped[mappedAttr] = [];
-      grouped[mappedAttr].push([k, v]);
-    } else {
-      other.push([k, v]);
-    }
+    const bucket = resolveAttrForSkill(k);
+    if (!grouped[bucket]) grouped[bucket] = [];
+    grouped[bucket].push([k, v]);
   }
-  if (other.length) grouped["Other"] = other;
-
-  // Ensure order keys exist even if empty (but we won't render empty cards)
   return grouped;
 }
 
 /** ---------- Component ---------- */
-
 export default function CharacterDetails({ id }: { id: string }) {
   const [character, setCharacter] = useState<Character | null>(null);
   const [loading, setLoading] = useState(true);
@@ -105,41 +160,24 @@ export default function CharacterDetails({ id }: { id: string }) {
     load();
   }, [id]);
 
-  const groupedSkills = useMemo(
-    () => computeGroupedSkills(character?.skills),
-    [character?.skills]
-  );
+  const groupedSkills = useMemo(() => groupSkills(character?.skills), [character?.skills]);
 
-  if (loading) return <p className="text-gray-900">Loading character...</p>;
-  if (!character) return <p className="text-gray-900">Character not found.</p>;
+  if (loading) return <div className="max-w-4xl mx-auto p-6"><p className="text-gray-900">Loading character…</p></div>;
+  if (!character) return <div className="max-w-4xl mx-auto p-6"><p className="text-gray-900">Character not found.</p></div>;
 
   const {
-    name,
-    role,
-    trope,
-    age,
-    background,
-    flaw,
-    catchphrase,
-    attributes,
-    feats,
-    gear,
-    resources,
-    ride,
-    notes,
+    name, role, trope, age, background, flaw, catchphrase,
+    attributes, feats, gear, resources, ride, notes,
   } = character;
 
-  /** Render helpers */
-
+  /** UI helpers */
   const renderKVGrid = (obj?: Record<string, any>) => {
     if (!obj) return null;
     return (
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3">
         {Object.entries(obj).map(([key, val]) => (
-          <div
-            key={key}
-            className="rounded-2xl bg-white text-gray-900 border px-3 py-2 flex items-center justify-between text-sm shadow-sm"
-          >
+          <div key={key}
+            className="rounded-xl bg-white text-gray-900 border px-3 py-2 flex items-center justify-between text-sm shadow-sm">
             <span className="font-semibold break-words">{key}</span>
             <span className="ml-3 tabular-nums">{formatValue(val)}</span>
           </div>
@@ -152,9 +190,7 @@ export default function CharacterDetails({ id }: { id: string }) {
     if (!arr || arr.length === 0) return null;
     return (
       <ul className="list-disc list-inside space-y-1 text-gray-900">
-        {arr.map((item, i) => (
-          <li key={i}>{formatValue(item)}</li>
-        ))}
+        {arr.map((item, i) => <li key={i}>{formatValue(item)}</li>)}
       </ul>
     );
   };
@@ -163,15 +199,11 @@ export default function CharacterDetails({ id }: { id: string }) {
     const presentAttrNames = attributes ? Object.keys(attributes) : [];
     const order: string[] = [];
 
-    // Known attributes in canonical order IF present or IF they have any skills grouped
     for (const a of ATTR_ORDER) {
       if ((attributes && a in attributes) || groupedSkills[a]?.length) order.push(a);
     }
-    // Add any unknown attributes from payload
     for (const a of presentAttrNames) if (!order.includes(a)) order.push(a);
-    // Add Other (unmapped skills)
     if (groupedSkills["Other"]?.length) order.push("Other");
-
     if (order.length === 0) return null;
 
     return (
@@ -182,10 +214,10 @@ export default function CharacterDetails({ id }: { id: string }) {
 
           return (
             <div key={attrName} className="rounded-2xl border shadow-sm bg-white text-gray-900 overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 bg-gray-100">
+              <div className="flex items-center justify-between px-4 py-3 bg-gray-900 text-white">
                 <div className="text-lg font-semibold">{attrName}</div>
                 {attrVal !== undefined && attrName !== "Other" && (
-                  <div className="inline-flex items-center rounded-xl border bg-white text-gray-900 px-3 py-1 text-base font-bold tabular-nums">
+                  <div className="inline-flex items-center rounded-xl border border-white/30 bg-gray-800 text-white px-3 py-1 text-base font-bold tabular-nums">
                     {formatValue(attrVal)}
                   </div>
                 )}
@@ -195,7 +227,8 @@ export default function CharacterDetails({ id }: { id: string }) {
                 <div className="px-4 py-3">
                   <div className="grid grid-cols-2 gap-3">
                     {skillsForCard.map(([skillName, value]) => (
-                      <div key={skillName} className="flex items-center justify-between rounded-xl bg-gray-50 text-gray-900 border px-3 py-2 text-sm">
+                      <div key={skillName}
+                        className="flex items-center justify-between rounded-xl bg-gray-50 text-gray-900 border px-3 py-2 text-sm">
                         <span className="mr-3">{skillName}</span>
                         <span className="font-semibold tabular-nums">{formatValue(value)}</span>
                       </div>
@@ -213,83 +246,86 @@ export default function CharacterDetails({ id }: { id: string }) {
   };
 
   return (
-    <div className="space-y-8 text-gray-900">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b pb-4 gap-3">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold">{name}</h1>
-          <p className="text-gray-700">
-            {formatValue(role)} — {formatValue(trope)}
-          </p>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-            {background && <span className="italic">Background: {formatValue(background)}</span>}
-            {age !== undefined && <span>Age: {formatValue(age)}</span>}
+    <div className="max-w-5xl mx-auto p-4 sm:p-6">
+      {/* White card wrapper guarantees readability on dark pages */}
+      <div className="rounded-2xl bg-white text-gray-900 shadow-lg p-6 space-y-8">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b pb-4 gap-3">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold">{name}</h1>
+            <p className="text-gray-900">
+              {formatValue(role)} — {formatValue(trope)}
+            </p>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+              {background && <span className="italic">Background: {formatValue(background)}</span>}
+              {age !== undefined && <span>Age: {formatValue(age)}</span>}
+            </div>
+            {catchphrase && <p className="text-sm mt-1">“{formatValue(catchphrase)}”</p>}
+            {flaw && <p className="text-sm mt-1 text-red-700">Flaw: {formatValue(flaw)}</p>}
           </div>
-          {catchphrase && <p className="text-sm mt-1">“{formatValue(catchphrase)}”</p>}
-          {flaw && <p className="text-sm mt-1 text-red-700">Flaw: {formatValue(flaw)}</p>}
+
+          <button
+            onClick={() => navigate(`/character/${id}/edit`)}
+            className="bg-black text-white px-4 py-2 rounded-xl hover:opacity-90 shadow-sm"
+          >
+            Edit
+          </button>
         </div>
 
-        <button
-          onClick={() => navigate(`/character/${id}/edit`)}
-          className="bg-black text-white px-4 py-2 rounded-xl hover:opacity-90 shadow-sm"
-        >
-          Edit
-        </button>
+        {/* Resources */}
+        {resources && (
+          <section>
+            <h2 className="text-xl font-semibold mb-2 text-gray-900">Resources</h2>
+            {renderKVGrid(resources)}
+          </section>
+        )}
+
+        {/* Ride */}
+        {ride && (
+          <section>
+            <h2 className="text-xl font-semibold mb-2 text-gray-900">Ride</h2>
+            <p className="bg-gray-50 text-gray-900 border rounded-2xl px-4 py-3 shadow-sm">
+              {formatValue(ride)}
+            </p>
+          </section>
+        )}
+
+        {/* Attributes & Skills */}
+        <section className="space-y-6">
+          <h2 className="text-xl font-semibold text-gray-900">Attributes & Skills</h2>
+          {renderAttributeCards()}
+        </section>
+
+        {/* Feats */}
+        {feats && feats.length > 0 && (
+          <section>
+            <h2 className="text-xl font-semibold mb-2 text-gray-900">Feats</h2>
+            <div className="rounded-2xl border bg-white text-gray-900 px-4 py-3 shadow-sm">
+              {renderList(feats)}
+            </div>
+          </section>
+        )}
+
+        {/* Gear */}
+        {gear && gear.length > 0 && (
+          <section>
+            <h2 className="text-xl font-semibold mb-2 text-gray-900">Gear</h2>
+            <div className="rounded-2xl border bg-white text-gray-900 px-4 py-3 shadow-sm">
+              {renderList(gear)}
+            </div>
+          </section>
+        )}
+
+        {/* Notes */}
+        {notes && (
+          <section>
+            <h2 className="text-xl font-semibold mb-2 text-gray-900">Notes</h2>
+            <p className="whitespace-pre-wrap bg-gray-50 text-gray-900 border rounded-2xl px-4 py-3 shadow-sm">
+              {notes}
+            </p>
+          </section>
+        )}
       </div>
-
-      {/* Resources */}
-      {resources && (
-        <section>
-          <h2 className="text-xl font-semibold mb-2">Resources</h2>
-          {renderKVGrid(resources)}
-        </section>
-      )}
-
-      {/* Ride */}
-      {ride && (
-        <section>
-          <h2 className="text-xl font-semibold mb-2">Ride</h2>
-          <p className="bg-white text-gray-900 border rounded-2xl px-4 py-3 shadow-sm">
-            {formatValue(ride)}
-          </p>
-        </section>
-      )}
-
-      {/* Attributes & Skills (Grouped Cards) */}
-      <section className="space-y-6">
-        <h2 className="text-xl font-semibold">Attributes & Skills</h2>
-        {renderAttributeCards()}
-      </section>
-
-      {/* Feats */}
-      {feats && feats.length > 0 && (
-        <section>
-          <h2 className="text-xl font-semibold mb-2">Feats</h2>
-          <div className="rounded-2xl border bg-white text-gray-900 px-4 py-3 shadow-sm">
-            {renderList(feats)}
-          </div>
-        </section>
-      )}
-
-      {/* Gear */}
-      {gear && gear.length > 0 && (
-        <section>
-          <h2 className="text-xl font-semibold mb-2">Gear</h2>
-          <div className="rounded-2xl border bg-white text-gray-900 px-4 py-3 shadow-sm">
-            {renderList(gear)}
-          </div>
-        </section>
-      )}
-
-      {/* Notes */}
-      {notes && (
-        <section>
-          <h2 className="text-xl font-semibold mb-2">Notes</h2>
-          <p className="whitespace-pre-wrap bg-gray-50 text-gray-900 border rounded-2xl px-4 py-3 shadow-sm">
-            {notes}
-          </p>
-        </section>
-      )}
     </div>
   );
 }
