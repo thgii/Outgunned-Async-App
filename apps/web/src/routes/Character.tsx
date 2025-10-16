@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api } from "../lib/api";
-import CharacterSheetV2 from "../components/CharacterSheetV2";
+import CharacterSheetV2 from "../components/CharacterSheetv2";
 
 export default function Character() {
   const { id } = useParams();
