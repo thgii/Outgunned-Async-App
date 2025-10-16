@@ -375,11 +375,11 @@ function AddLine({label, onAdd}:{label:string; onAdd:(txt:string)=>void}){
 }
 
 const ALL_SKILLS: SkillKey[] = [
-  "endure","fight","force","stunt",
-  "cool","drive","shoot","survival",
-  "flirt","leadership","speech","style",
-  "detect","fix","heal","know",
-  "awareness","dexterity","stealth","streetwise"
+  "Endure","Fight","Force","Stunt",
+  "Cool","Drive","Shoot","Survival",
+  "Flirt","Leadership","Speech","Style",
+  "Detect","Fix","Heal","Know",
+  "Awareness","Dexterity","Stealth","Streetwise"
 ];
 
 function SkillPicker({value, onChange}:{value: SkillKey[]; onChange:(s:SkillKey[])=>void}) {

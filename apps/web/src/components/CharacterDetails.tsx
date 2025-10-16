@@ -42,7 +42,11 @@ function formatValue(v: unknown): string | number {
 const ATTR_ORDER = ["Brawn", "Nerves", "Smooth", "Focus", "Crime"] as const;
 type AttrName = typeof ATTR_ORDER[number];
 
-/** Base skill lists (canonical) */
+/** Normalize helper used in several places */
+const norm = (s: string) =>
+  s.trim().toLowerCase().replace(/\s+/g, " ").replace(/[_-]/g, " ");
+
+/** ---------- Canonical skills by attribute ---------- */
 const SKILLS_BY_ATTR: Record<AttrName, string[]> = {
   Brawn: ["Endure","Fight","Force","Stunt"],
   Nerves: ["Cool","Drive","Shoot","Survival"],
@@ -71,7 +75,7 @@ const CUSTOM_SKILL_TO_ATTR: Record<string, AttrName> = {
   "speech": "Smooth",
   "style": "Smooth",
 
-  // --- Focus (perception / knowledge / tech / survival / medicine) ---
+  // --- Focus (perception / knowledge / tech / medicine) ---
   "detect": "Focus",
   "fix": "Focus",
   "heal": "Focus",
@@ -84,8 +88,6 @@ const CUSTOM_SKILL_TO_ATTR: Record<string, AttrName> = {
   "streetwise": "Crime",
 };
 
-const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ").replace(/[_-]/g, " ");
-
 /** Build reverse map from the canonical lists, too */
 const REVERSE_FROM_CANON: Record<string, AttrName> = {};
 for (const attr of ATTR_ORDER) {
@@ -95,11 +97,9 @@ for (const attr of ATTR_ORDER) {
 /** Final resolver: CUSTOM (substring) > Canonical (exact after normalizing) */
 function resolveAttrForSkill(raw: string): AttrName | "Other" {
   const n = norm(raw);
-  // substring match on CUSTOM map
   for (const [needle, attr] of Object.entries(CUSTOM_SKILL_TO_ATTR)) {
     if (n.includes(needle)) return attr;
   }
-  // exact match on canonical known skills
   if (REVERSE_FROM_CANON[n]) return REVERSE_FROM_CANON[n];
   return "Other";
 }
@@ -115,6 +115,35 @@ function groupSkills(skills: Record<string, any> | undefined): Record<string, Ar
   return grouped;
 }
 
+/** ---------- Attribute canonicalization (fixes "Brawn" vs "brawn") ---------- */
+const ATTR_SET = new Set<AttrName>(ATTR_ORDER);
+const ATTR_ALIASES: Record<string, AttrName> = {
+  brawn: "Brawn",
+  nerves: "Nerves",
+  smooth: "Smooth",
+  focus: "Focus",
+  crime: "Crime",
+};
+
+function canonAttrName(raw: string): AttrName | null {
+  const n = norm(raw);
+  if (ATTR_ALIASES[n]) return ATTR_ALIASES[n];
+  const title = raw.trim();
+  if (ATTR_SET.has(title as AttrName)) return title as AttrName;
+  return null;
+}
+
+function normalizeAttributes(attrs?: Record<string, any>): Partial<Record<AttrName, any>> {
+  if (!attrs) return {};
+  const out: Partial<Record<AttrName, any>> = {};
+  for (const [k, v] of Object.entries(attrs)) {
+    const canon = canonAttrName(k);
+    if (!canon) continue;
+    out[canon] = v;
+  }
+  return out;
+}
+
 /** ---------- Component ---------- */
 export default function CharacterDetails({ id }: { id: string }) {
   const [character, setCharacter] = useState<Character | null>(null);
@@ -125,7 +154,9 @@ export default function CharacterDetails({ id }: { id: string }) {
     async function load() {
       try {
         const data = await api(`/characters/${id}`);
-        setCharacter(data);
+        // Normalize attribute keys so duplicates like "Brawn"/"brawn" collapse
+        const normalizedAttrs = normalizeAttributes(data?.attributes);
+        setCharacter({ ...data, attributes: normalizedAttrs });
       } catch (err) {
         console.error("Failed to load character:", err);
       } finally {
@@ -151,8 +182,10 @@ export default function CharacterDetails({ id }: { id: string }) {
     return (
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3">
         {Object.entries(obj).map(([key, val]) => (
-          <div key={key}
-            className="rounded-xl bg-white text-gray-900 border px-3 py-2 flex items-center justify-between text-sm shadow-sm">
+          <div
+            key={key}
+            className="rounded-xl bg-white text-gray-900 border px-3 py-2 flex items-center justify-between text-sm shadow-sm"
+          >
             <span className="font-semibold break-words">{key}</span>
             <span className="ml-3 tabular-nums">{formatValue(val)}</span>
           </div>
@@ -171,20 +204,21 @@ export default function CharacterDetails({ id }: { id: string }) {
   };
 
   const renderAttributeCards = () => {
-    const presentAttrNames = attributes ? Object.keys(attributes) : [];
+    const canonAttrs = attributes as Partial<Record<AttrName, any>> | undefined;
     const order: string[] = [];
 
+    // only show canonical attributes that are present or have skills
     for (const a of ATTR_ORDER) {
-      if ((attributes && a in attributes) || groupedSkills[a]?.length) order.push(a);
+      if ((canonAttrs && a in canonAttrs) || groupedSkills[a]?.length) order.push(a);
     }
-    for (const a of presentAttrNames) if (!order.includes(a)) order.push(a);
+    // "Other" (skills that couldn't be mapped)
     if (groupedSkills["Other"]?.length) order.push("Other");
     if (order.length === 0) return null;
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {order.map((attrName) => {
-          const attrVal = attributes ? attributes[attrName] : undefined;
+          const attrVal = canonAttrs ? canonAttrs[attrName as AttrName] : undefined;
           const skillsForCard = groupedSkills[attrName] || [];
 
           return (
@@ -202,8 +236,10 @@ export default function CharacterDetails({ id }: { id: string }) {
                 <div className="px-4 py-3">
                   <div className="grid grid-cols-2 gap-3">
                     {skillsForCard.map(([skillName, value]) => (
-                      <div key={skillName}
-                        className="flex items-center justify-between rounded-xl bg-gray-50 text-gray-900 border px-3 py-2 text-sm">
+                      <div
+                        key={skillName}
+                        className="flex items-center justify-between rounded-xl bg-gray-50 text-gray-900 border px-3 py-2 text-sm"
+                      >
                         <span className="mr-3">{skillName}</span>
                         <span className="font-semibold tabular-nums">{formatValue(value)}</span>
                       </div>
