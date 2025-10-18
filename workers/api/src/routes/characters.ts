@@ -174,10 +174,14 @@ characters.post("/", async (c) => {
   const role = dto.role;
   const trope = dto.trope ?? null;
   const age = dto.age ?? null;
-  const job =
-    getMaybeName((dto as any).jobOrBackground) ??
-    getMaybeName(body.job) ??
-    null;
+  // Prefer the freshly provided body.job; fall back to background, then dto/existing
+const job =
+  getMaybeName(body.job) ??                         // new value from client
+  getMaybeName(body.background) ??                  // legacy safety (optional)
+  getMaybeName((dto as any).jobOrBackground) ??     // normalized fallback
+  existing.job ??                                   // keep old if nothing new
+  null;
+
   const catchphrase = dto.catchphrase ?? null;
   const flaw = dto.flaw ?? null;
 
@@ -392,14 +396,28 @@ characters.patch("/:id", async (c) => {
       ? body.notes
       : existing.notes ?? null;
 
-  await c.env.DB
-    .prepare(
-      `UPDATE characters SET
-        name=?, role=?, trope=?, age=?, job=?, catchphrase=?, flaw=?, tropeAttribute=?,
-        feats=?, attributes=?, skills=?, resources=?, gear=?, conditions=?, notes=?,
-        revision=COALESCE(revision,0)+1
-       WHERE id=?`
-    )
+await c.env.DB
+  .prepare(
+    `UPDATE characters SET
+      name = COALESCE(?, name),
+      role = COALESCE(?, role),
+      trope = COALESCE(?, trope),
+      age = COALESCE(?, age),
+      job = COALESCE(?, job),
+      catchphrase = COALESCE(?, catchphrase),
+      flaw = COALESCE(?, flaw),
+      tropeAttribute = COALESCE(?, tropeAttribute),
+      feats = COALESCE(?, feats),
+      attributes = COALESCE(?, attributes),
+      skills = COALESCE(?, skills),
+      resources = COALESCE(?, resources),
+      gear = COALESCE(?, gear),
+      conditions = COALESCE(?, conditions),
+      notes = COALESCE(?, notes),
+      revision = COALESCE(revision, 0) + 1
+    WHERE id = ?`
+  )
+
     .bind(
       name,
       role,
