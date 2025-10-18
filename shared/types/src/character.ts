@@ -123,7 +123,8 @@ ride: z
 export type CharacterDTO = z.infer<typeof characterSchema>;
 
 export function normalizeYouLook(dto: CharacterDTO): CharacterDTO {
-  const unique = Array.from(new Set(dto.youLookSelected));
+  const unique = Array.from(new Set(dto.youLookSelected ?? []));
   const isBroken = unique.length >= 3 ? true : dto.isBroken;
   return { ...dto, youLookSelected: unique, isBroken };
 }
+
