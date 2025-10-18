@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import data from "../data/outgunned_data.json"; 
 
 /** Types aligned to your DTO (kept permissive for safety) */
 type Meter = { current?: number; max?: number };
@@ -54,17 +53,6 @@ type CharacterDTO = {
   isBroken?: boolean;
 
   deathRoulette?: [boolean, boolean, boolean, boolean, boolean, boolean];
-
-  /*Feat Descriptions built
-const FEAT_DESC = React.useMemo(() => {
-  const map = new Map<string, string>();
-  try {
-    (data?.feats ?? []).forEach((f: any) => {
-      if (f?.name) map.set(String(f.name).trim(), String(f.description ?? "").trim());
-    });
-  } catch {}
-  return map;
-}, []);
 
   /** Preferred top-level storage */
   storage?: {
@@ -380,15 +368,11 @@ export default function CharacterSheetV2({
   const setRideName = (e: React.ChangeEvent<HTMLInputElement>) =>
     pathUpdate("ride", { ...(local.ride ?? {}), name: e.target.value });
 
-  // Feats display (string or {name, description})
-const feats = (local.feats ?? []).map((f) => {
-  if (typeof f === "string") {
-    const name = f.trim();
-    return { name, description: FEAT_DESC.get(name) };
-  }
-  const name = String((f as any).name ?? "").trim();
-  return { ...f, description: (f as any).description ?? FEAT_DESC.get(name) };
-});
+// Feats already include descriptions in the DTO
+const feats = (local.feats ?? []).map((f) =>
+  typeof f === "string" ? { name: f, description: "" } : f
+);
+
 
 
   return (
