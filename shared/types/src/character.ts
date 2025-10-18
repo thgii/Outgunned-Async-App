@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+
+
+
 export const ATTRS = ["brawn","nerves","smooth","focus","crime"] as const;
 export const SKILLS = [
   "endure","fight","force","stunt",
@@ -14,6 +17,18 @@ export type SkillKey = typeof SKILLS[number];
 
 const _0to6 = z.number().int().min(0).max(6);
 const _0to12 = z.number().int().min(0).max(12);
+
+// ✅ NEW: allow a feat to be either a plain string or an object carrying description
+export const FeatSchema = z.union([
+  z.string(),
+  z.object({
+    name: z.string(),
+    description: z.string().optional(),
+  }),
+]);
+
+// (optional) export the type if you want to use it elsewhere
+export type Feat = z.infer<typeof FeatSchema>;
 
 const skillsBlock = z.object(
   Object.fromEntries(SKILLS.map(k => [k, _0to6])) as Record<SkillKey, z.ZodNumber>
@@ -53,7 +68,7 @@ export const characterSchema = z.object({
   luck: _0to6.default(0),
 
   experiences: z.array(z.string()).default([]),
-  feats: z.array(z.string()).max(6).default([]),
+  feats: z.array(FeatSchema).max(6).default([]),
 
   // You Look + Broken
   youLookSelected: z.array(youLookEnum).max(6).default([]),
