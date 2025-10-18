@@ -254,4 +254,15 @@ characters.patch("/:id", async (c) => {
   return c.json(row);
 });
 
+characters.delete("/:id", async (c) => {
+  const id = c.req.param("id");
+  try {
+    await c.env.DB.prepare("DELETE FROM characters WHERE id = ?").bind(id).run();
+    return c.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    return c.json({ error: "delete_failed", message: String(e) }, 500);
+  }
+});
+
 export default characters;

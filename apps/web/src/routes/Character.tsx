@@ -32,6 +32,9 @@ type Character = {
   cash?: number;
   ride?: string | MaybeNamed;
   notes?: string;
+  youLookSelected?: string[];
+  isBroken?: boolean;
+  deathRoulette?: [boolean, boolean, boolean, boolean, boolean, boolean];
 };
 
 type SavingState = "idle" | "saving" | "saved" | "error";
@@ -102,25 +105,52 @@ function normalizeForSheet(c: any): Character {
   const gritObj = c?.grit ?? c?.resources?.grit ?? {};
   const grit: Meter = {
     current: asNumber(gritObj.current, 0),
-    max: asNumber(gritObj.max, 12), // 0–12 per your spec
+    max: asNumber(gritObj.max, 12), // 0–12
   };
 
   // Numbers commonly stored under resources
   const adrenaline = asNumber(fromResources("adrenaline", 0), 0);
-  const spotlight = asNumber(fromResources("spotlight", 0), 0);
-  const luck = asNumber(fromResources("luck", 0), 0);
-  const cash = asNumber(fromResources("cash", 0), 0);
+  const spotlight  = asNumber(fromResources("spotlight", 0), 0);
+  const luck       = asNumber(fromResources("luck", 0), 0);
+  const cash       = asNumber(fromResources("cash", 0), 0);
 
-  const storage = sanitizeStorage(c?.storage ?? c?.resources?.storage);
+  // Storage: accept top-level, resources.storage, or fall back to gear list
+  const storage = sanitizeStorage(
+    c?.storage ??
+    c?.resources?.storage ??
+    (Array.isArray(c?.gear) ? { gunsAndGear: c.gear } : undefined)
+  );
+
+  // --- You Look / Death Roulette / Broken rehydration ---
+  // Accept either old `conditions` (array) or `resources.youLookSelected`
+  const youLookSelected =
+    (Array.isArray(c?.youLookSelected) && c.youLookSelected) ||
+    (Array.isArray(c?.conditions) && c.conditions) ||
+    (Array.isArray(c?.resources?.youLookSelected) && c.resources.youLookSelected) ||
+    [];
+
+  const deathRouletteRaw = c?.deathRoulette ?? c?.resources?.deathRoulette;
+  const deathRoulette: [boolean, boolean, boolean, boolean, boolean, boolean] =
+    Array.isArray(deathRouletteRaw) && deathRouletteRaw.length === 6
+      ? deathRouletteRaw.map(Boolean) as any
+      : [false, false, false, false, false, false];
+
+  const isBroken =
+    typeof c?.isBroken === "boolean" ? c.isBroken :
+    typeof c?.resources?.isBroken === "boolean" ? c.resources.isBroken :
+    youLookSelected.length >= 3; // sensible fallback
 
   // Ensure resources exists and mirror normalized fields into it
   const resources: any = { ...(c?.resources ?? {}) };
   resources.grit = { current: grit.current ?? 0, max: grit.max ?? 12 };
   resources.adrenaline = adrenaline;
-  resources.spotlight = spotlight;
-  resources.luck = luck;
-  resources.cash = cash;
+  resources.spotlight  = spotlight;
+  resources.luck       = luck;
+  resources.cash       = cash;
   if (storage !== undefined) resources.storage = storage;
+  resources.youLookSelected = youLookSelected;
+  resources.deathRoulette  = deathRoulette;
+  resources.isBroken       = isBroken;
 
   return {
     ...(c ?? {}),
@@ -132,6 +162,9 @@ function normalizeForSheet(c: any): Character {
     cash,
     storage,
     resources,
+    youLookSelected,
+    deathRoulette,
+    isBroken,
   };
 }
 
@@ -148,21 +181,30 @@ function mapToServerPayload(next: Character): any {
     max: asNumber(next.grit?.max, 12),
   };
   payload.resources.adrenaline = asNumber(next.adrenaline, 0);
-  payload.resources.spotlight = asNumber(next.spotlight, 0);
-  payload.resources.luck = asNumber(next.luck, 0);
-  payload.resources.cash = asNumber(next.cash, 0);
+  payload.resources.spotlight  = asNumber(next.spotlight, 0);
+  payload.resources.luck       = asNumber(next.luck, 0);
+  payload.resources.cash       = asNumber(next.cash, 0);
 
   // Mirror storage if present, and sanitize it for the Worker
-const rawStorage = next.storage ?? payload.resources.storage;
-const storage = sanitizeStorage(rawStorage);
-if (storage) {
-  payload.storage = storage;
-  payload.resources.storage = storage;
-} else {
-  delete payload.storage;
-  delete payload.resources?.storage;
-}
+  const rawStorage = next.storage ?? payload.resources.storage;
+  const storage = sanitizeStorage(rawStorage);
+  if (storage) {
+    payload.storage = storage;
+    payload.resources.storage = storage;
+  } else {
+    delete payload.storage;
+    delete payload.resources?.storage;
+  }
 
+  // --- You Look / Death Roulette / Broken back to server ---
+  payload.resources.youLookSelected = Array.isArray(next.youLookSelected) ? next.youLookSelected : [];
+  payload.resources.deathRoulette  = Array.isArray(next.deathRoulette) && next.deathRoulette.length === 6
+    ? next.deathRoulette.map(Boolean)
+    : [false, false, false, false, false, false];
+  payload.resources.isBroken = !!next.isBroken;
+
+  // Back-compat: also send legacy `conditions` if your Worker still reads it
+  payload.conditions = payload.resources.youLookSelected;
 
   // Push job/background back to a single field the API accepts.
   // If your Worker expects "background", keep this; if it expects "job", swap it.
@@ -180,6 +222,7 @@ if (storage) {
 
   return payload;
 }
+
 
 /** ---------- Route Component ---------- */
 export default function CharacterRoute() {
@@ -259,6 +302,24 @@ export default function CharacterRoute() {
     }
   }
 
+async function deleteCharacter() {
+  if (!character) return;
+  const ok = confirm(`Delete ${character.name || "this character"}? This cannot be undone.`);
+  if (!ok) return;
+  try {
+    await api(`/characters/${character.id}`, { method: "DELETE" });
+    navigate("/characters");
+  } catch (e: any) {
+    console.error("Delete failed", e);
+    setError(
+      typeof e === "object" && e
+        ? JSON.stringify(e)
+        : "Delete failed. See console for details."
+    );
+  }
+}
+
+
   const headerRight = useMemo(() => {
     switch (saving) {
       case "saving":
@@ -315,6 +376,14 @@ export default function CharacterRoute() {
             Save now
           </button>
         */}
+<button
+  className="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700"
+  onClick={deleteCharacter}
+  title="Delete character"
+>
+  Delete
+</button>
+
         </div>
       </div>
 
