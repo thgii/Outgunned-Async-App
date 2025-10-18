@@ -221,18 +221,23 @@ function mapToServerPayload(next: Character): any {
   // Keep legacy `conditions` in sync with `youLookSelected`
   payload.conditions = payload.resources.youLookSelected;
 
-  // Push job/background back to a single field the API accepts (string only).
-  const selectedJob =
-    getMaybeName(next.job) ?? getMaybeName(next.jobOrBackground);
-  if (selectedJob) {
-    payload.job = selectedJob; // always a string
-  } else {
-    delete payload.job;
-  }
+// Push job/background back to a single field the API accepts (string only).
+const selectedJob =
+  (typeof next.job === "object" ? next.job?.name ?? next.job?.value : next.job) ??
+  (typeof next.jobOrBackground === "object"
+    ? next.jobOrBackground?.name ?? next.jobOrBackground?.value
+    : next.jobOrBackground);
 
-  // Clean up so the server gets a tidy object
-  delete payload.jobOrBackground;
-  delete payload.background;
+if (selectedJob) {
+  payload.job = selectedJob;     // ← what your Worker persists
+} else {
+  delete payload.job;
+}
+
+// Clean up legacy/noisy fields
+delete payload.jobOrBackground;
+delete payload.background;
+
   delete payload.grit;
   delete payload.adrenaline;
   delete payload.spotlight;
