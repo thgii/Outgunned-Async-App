@@ -80,8 +80,8 @@ function safeMergeResources(oldR: any, newR: any) {
     if (merged[k] == null && base[k] != null) merged[k] = base[k];
   });
 
-  // keep youLook and flags unless explicitly overridden
-  ["youLookSelected", "isBroken", "deathRoulette"].forEach((k) => {
+  // keep youLook and flags and ride unless explicitly overridden
+  ["youLookSelected", "isBroken", "deathRoulette", "ride"].forEach((k) => {
     if (merged[k] == null && base[k] != null) merged[k] = base[k];
   });
 
@@ -96,6 +96,7 @@ function pickTopLevelResourceOverrides(body: any) {
   if ("spotlight" in body) r.spotlight = body.spotlight;
   if ("luck" in body) r.luck = body.luck;
   if ("cash" in body) r.cash = body.cash;
+  if ("ride" in body) r.ride = body.ride;
   if ("youLookSelected" in body) r.youLookSelected = body.youLookSelected;
   if ("isBroken" in body) r.isBroken = body.isBroken;
   if ("deathRoulette" in body) r.deathRoulette = body.deathRoulette;

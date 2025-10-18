@@ -103,6 +103,9 @@ function normalizeForSheet(c: any): Character {
 
   const jobOrBackground = getMaybeName(jobOrBackgroundRaw) ?? "";
 
+  // Ride: keep a top-level string for UI, but store under resources in DB
+  const ride = getMaybeName(c?.ride ?? c?.resources?.ride);
+
   // Grit may be on top-level or inside resources (as a meter)
   const gritObj = c?.grit ?? c?.resources?.grit ?? {};
   const grit: Meter = {
@@ -155,10 +158,12 @@ function normalizeForSheet(c: any): Character {
   resources.youLookSelected = youLookSelected;
   resources.deathRoulette = deathRoulette;
   resources.isBroken = isBroken;
+  if (ride !== undefined) resources.ride = ride;
 
   return {
     ...(c ?? {}),
     jobOrBackground,
+    ride,
     grit,
     adrenaline,
     spotlight,
@@ -209,6 +214,9 @@ function mapToServerPayload(next: Character): any {
       ? next.deathRoulette.map(Boolean)
       : [false, false, false, false, false, false];
   payload.resources.isBroken = !!next.isBroken;
+  // Persist ride under resources, always as a string if present
+  const ride = getMaybeName(next.ride);
+  if (ride) payload.resources.ride = ride; else delete payload.resources.ride;
 
   // Keep legacy `conditions` in sync with `youLookSelected`
   payload.conditions = payload.resources.youLookSelected;
