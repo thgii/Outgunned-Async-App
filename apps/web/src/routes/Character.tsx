@@ -307,12 +307,12 @@ export default function CharacterRoute() {
         </h1>
         <div className="flex items-center gap-3">
           {headerRight}
-          <button
-            className="px-3 py-1 rounded bg-slate-200 hover:bg-slate-300"
-            onClick={() => saveNow(latestRef.current ?? character)}
-          >
-            Save now
-          </button>
+//          <button
+//            className="px-3 py-1 rounded bg-slate-200 hover:bg-slate-300"
+//            onClick={() => saveNow(latestRef.current ?? character)}
+//          >
+//            Save now
+//          </button>
         </div>
       </div>
 
