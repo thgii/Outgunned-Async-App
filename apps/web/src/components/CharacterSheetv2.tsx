@@ -69,6 +69,15 @@ type CharacterDTO = {
       backpack?: string[];
       bag?: string[];
     };
+    grit?: Meter;
+    adrenaline?: number;
+    spotlight?: number;
+    luck?: number;
+    cash?: number;
+    ride?: string;
+    youLookSelected?: CharacterDTO["youLookSelected"];
+    isBroken?: boolean;
+    deathRoulette?: CharacterDTO["deathRoulette"];
   };
 
   /** Some data sets store gear as a top-level array; we’ll support that too. */
@@ -76,7 +85,8 @@ type CharacterDTO = {
 
   cash?: number;
 
-  ride?: { name?: string; speed?: number; armor?: number; tags?: string[] };
+  // Ride can be string (preferred) or an object with name
+  ride?: string | { name?: string; speed?: number; armor?: number; tags?: string[] };
 
   feats?: Array<string | { name: string; description?: string }>;
   notes?: string;
@@ -123,12 +133,10 @@ function ToggleBox({
   label?: string;
   emphasis?: "bad" | "hot";
 }) {
-    const base = "inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-md border text-[10px] font-bold cursor-pointer select-none transition";
-  const styles = checked
-    ? "bg-indigo-600 border-indigo-600 text-white"
-    : "bg-white border-zinc-300 text-zinc-700 hover:border-indigo-400";
-  const emph =
-    emphasis === "bad" ? "ring-2 ring-red-500" : emphasis === "hot" ? "ring-2 ring-orange-500" : "";
+  const base =
+    "inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-md border text-[10px] font-bold cursor-pointer select-none transition";
+  const styles = checked ? "bg-indigo-600 border-indigo-600 text-white" : "bg-white border-zinc-300 text-zinc-700 hover:border-indigo-400";
+  const emph = emphasis === "bad" ? "ring-2 ring-red-500" : emphasis === "hot" ? "ring-2 ring-orange-500" : "";
   return (
     <button
       type="button"
@@ -174,7 +182,7 @@ const ATTR_GROUPS: Record<"Brawn" | "Nerves" | "Smooth" | "Focus" | "Crime", str
   Crime: ["awareness", "dexterity", "stealth", "streetwise"],
 };
 
-/** --- helpers to safely coerce gear shapes --- */
+/** --- helpers --- */
 function asStringArray(v: unknown): string[] {
   if (Array.isArray(v)) {
     return (v as any[])
@@ -197,53 +205,43 @@ function asStringArray(v: unknown): string[] {
   return [];
 }
 
+function getMaybeName(v: any): string | undefined {
+  if (v == null) return undefined;
+  if (typeof v === "object") return v.name ?? v.value ?? v.label ?? undefined;
+  if (typeof v === "string") return v || undefined;
+  return String(v);
+}
+
 export default function CharacterSheetV2({
   value,
   onChange,
 }: {
-  value: CharacterDTO | null | undefined;   // ← accepts undefined during first render
+  value: CharacterDTO | null | undefined; // accepts undefined during first render
   onChange: (c: CharacterDTO) => void;
 }) {
   // Guard against the very first render while the route is still loading
   if (!value) return null;
 
-  // Seed safe defaults so reads like local.grit.current never explode
+  // Hydrate safe defaults + mirror counters into resources for a consistent local view
   const safe: CharacterDTO = {
     ...value,
-    grit: value.grit ?? { current: 0, max: 12 },
-    adrenaline:
-      value.adrenaline ??
-      (value as any)?.resources?.adrenaline ??
-      0,
-    spotlight:
-      value.spotlight ??
-      (value as any)?.resources?.spotlight ??
-      0,
-    luck:
-      value.luck ??
-      (value as any)?.resources?.luck ??
-      0,
-    cash:
-      value.cash ??
-      (value as any)?.resources?.cash ??
-      0,
+    grit: value.grit ?? (value as any)?.resources?.grit ?? { current: 0, max: 12 },
+    adrenaline: value.adrenaline ?? (value as any)?.resources?.adrenaline ?? 0,
+    spotlight: value.spotlight ?? (value as any)?.resources?.spotlight ?? 0,
+    luck: value.luck ?? (value as any)?.resources?.luck ?? 0,
+    cash: value.cash ?? (value as any)?.resources?.cash ?? 0,
+    // If ride is only in resources (string), bubble it up for the input
+    ride: value.ride ?? (value as any)?.resources?.ride ?? value.ride,
     resources: {
       ...((value as any)?.resources ?? {}),
-      grit:
-        (value as any)?.resources?.grit ??
-        (value.grit ?? { current: 0, max: 12 }),
-      adrenaline:
-        (value as any)?.resources?.adrenaline ??
-        (value.adrenaline ?? 0),
-      spotlight:
-        (value as any)?.resources?.spotlight ??
-        (value.spotlight ?? 0),
-      luck:
-        (value as any)?.resources?.luck ??
-        (value.luck ?? 0),
-      cash:
-        (value as any)?.resources?.cash ??
-        (value.cash ?? 0),
+      grit: (value as any)?.resources?.grit ?? (value.grit ?? { current: 0, max: 12 }),
+      adrenaline: (value as any)?.resources?.adrenaline ?? (value.adrenaline ?? 0),
+      spotlight: (value as any)?.resources?.spotlight ?? (value.spotlight ?? 0),
+      luck: (value as any)?.resources?.luck ?? (value.luck ?? 0),
+      cash: (value as any)?.resources?.cash ?? (value.cash ?? 0),
+      ride:
+        (typeof value.ride === "string" ? value.ride : getMaybeName(value.ride)) ??
+        (value as any)?.resources?.ride,
     },
   };
 
@@ -255,32 +253,53 @@ export default function CharacterSheetV2({
     setLocal(next);
     onChange(next);
   };
-  const pathUpdate = <K extends keyof CharacterDTO>(key: K, value: CharacterDTO[K]) =>
-    update({ [key]: value } as Partial<CharacterDTO>);
+  const pathUpdate = <K extends keyof CharacterDTO>(key: K, v: CharacterDTO[K]) => update({ [key]: v } as any);
 
   /** ---------- Header bindings ---------- */
   const setHeader =
     (k: keyof CharacterDTO) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       pathUpdate(k, e.target.value as any);
+
   /** ---------- Grit / Adrenaline / Spotlight ---------- */
   const gritCurrent = Math.max(0, Math.min(12, local.grit?.current ?? 0));
-  const setGrit = (n: number) => pathUpdate("grit", { current: Math.max(0, Math.min(12, n)), max: 12 });
+  const setGrit = (n: number) => {
+    const clamped = Math.max(0, Math.min(12, n));
+    update({
+      grit: { current: clamped, max: 12 },
+      resources: { ...(local.resources ?? {}), grit: { current: clamped, max: 12 } },
+    });
+  };
 
   const adrenaline = Math.max(0, Math.min(6, local.adrenaline ?? 0));
-  const setAdrenaline = (n: number) => pathUpdate("adrenaline", Math.max(0, Math.min(6, n)));
+  const setAdrenaline = (n: number) => {
+    const clamped = Math.max(0, Math.min(6, n));
+    update({
+      adrenaline: clamped,
+      resources: { ...(local.resources ?? {}), adrenaline: clamped },
+    });
+  };
 
   const spotlight = Math.max(0, Math.min(3, local.spotlight ?? 0));
-  const setSpotlight = (n: number) => pathUpdate("spotlight", Math.max(0, Math.min(3, n)));
+  const setSpotlight = (n: number) => {
+    const clamped = Math.max(0, Math.min(3, n));
+    update({
+      spotlight: clamped,
+      resources: { ...(local.resources ?? {}), spotlight: clamped },
+    });
+  };
 
   /** ---------- Death Roulette ---------- */
   const death = (local.deathRoulette ?? [false, false, false, false, false, false]).slice() as boolean[];
   const deathValue = death.reduce((acc, v) => acc + (v ? 1 : 0), 0);
   const setDeathFromCount = (n: number) => {
     const next = Array.from({ length: 6 }, (_, i) => i < n);
-    pathUpdate("deathRoulette", next as any);
+    update({
+      deathRoulette: next as any,
+      resources: { ...(local.resources ?? {}), deathRoulette: next as any },
+    });
   };
 
-  /** ---------- You Look (bigger, darker text) ---------- */
+  /** ---------- You Look ---------- */
   const youLookSelected = new Set(local.youLookSelected ?? []);
   const isBroken = !!local.isBroken;
   const toggleYouLook =
@@ -289,10 +308,15 @@ export default function CharacterSheetV2({
       const next = new Set(youLookSelected);
       if (e.target.checked) next.add(k);
       else next.delete(k);
-      pathUpdate("youLookSelected", Array.from(next));
+      const arr = Array.from(next);
+      update({
+        youLookSelected: arr,
+        isBroken,
+        resources: { ...(local.resources ?? {}), youLookSelected: arr, isBroken },
+      });
     };
 
-  /** ---------- Attributes + Skills combined ---------- */
+  /** ---------- Attributes + Skills ---------- */
   const setAttr =
     (k: keyof NonNullable<CharacterDTO["attributes"]>) => (e: React.ChangeEvent<HTMLInputElement>) => {
       const n = Math.max(0, Number(e.target.value || 0));
@@ -304,14 +328,15 @@ export default function CharacterSheetV2({
       pathUpdate("skills", { ...(local.skills ?? {}), [k]: n });
     };
 
-  /** ---------- Gear & Off-Person: support storage at top-level or under resources ---------- */
+  /** ---------- Storage ---------- */
   const topStorage = local.storage;
   const resStorage = local.resources?.storage;
   const effectiveStorage = topStorage ?? resStorage ?? {};
 
-  // GEAR list (merge any top-level `gear` array with storage.gunsAndGear)
-  const gearNamesFromTop = asStringArray(local.gear);
-  const gearNamesFromStorage = asStringArray(effectiveStorage.gunsAndGear);
+  const asStringArrayLocal = asStringArray;
+
+  const gearNamesFromTop = asStringArrayLocal(local.gear);
+  const gearNamesFromStorage = asStringArrayLocal(effectiveStorage.gunsAndGear);
   const mergedGearNames = useMemo(() => {
     const set = new Set<string>([...gearNamesFromTop, ...gearNamesFromStorage]);
     return Array.from(set);
@@ -319,70 +344,69 @@ export default function CharacterSheetV2({
 
   const gunsAndGearText = mergedGearNames.join("\n");
 
-  // writes to BOTH: `gear` (string[]) and `storage.gunsAndGear` at both locations
   const setGunsAndGearText = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const lines = e.target.value.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
-
-    const nextStorage = {
-      ...(effectiveStorage || {}),
-      gunsAndGear: lines.map((name) => ({ name })),
-    };
-
+    const nextStorage = { ...(effectiveStorage || {}), gunsAndGear: lines.map((name) => ({ name })) };
     update({
-      gear: lines, // top-level gear as string[]
+      gear: lines,
       storage: nextStorage,
       resources: { ...(local.resources ?? {}), storage: nextStorage },
     });
   };
 
-  // Off-Person Storage (bag)
   const offPersonText = ((effectiveStorage?.bag ?? []) as string[]).join("\n");
   const setOffPersonText = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const lines = e.target.value.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
-
     const nextStorage = { ...(effectiveStorage || {}), bag: lines };
-
     update({
       storage: nextStorage,
       resources: { ...(local.resources ?? {}), storage: nextStorage },
     });
   };
 
-  // Backpack
   const backpackText = ((effectiveStorage?.backpack ?? []) as string[]).join("\n");
   const setBackpackText = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const lines = e.target.value.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
-
     const nextStorage = { ...(effectiveStorage || {}), backpack: lines };
-
     update({
       storage: nextStorage,
       resources: { ...(local.resources ?? {}), storage: nextStorage },
     });
   };
 
+  /** ---------- Money & Ride ---------- */
   const cash = Number.isFinite(local.cash) ? Number(local.cash) : 0;
   const setCash = (e: React.ChangeEvent<HTMLInputElement>) =>
-    pathUpdate("cash", Math.max(0, Number(e.target.value || 0)));
+    update({
+      cash: Math.max(0, Number(e.target.value || 0)),
+      resources: { ...(local.resources ?? {}), cash: Math.max(0, Number(e.target.value || 0)) },
+    });
 
-  const rideName = local.ride?.name ?? "";
-  const setRideName = (e: React.ChangeEvent<HTMLInputElement>) =>
-    pathUpdate("ride", { ...(local.ride ?? {}), name: e.target.value });
+  // Read ride from top-level or resources, accept string or {name}
+  const rideString =
+    (typeof local.ride === "string" ? local.ride : local.ride?.name) ??
+    (local.resources?.ride as string | undefined) ??
+    "";
+  const setRideString = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    update({
+      // top-level ride: keep it a plain string for easier mapping
+      ride: val,
+      // also mirror under resources.ride so it's visible after reloads
+      resources: { ...(local.resources ?? {}), ride: val },
+    });
+  };
 
-// Feats already include descriptions in the DTO
-// Ensure we display a description even if the saved feat is a plain string
-const feats = (local.feats ?? []).map((f) => {
-  if (typeof f === "string") {
-    const name = f;
-    return { name, description: FEAT_DESC[name] || "" };
-  }
-  const name = (f as any).name;
-  const description = (f as any).description || FEAT_DESC[name] || "";
-  return { name, description };
-});
-
-
-
+  // Feats already include descriptions in the DTO
+  const feats = (local.feats ?? []).map((f) => {
+    if (typeof f === "string") {
+      const name = f;
+      return { name, description: FEAT_DESC[name] || "" };
+    }
+    const name = (f as any).name;
+    const description = (f as any).description || FEAT_DESC[name] || "";
+    return { name, description };
+  });
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4">
@@ -532,10 +556,7 @@ const feats = (local.feats ?? []).map((f) => {
                 ["Tired", "Tired"],
               ] as const
             ).map(([label, key]) => (
-              <label
-                key={key}
-                className="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-2"
-              >
+              <label key={key} className="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-2">
                 <input
                   type="checkbox"
                   className="h-5 w-5 accent-indigo-600"
@@ -550,7 +571,12 @@ const feats = (local.feats ?? []).map((f) => {
                 type="checkbox"
                 className="h-5 w-5 accent-indigo-600"
                 checked={isBroken}
-                onChange={(e) => pathUpdate("isBroken", e.target.checked)}
+                onChange={(e) =>
+                  update({
+                    isBroken: e.target.checked,
+                    resources: { ...(local.resources ?? {}), isBroken: e.target.checked },
+                  })
+                }
               />
               <span className="text-[15px] font-medium text-zinc-800">Broken</span>
             </label>
@@ -573,27 +599,15 @@ const feats = (local.feats ?? []).map((f) => {
         <SectionTitle>Storage & Resources</SectionTitle>
         <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
           <Labeled label="Guns & Gear (one per line)">
-            <TextArea
-              value={gunsAndGearText}
-              onChange={setGunsAndGearText}
-              placeholder="Pistol&#10;Rope&#10;Compass"
-            />
+            <TextArea value={gunsAndGearText} onChange={setGunsAndGearText} placeholder="Pistol&#10;Rope&#10;Compass" />
           </Labeled>
 
           <Labeled label="Off-Person Storage (one per line)">
-            <TextArea
-              value={offPersonText}
-              onChange={setOffPersonText}
-              placeholder="Locker key&#10;Spare ammo"
-            />
+            <TextArea value={offPersonText} onChange={setOffPersonText} placeholder="Locker key&#10;Spare ammo" />
           </Labeled>
 
           <Labeled label="Backpack (one per line)">
-            <TextArea
-              value={backpackText}
-              onChange={setBackpackText}
-              placeholder="Rations&#10;Canteen&#10;Flashlight"
-            />
+            <TextArea value={backpackText} onChange={setBackpackText} placeholder="Rations&#10;Canteen&#10;Flashlight" />
           </Labeled>
 
           <div className="grid grid-cols-1 gap-4">
@@ -601,7 +615,7 @@ const feats = (local.feats ?? []).map((f) => {
               <Input type="number" min={0} value={cash} onChange={setCash} />
             </Labeled>
             <Labeled label="Ride">
-              <Input value={rideName} onChange={setRideName} placeholder="Seaplane, Jeep, etc." />
+              <Input value={rideString} onChange={setRideString} placeholder="Seaplane, Jeep, etc." />
             </Labeled>
           </div>
         </div>
