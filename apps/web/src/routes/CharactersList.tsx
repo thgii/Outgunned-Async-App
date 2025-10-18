@@ -60,13 +60,6 @@ export default function CharactersList() {
                   >
                     View Sheet
                   </button>
-                  <button
-                    disabled={!charId}
-                    onClick={() => navigate(`/character/${charId}/edit`)}
-                    className="px-3 py-1.5 rounded bg-black text-white hover:opacity-90 disabled:opacity-50"
-                  >
-                    Edit
-                  </button>
                 </div>
               </div>
             );
