@@ -40,11 +40,17 @@ function parseJsonFields(row: CharRow): CharRow {
 /** -------- resources helpers -------- */
 function normalizeGrit(v: any) {
   if (v == null) return v;
-  if (typeof v === "number") return { current: v, max: v };
+  if (typeof v === "number") return { current: Math.max(0, Math.min(12, v)), max: 12 };
   if (typeof v === "object") {
-    const cur = Number(v.current ?? v.curr ?? v.value ?? v);
-    const max = Number(v.max ?? v.maximum ?? v.limit ?? cur);
-    return { current: isFinite(cur) ? cur : 0, max: isFinite(max) ? max : 0 };
+    const curN = Number(v.current ?? v.curr ?? v.value ?? v);
+   const maxN = Number(v.max ?? v.maximum ?? v.limit ?? 12);
+   const cur = Number.isFinite(curN) ? curN : 0;
+   const max = Number.isFinite(maxN) ? maxN : 12;
+   // clamp to 0–12 to match UI + Zod
+   return {
+     current: Math.max(0, Math.min(12, cur)),
+     max: Math.max(1, Math.min(12, max)),
+   };
   }
   return v;
 }
@@ -167,9 +173,12 @@ characters.post("/", async (c) => {
   const attributes = JSON.stringify(dto.attributes ?? {});
   const skills = JSON.stringify(dto.skills ?? {});
 
-  // Build resources from dto top-level
-  const fromDto = {
-    grit: dto.grit,
+// Build resources from: body.resources + top-level overrides + dto overlay (same approach as PATCH)
+  const bodyResourceObj =
+    body && typeof body.resources === "object" ? body.resources : {};
+  const topLevelOverrides = pickTopLevelResourceOverrides(body);
+  const dtoOverlay = {
+    grit: (dto as any).grit,
     adrenaline: (dto as any).adrenaline,
     spotlight: (dto as any).spotlight,
     luck: (dto as any).luck,
@@ -178,14 +187,16 @@ characters.post("/", async (c) => {
     isBroken: (dto as any).isBroken,
     deathRoulette: (dto as any).deathRoulette,
   };
-  const resources = JSON.stringify(safeMergeResources({}, fromDto));
+  const mergedForPost = safeMergeResources({}, { ...bodyResourceObj, ...topLevelOverrides });
+  const finalResourcesPost = safeMergeResources(mergedForPost, dtoOverlay);
+  const resources = JSON.stringify(finalResourcesPost);
 
   const gear = JSON.stringify(
     (dto as any).storage ?? { backpack: [], bag: [], gunsAndGear: [] }
   );
 
-  // Conditions mirror youLook selection
-  const conditions = JSON.stringify((dto as any).youLookSelected ?? []);
+// Conditions mirror what ended up in resources
+  const conditions = JSON.stringify(finalResourcesPost.youLookSelected ?? []);
 
   // Notes: drop missionOrTreasure; accept a plain "notes" if provided
   const notes =
@@ -358,15 +369,18 @@ characters.patch("/:id", async (c) => {
     isBroken: (dto as any).isBroken,
     deathRoulette: (dto as any).deathRoulette,
   };
-  const resources = JSON.stringify(safeMergeResources(mergedResources, dtoOverlay));
+    const finalResourcesPatch = safeMergeResources(mergedResources, dtoOverlay);
+  const resources = JSON.stringify(finalResourcesPatch);
 
   const gear = JSON.stringify(
     (dto as any).storage ?? { backpack: [], bag: [], gunsAndGear: [] }
   );
 
-  // Prefer the youLookSelected that made it into resources
-  const conditions = JSON.stringify(mergedResources.youLookSelected ?? (dto as any).youLookSelected ?? []);
-
+// Prefer the youLookSelected that made it into resources (final)
+  const conditions = JSON.stringify(
+    finalResourcesPatch.youLookSelected ?? (dto as any).youLookSelected ?? []
+  );
+ 
   // Notes: keep existing unless an explicit "notes" string is provided
   const notes =
     typeof body.notes === "string"

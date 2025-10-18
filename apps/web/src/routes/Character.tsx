@@ -206,14 +206,18 @@ function mapToServerPayload(next: Character): any {
   // Back-compat: also send legacy `conditions` if your Worker still reads it
   payload.conditions = payload.resources.youLookSelected;
 
-  // Push job/background back to a single field the API accepts.
-  // If your Worker expects "background", keep this; if it expects "job", swap it.
-  if (!payload.background && !payload.job && next.jobOrBackground) {
-    payload.background = next.jobOrBackground;
-  }
-
-  // Clean up top-level duplicates so server gets a tidy object
-  delete payload.jobOrBackground;
+  // Push job/background back to a single field the API accepts (string only).
+ const selectedJob =
+   getMaybeName(next.job) ??        // if UI already stored it in job
+   getMaybeName(next.jobOrBackground);
+ if (selectedJob) {
+   payload.job = selectedJob;       // ← always a string now
+ } else {
+   delete payload.job;              // avoid sending undefined/object
+ }
+ // Clean up so the server gets a tidy object
+ delete payload.jobOrBackground;
+ delete payload.background;         // make sure legacy field doesn't sneak in
   delete payload.grit;
   delete payload.adrenaline;
   delete payload.spotlight;
