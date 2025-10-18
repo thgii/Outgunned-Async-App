@@ -38,9 +38,24 @@ export const DATA = {
   ages: (Array.isArray((raw as any).ages) ? (raw as any).ages : []).map((a: any) => a.age),
 };
 
-export const FEATS_CATALOG = ((raw as any).feats_catalog as FeatCat[]) || [];
+// ===== Feats catalog / descriptions =====
+export const FEATS_CATALOG: { name: string; description?: string }[] = (() => {
+  // Accept either `feats_catalog` or `feats` from the JSON
+  const rawFeats =
+    Array.isArray((raw as any).feats_catalog) && (raw as any).feats_catalog.length
+      ? (raw as any).feats_catalog
+      : (Array.isArray((raw as any).feats) ? (raw as any).feats : []);
+
+  // Normalize to the minimal shape we need
+  return rawFeats.map((f: any) => ({
+    name: String(f?.name ?? "").trim(),
+    description: String(f?.description ?? "").trim() || undefined,
+  }));
+})();
+
 export const FEAT_DESC: Record<string, string> =
   Object.fromEntries(FEATS_CATALOG.map((f) => [f.name, f.description || ""])) || {};
+
 
 /* ===============================
  * Lookups

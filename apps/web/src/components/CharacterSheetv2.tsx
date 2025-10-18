@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { FEAT_DESC } from "../data/wizard";
 
 /** Types aligned to your DTO (kept permissive for safety) */
 type Meter = { current?: number; max?: number };
@@ -369,9 +370,17 @@ export default function CharacterSheetV2({
     pathUpdate("ride", { ...(local.ride ?? {}), name: e.target.value });
 
 // Feats already include descriptions in the DTO
-const feats = (local.feats ?? []).map((f) =>
-  typeof f === "string" ? { name: f, description: "" } : f
-);
+// Ensure we display a description even if the saved feat is a plain string
+const feats = (local.feats ?? []).map((f) => {
+  if (typeof f === "string") {
+    const name = f;
+    return { name, description: FEAT_DESC[name] || "" };
+  }
+  const name = (f as any).name;
+  const description = (f as any).description || FEAT_DESC[name] || "";
+  return { name, description };
+});
+
 
 
 
