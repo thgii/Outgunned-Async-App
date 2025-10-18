@@ -37,20 +37,28 @@ function parseJsonFields(row: CharRow): CharRow {
   return row;
 }
 
+/** -------- helpers -------- */
+function getMaybeName(v: any): string | undefined {
+  if (v == null) return undefined;
+  if (typeof v === "object") return v.name ?? v.value ?? undefined;
+  if (typeof v === "string") return v || undefined;
+  return String(v);
+}
+
 /** -------- resources helpers -------- */
 function normalizeGrit(v: any) {
   if (v == null) return v;
   if (typeof v === "number") return { current: Math.max(0, Math.min(12, v)), max: 12 };
   if (typeof v === "object") {
     const curN = Number(v.current ?? v.curr ?? v.value ?? v);
-   const maxN = Number(v.max ?? v.maximum ?? v.limit ?? 12);
-   const cur = Number.isFinite(curN) ? curN : 0;
-   const max = Number.isFinite(maxN) ? maxN : 12;
-   // clamp to 0–12 to match UI + Zod
-   return {
-     current: Math.max(0, Math.min(12, cur)),
-     max: Math.max(1, Math.min(12, max)),
-   };
+    const maxN = Number(v.max ?? v.maximum ?? v.limit ?? 12);
+    const cur = Number.isFinite(curN) ? curN : 0;
+    const max = Number.isFinite(maxN) ? maxN : 12;
+    // clamp to 0–12 to match UI + Zod
+    return {
+      current: Math.max(0, Math.min(12, cur)),
+      max: Math.max(1, Math.min(12, max)),
+    };
   }
   return v;
 }
@@ -165,7 +173,10 @@ characters.post("/", async (c) => {
   const role = dto.role;
   const trope = dto.trope ?? null;
   const age = dto.age ?? null;
-  const job = (dto as any).jobOrBackground ?? body.job ?? null; // support both
+  const job =
+    getMaybeName((dto as any).jobOrBackground) ??
+    getMaybeName(body.job) ??
+    null;
   const catchphrase = dto.catchphrase ?? null;
   const flaw = dto.flaw ?? null;
 
@@ -173,29 +184,26 @@ characters.post("/", async (c) => {
   const attributes = JSON.stringify(dto.attributes ?? {});
   const skills = JSON.stringify(dto.skills ?? {});
 
-// Build resources from: body.resources + top-level overrides + dto overlay (same approach as PATCH)
+  // Build resources for CREATE from: body.resources + top-level overrides + only youLook-ish overlay
   const bodyResourceObj =
     body && typeof body.resources === "object" ? body.resources : {};
   const topLevelOverrides = pickTopLevelResourceOverrides(body);
-  const dtoOverlay = {
-    grit: (dto as any).grit,
-    adrenaline: (dto as any).adrenaline,
-    spotlight: (dto as any).spotlight,
-    luck: (dto as any).luck,
-    cash: (dto as any).cash,
+  const mergedForPost = safeMergeResources({}, { ...bodyResourceObj, ...topLevelOverrides });
+
+  // Only overlay fields normalized by normalizeYouLook; DO NOT overlay grit/adrenaline/spotlight/luck/cash from dto
+  const dtoYouLookOverlay = {
     youLookSelected: (dto as any).youLookSelected,
     isBroken: (dto as any).isBroken,
     deathRoulette: (dto as any).deathRoulette,
   };
-  const mergedForPost = safeMergeResources({}, { ...bodyResourceObj, ...topLevelOverrides });
-  const finalResourcesPost = safeMergeResources(mergedForPost, dtoOverlay);
+  const finalResourcesPost = safeMergeResources(mergedForPost, dtoYouLookOverlay);
   const resources = JSON.stringify(finalResourcesPost);
 
   const gear = JSON.stringify(
     (dto as any).storage ?? { backpack: [], bag: [], gunsAndGear: [] }
   );
 
-// Conditions mirror what ended up in resources
+  // Conditions mirror what ended up in resources
   const conditions = JSON.stringify(finalResourcesPost.youLookSelected ?? []);
 
   // Notes: drop missionOrTreasure; accept a plain "notes" if provided
@@ -334,8 +342,8 @@ characters.patch("/:id", async (c) => {
 
   // allow either jobOrBackground or direct job in the patch
   const job =
-    (dto as any).jobOrBackground ??
-    body.job ??
+    getMaybeName((dto as any).jobOrBackground) ??
+    getMaybeName(body.job) ??
     existing.job ??
     null;
 
@@ -358,29 +366,25 @@ characters.patch("/:id", async (c) => {
     existingResources,
     { ...bodyResourceObj, ...topLevelOverrides }
   );
-  // Ensure dto coercion (like normalizeYouLook) also reflected if present:
-  const dtoOverlay = {
-    grit: (dto as any).grit,
-    adrenaline: (dto as any).adrenaline,
-    spotlight: (dto as any).spotlight,
-    luck: (dto as any).luck,
-    cash: (dto as any).cash,
+
+  // Only overlay the fields that normalizeYouLook() adjusts; DO NOT overlay grit/adrenaline/spotlight/luck/cash from dto
+  const dtoYouLookOverlay = {
     youLookSelected: (dto as any).youLookSelected,
     isBroken: (dto as any).isBroken,
     deathRoulette: (dto as any).deathRoulette,
   };
-    const finalResourcesPatch = safeMergeResources(mergedResources, dtoOverlay);
+  const finalResourcesPatch = safeMergeResources(mergedResources, dtoYouLookOverlay);
   const resources = JSON.stringify(finalResourcesPatch);
 
   const gear = JSON.stringify(
     (dto as any).storage ?? { backpack: [], bag: [], gunsAndGear: [] }
   );
 
-// Prefer the youLookSelected that made it into resources (final)
+  // Conditions mirror what ended up in resources (final)
   const conditions = JSON.stringify(
     finalResourcesPatch.youLookSelected ?? (dto as any).youLookSelected ?? []
   );
- 
+
   // Notes: keep existing unless an explicit "notes" string is provided
   const notes =
     typeof body.notes === "string"

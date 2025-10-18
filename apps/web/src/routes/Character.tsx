@@ -6,7 +6,7 @@ import CharacterSheetv2 from "../components/CharacterSheetv2";
 
 /** ---------- Types (keep in sync with the rest of the app) ---------- */
 type Meter = { current?: number; max?: number };
-type MaybeNamed = { name?: string; value?: any };
+type MaybeNamed = { name?: string; value?: any; label?: any };
 
 type Character = {
   id: string;
@@ -16,14 +16,14 @@ type Character = {
   age?: string | number;
   background?: string | MaybeNamed;
   job?: string | MaybeNamed;
-  jobOrBackground?: string;
+  jobOrBackground?: string | MaybeNamed;
   flaw?: string | MaybeNamed;
   catchphrase?: string | MaybeNamed;
   attributes?: Record<string, number | MaybeNamed>;
   skills?: Record<string, number | MaybeNamed>;
   feats?: Array<string | MaybeNamed>;
   gear?: Array<string | MaybeNamed>;
-  resources?: Record<string, number | Meter | MaybeNamed>;
+  resources?: Record<string, any>;
   storage?: any;
   grit?: Meter;
   adrenaline?: number;
@@ -45,6 +45,17 @@ function asNumber(v: any, fallback = 0): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
+function clamp(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n));
+}
+
+function getMaybeName(v: any): string | undefined {
+  if (v == null) return undefined;
+  if (typeof v === "object") return v.name ?? v.value ?? v.label ?? undefined;
+  if (typeof v === "string") return v || undefined;
+  return String(v);
+}
+
 /** Ensure storage shape matches Worker validator. */
 function sanitizeStorage(s: any) {
   if (!s) return undefined;
@@ -55,7 +66,6 @@ function sanitizeStorage(s: any) {
     out.gunsAndGear = out.gunsAndGear
       .filter(Boolean)
       .map((item: any) => {
-        // Allow simple strings/MaybeNamed and coerce them to objects
         if (item == null) return undefined;
         if (typeof item === "string") {
           return { name: item, qty: 1, ranges: {} };
@@ -70,20 +80,12 @@ function sanitizeStorage(s: any) {
             item.ranges && typeof item.ranges === "object" ? item.ranges : {};
           return { ...item, name, qty, ranges };
         }
-        // Fallback
         return { name: String(item), qty: 1, ranges: {} };
       })
       .filter(Boolean);
   }
 
   return out;
-}
-
-function getMaybeName(v: any): string | undefined {
-  if (v == null) return undefined;
-  if (typeof v === "object") return v.name ?? v.value ?? undefined;
-  if (typeof v === "string") return v || undefined;
-  return String(v);
 }
 
 /** Normalize server payload -> shape the sheet expects (top-level fields). */
@@ -104,53 +106,55 @@ function normalizeForSheet(c: any): Character {
   // Grit may be on top-level or inside resources (as a meter)
   const gritObj = c?.grit ?? c?.resources?.grit ?? {};
   const grit: Meter = {
-    current: asNumber(gritObj.current, 0),
-    max: asNumber(gritObj.max, 12), // 0–12
+    current: clamp(asNumber(gritObj.current, 0), 0, 12),
+    max: clamp(asNumber(gritObj.max, 12), 1, 12),
   };
 
   // Numbers commonly stored under resources
   const adrenaline = asNumber(fromResources("adrenaline", 0), 0);
-  const spotlight  = asNumber(fromResources("spotlight", 0), 0);
-  const luck       = asNumber(fromResources("luck", 0), 0);
-  const cash       = asNumber(fromResources("cash", 0), 0);
+  const spotlight = asNumber(fromResources("spotlight", 0), 0);
+  const luck = asNumber(fromResources("luck", 0), 0);
+  const cash = asNumber(fromResources("cash", 0), 0);
 
   // Storage: accept top-level, resources.storage, or fall back to gear list
   const storage = sanitizeStorage(
     c?.storage ??
-    c?.resources?.storage ??
-    (Array.isArray(c?.gear) ? { gunsAndGear: c.gear } : undefined)
+      c?.resources?.storage ??
+      (Array.isArray(c?.gear) ? { gunsAndGear: c.gear } : undefined)
   );
 
   // --- You Look / Death Roulette / Broken rehydration ---
-  // Accept either old `conditions` (array) or `resources.youLookSelected`
   const youLookSelected =
     (Array.isArray(c?.youLookSelected) && c.youLookSelected) ||
     (Array.isArray(c?.conditions) && c.conditions) ||
-    (Array.isArray(c?.resources?.youLookSelected) && c.resources.youLookSelected) ||
+    (Array.isArray(c?.resources?.youLookSelected) &&
+      c.resources.youLookSelected) ||
     [];
 
   const deathRouletteRaw = c?.deathRoulette ?? c?.resources?.deathRoulette;
   const deathRoulette: [boolean, boolean, boolean, boolean, boolean, boolean] =
     Array.isArray(deathRouletteRaw) && deathRouletteRaw.length === 6
-      ? deathRouletteRaw.map(Boolean) as any
+      ? (deathRouletteRaw.map(Boolean) as any)
       : [false, false, false, false, false, false];
 
   const isBroken =
-    typeof c?.isBroken === "boolean" ? c.isBroken :
-    typeof c?.resources?.isBroken === "boolean" ? c.resources.isBroken :
-    youLookSelected.length >= 3; // sensible fallback
+    typeof c?.isBroken === "boolean"
+      ? c.isBroken
+      : typeof c?.resources?.isBroken === "boolean"
+      ? c.resources.isBroken
+      : youLookSelected.length >= 3;
 
   // Ensure resources exists and mirror normalized fields into it
   const resources: any = { ...(c?.resources ?? {}) };
   resources.grit = { current: grit.current ?? 0, max: grit.max ?? 12 };
   resources.adrenaline = adrenaline;
-  resources.spotlight  = spotlight;
-  resources.luck       = luck;
-  resources.cash       = cash;
+  resources.spotlight = spotlight;
+  resources.luck = luck;
+  resources.cash = cash;
   if (storage !== undefined) resources.storage = storage;
   resources.youLookSelected = youLookSelected;
-  resources.deathRoulette  = deathRoulette;
-  resources.isBroken       = isBroken;
+  resources.deathRoulette = deathRoulette;
+  resources.isBroken = isBroken;
 
   return {
     ...(c ?? {}),
@@ -176,14 +180,14 @@ function mapToServerPayload(next: Character): any {
   payload.resources = { ...(payload.resources ?? {}) };
 
   // Move resource-like fields under resources (grit 0–12)
-  payload.resources.grit = {
-    current: asNumber(next.grit?.current, 0),
-    max: asNumber(next.grit?.max, 12),
-  };
+  const cur = clamp(asNumber(next.grit?.current, 0), 0, 12);
+  const max = clamp(asNumber(next.grit?.max, 12), 1, 12);
+  payload.resources.grit = { current: cur, max };
+
   payload.resources.adrenaline = asNumber(next.adrenaline, 0);
-  payload.resources.spotlight  = asNumber(next.spotlight, 0);
-  payload.resources.luck       = asNumber(next.luck, 0);
-  payload.resources.cash       = asNumber(next.cash, 0);
+  payload.resources.spotlight = asNumber(next.spotlight, 0);
+  payload.resources.luck = asNumber(next.luck, 0);
+  payload.resources.cash = asNumber(next.cash, 0);
 
   // Mirror storage if present, and sanitize it for the Worker
   const rawStorage = next.storage ?? payload.resources.storage;
@@ -197,27 +201,30 @@ function mapToServerPayload(next: Character): any {
   }
 
   // --- You Look / Death Roulette / Broken back to server ---
-  payload.resources.youLookSelected = Array.isArray(next.youLookSelected) ? next.youLookSelected : [];
-  payload.resources.deathRoulette  = Array.isArray(next.deathRoulette) && next.deathRoulette.length === 6
-    ? next.deathRoulette.map(Boolean)
-    : [false, false, false, false, false, false];
+  payload.resources.youLookSelected = Array.isArray(next.youLookSelected)
+    ? next.youLookSelected
+    : [];
+  payload.resources.deathRoulette =
+    Array.isArray(next.deathRoulette) && next.deathRoulette.length === 6
+      ? next.deathRoulette.map(Boolean)
+      : [false, false, false, false, false, false];
   payload.resources.isBroken = !!next.isBroken;
 
-  // Back-compat: also send legacy `conditions` if your Worker still reads it
+  // Keep legacy `conditions` in sync with `youLookSelected`
   payload.conditions = payload.resources.youLookSelected;
 
   // Push job/background back to a single field the API accepts (string only).
- const selectedJob =
-   getMaybeName(next.job) ??        // if UI already stored it in job
-   getMaybeName(next.jobOrBackground);
- if (selectedJob) {
-   payload.job = selectedJob;       // ← always a string now
- } else {
-   delete payload.job;              // avoid sending undefined/object
- }
- // Clean up so the server gets a tidy object
- delete payload.jobOrBackground;
- delete payload.background;         // make sure legacy field doesn't sneak in
+  const selectedJob =
+    getMaybeName(next.job) ?? getMaybeName(next.jobOrBackground);
+  if (selectedJob) {
+    payload.job = selectedJob; // always a string
+  } else {
+    delete payload.job;
+  }
+
+  // Clean up so the server gets a tidy object
+  delete payload.jobOrBackground;
+  delete payload.background;
   delete payload.grit;
   delete payload.adrenaline;
   delete payload.spotlight;
@@ -226,7 +233,6 @@ function mapToServerPayload(next: Character): any {
 
   return payload;
 }
-
 
 /** ---------- Route Component ---------- */
 export default function CharacterRoute() {
@@ -279,7 +285,7 @@ export default function CharacterRoute() {
     if (timerRef.current) window.clearTimeout(timerRef.current);
     timerRef.current = window.setTimeout(() => {
       void saveNow(next);
-    }, 600); // tweak debounce as needed
+    }, 600);
   };
 
   // Manual "Save now" (also used by debounce)
@@ -306,23 +312,24 @@ export default function CharacterRoute() {
     }
   }
 
-async function deleteCharacter() {
-  if (!character) return;
-  const ok = confirm(`Delete ${character.name || "this character"}? This cannot be undone.`);
-  if (!ok) return;
-  try {
-    await api(`/characters/${character.id}`, { method: "DELETE" });
-    navigate("/characters");
-  } catch (e: any) {
-    console.error("Delete failed", e);
-    setError(
-      typeof e === "object" && e
-        ? JSON.stringify(e)
-        : "Delete failed. See console for details."
+  async function deleteCharacter() {
+    if (!character) return;
+    const ok = confirm(
+      `Delete ${character.name || "this character"}? This cannot be undone.`
     );
+    if (!ok) return;
+    try {
+      await api(`/characters/${character.id}`, { method: "DELETE" });
+      navigate("/characters");
+    } catch (e: any) {
+      console.error("Delete failed", e);
+      setError(
+        typeof e === "object" && e
+          ? JSON.stringify(e)
+          : "Delete failed. See console for details."
+      );
+    }
   }
-}
-
 
   const headerRight = useMemo(() => {
     switch (saving) {
@@ -372,26 +379,24 @@ async function deleteCharacter() {
         </h1>
         <div className="flex items-center gap-3">
           {headerRight}
-          {/*
+          {/* Optional manual save button:
           <button
             className="px-3 py-1 rounded bg-slate-200 hover:bg-slate-300"
             onClick={() => saveNow(latestRef.current ?? character)}
           >
             Save now
           </button>
-        */}
-<button
-  className="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700"
-  onClick={deleteCharacter}
-  title="Delete character"
->
-  Delete
-</button>
-
+          */}
+          <button
+            className="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700"
+            onClick={deleteCharacter}
+            title="Delete character"
+          >
+            Delete
+          </button>
         </div>
       </div>
 
-      {/* IMPORTANT: CharacterSheetv2 expects `value` prop in your codebase */}
       <CharacterSheetv2 value={character} onChange={onChange} />
 
       {error && (
