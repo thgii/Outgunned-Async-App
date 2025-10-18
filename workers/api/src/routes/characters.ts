@@ -37,6 +37,57 @@ function parseJsonFields(row: CharRow): CharRow {
   return row;
 }
 
+/** -------- resources helpers -------- */
+function normalizeGrit(v: any) {
+  if (v == null) return v;
+  if (typeof v === "number") return { current: v, max: v };
+  if (typeof v === "object") {
+    const cur = Number(v.current ?? v.curr ?? v.value ?? v);
+    const max = Number(v.max ?? v.maximum ?? v.limit ?? cur);
+    return { current: isFinite(cur) ? cur : 0, max: isFinite(max) ? max : 0 };
+  }
+  return v;
+}
+
+function safeMergeResources(oldR: any, newR: any) {
+  const base = typeof oldR === "object" && oldR ? oldR : {};
+  const incoming = typeof newR === "object" && newR ? newR : {};
+  const merged: any = { ...base, ...incoming };
+
+  // normalize grit shape if present
+  if (merged.grit != null) {
+    merged.grit = normalizeGrit(merged.grit);
+  } else if (base.grit != null) {
+    merged.grit = normalizeGrit(base.grit);
+  }
+
+  // ensure counters don’t get dropped if not provided this patch
+  ["adrenaline", "spotlight", "luck", "cash"].forEach((k) => {
+    if (merged[k] == null && base[k] != null) merged[k] = base[k];
+  });
+
+  // keep youLook and flags unless explicitly overridden
+  ["youLookSelected", "isBroken", "deathRoulette"].forEach((k) => {
+    if (merged[k] == null && base[k] != null) merged[k] = base[k];
+  });
+
+  return merged;
+}
+
+function pickTopLevelResourceOverrides(body: any) {
+  const r: Record<string, any> = {};
+  if (body == null) return r;
+  if ("grit" in body) r.grit = body.grit;
+  if ("adrenaline" in body) r.adrenaline = body.adrenaline;
+  if ("spotlight" in body) r.spotlight = body.spotlight;
+  if ("luck" in body) r.luck = body.luck;
+  if ("cash" in body) r.cash = body.cash;
+  if ("youLookSelected" in body) r.youLookSelected = body.youLookSelected;
+  if ("isBroken" in body) r.isBroken = body.isBroken;
+  if ("deathRoulette" in body) r.deathRoulette = body.deathRoulette;
+  return r;
+}
+
 // 🔎 quick ping
 characters.get("/__ping", (c) => c.text("OK: characters router mounted"));
 
@@ -45,8 +96,16 @@ characters.get("/", async (c) => {
   const campaignId = c.req.query("campaignId");
 
   const rows = (campaignId
-    ? await q(c.env.DB, "SELECT * FROM characters WHERE campaignId = ? ORDER BY createdAt DESC", [campaignId])
-    : await q(c.env.DB, "SELECT * FROM characters ORDER BY createdAt DESC", [])) as CharRow[];
+    ? await q(
+        c.env.DB,
+        "SELECT * FROM characters WHERE campaignId = ? ORDER BY createdAt DESC",
+        [campaignId]
+      )
+    : await q(
+        c.env.DB,
+        "SELECT * FROM characters ORDER BY createdAt DESC",
+        []
+      )) as CharRow[];
 
   for (const row of rows) parseJsonFields(row);
   return c.json(rows);
@@ -55,7 +114,11 @@ characters.get("/", async (c) => {
 // GET one
 characters.get("/:id", async (c) => {
   const id = c.req.param("id");
-  const row = (await one(c.env.DB, "SELECT * FROM characters WHERE id = ?", [id])) as CharRow | null;
+  const row = (await one(
+    c.env.DB,
+    "SELECT * FROM characters WHERE id = ?",
+    [id]
+  )) as CharRow | null;
   if (!row) return c.notFound();
   parseJsonFields(row);
   return c.json(row);
@@ -77,7 +140,10 @@ characters.post("/", async (c) => {
     const base = { ...body };
     dto = normalizeYouLook(characterSchema.parse(base));
   } catch (e: any) {
-    return c.json({ error: "validation_error", issues: e?.errors ?? String(e) }, 422);
+    return c.json(
+      { error: "validation_error", issues: e?.errors ?? String(e) },
+      422
+    );
   }
 
   const id = crypto.randomUUID();
@@ -93,26 +159,39 @@ characters.post("/", async (c) => {
   const role = dto.role;
   const trope = dto.trope ?? null;
   const age = dto.age ?? null;
-  const job = dto.jobOrBackground ?? null;
+  const job = (dto as any).jobOrBackground ?? body.job ?? null; // support both
   const catchphrase = dto.catchphrase ?? null;
   const flaw = dto.flaw ?? null;
 
   const feats = JSON.stringify(dto.feats ?? []);
   const attributes = JSON.stringify(dto.attributes ?? {});
   const skills = JSON.stringify(dto.skills ?? {});
-  const resources = JSON.stringify({
+
+  // Build resources from dto top-level
+  const fromDto = {
     grit: dto.grit,
-    adrenaline: dto.adrenaline,
-    spotlight: dto.spotlight,
-    luck: dto.luck,
-    youLookSelected: dto.youLookSelected,
-    isBroken: dto.isBroken,
-    deathRoulette: dto.deathRoulette,
-    cash: dto.cash,
-  });
-  const gear = JSON.stringify(dto.storage ?? { backpack: [], bag: [], gunsAndGear: [] });
-  const conditions = JSON.stringify(dto.youLookSelected ?? []);
-  const notes = dto.missionOrTreasure ?? null;
+    adrenaline: (dto as any).adrenaline,
+    spotlight: (dto as any).spotlight,
+    luck: (dto as any).luck,
+    cash: (dto as any).cash,
+    youLookSelected: (dto as any).youLookSelected,
+    isBroken: (dto as any).isBroken,
+    deathRoulette: (dto as any).deathRoulette,
+  };
+  const resources = JSON.stringify(safeMergeResources({}, fromDto));
+
+  const gear = JSON.stringify(
+    (dto as any).storage ?? { backpack: [], bag: [], gunsAndGear: [] }
+  );
+
+  // Conditions mirror youLook selection
+  const conditions = JSON.stringify((dto as any).youLookSelected ?? []);
+
+  // Notes: drop missionOrTreasure; accept a plain "notes" if provided
+  const notes =
+    typeof body.notes === "string" && body.notes.trim().length
+      ? body.notes.trim()
+      : null;
 
   if (!name) return c.json({ error: "name is required" }, 400);
 
@@ -121,7 +200,7 @@ characters.post("/", async (c) => {
       `INSERT INTO characters
         (id, campaignId, ownerId, name, role, trope, age, job, catchphrase, flaw, tropeAttribute,
          feats, attributes, skills, resources, gear, conditions, notes, revision, createdAt)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
     )
     .bind(
       id,
@@ -143,11 +222,15 @@ characters.post("/", async (c) => {
       conditions,
       notes,
       1,
-      createdAt,
+      createdAt
     )
     .run();
 
-  const row = (await one(c.env.DB, "SELECT * FROM characters WHERE id = ?", [id])) as CharRow | null;
+  const row = (await one(
+    c.env.DB,
+    "SELECT * FROM characters WHERE id = ?",
+    [id]
+  )) as CharRow | null;
   if (!row) return c.notFound();
   parseJsonFields(row);
   return c.json(row, 201);
@@ -156,7 +239,11 @@ characters.post("/", async (c) => {
 // UPDATE (partial, schema-coerced)
 characters.patch("/:id", async (c) => {
   const id = c.req.param("id");
-  const existing = (await one(c.env.DB, "SELECT * FROM characters WHERE id = ?", [id])) as CharRow | null;
+  const existing = (await one(
+    c.env.DB,
+    "SELECT * FROM characters WHERE id = ?",
+    [id]
+  )) as CharRow | null;
   if (!existing) return c.notFound();
 
   let body: any = null;
@@ -167,6 +254,27 @@ characters.patch("/:id", async (c) => {
   }
 
   // Rebuild a DTO-like object from existing row (so we can parse with defaults)
+  let existingAttributes = {};
+  let existingSkills = {};
+  let existingResources: any = {};
+  let existingGear = { backpack: [], bag: [], gunsAndGear: [] as any[] };
+  let existingFeats: any[] = [];
+  try {
+    if (existing.attributes) existingAttributes = JSON.parse(existing.attributes);
+  } catch {}
+  try {
+    if (existing.skills) existingSkills = JSON.parse(existing.skills);
+  } catch {}
+  try {
+    if (existing.resources) existingResources = JSON.parse(existing.resources);
+  } catch {}
+  try {
+    if (existing.gear) existingGear = JSON.parse(existing.gear);
+  } catch {}
+  try {
+    if (existing.feats) existingFeats = JSON.parse(existing.feats);
+  } catch {}
+
   const existingDTO: Partial<CharacterDTO> = {
     id: existing.id,
     name: existing.name,
@@ -176,13 +284,24 @@ characters.patch("/:id", async (c) => {
     jobOrBackground: existing.job ?? "",
     catchphrase: existing.catchphrase ?? "",
     flaw: existing.flaw ?? "",
-    // unpack JSON columns
-    ...(existing.attributes ? { attributes: JSON.parse(existing.attributes) } : {}),
-    ...(existing.skills ? { skills: JSON.parse(existing.skills) } : {}),
-    ...(existing.resources ? JSON.parse(existing.resources) : {}),
-    storage: existing.gear ? JSON.parse(existing.gear) : { backpack: [], bag: [], gunsAndGear: [] },
-    feats: existing.feats ? JSON.parse(existing.feats) : [],
-    missionOrTreasure: existing.notes ?? "",
+    attributes: existingAttributes as any,
+    skills: existingSkills as any,
+    // Bring resource-like fields up so schema/coercion works the same as POST
+    ...(typeof existingResources === "object" && existingResources
+      ? {
+          grit: existingResources.grit,
+          adrenaline: existingResources.adrenaline,
+          spotlight: existingResources.spotlight,
+          luck: existingResources.luck,
+          cash: existingResources.cash,
+          youLookSelected: existingResources.youLookSelected,
+          isBroken: existingResources.isBroken,
+          deathRoulette: existingResources.deathRoulette,
+        }
+      : {}),
+    storage: existingGear,
+    feats: existingFeats,
+    // intentionally no "missionOrTreasure"
   };
 
   // Merge PATCH body over the reconstructed DTO and validate
@@ -190,7 +309,10 @@ characters.patch("/:id", async (c) => {
   try {
     dto = normalizeYouLook(characterSchema.parse({ ...existingDTO, ...body }));
   } catch (e: any) {
-    return c.json({ error: "validation_error", issues: e?.errors ?? String(e) }, 422);
+    return c.json(
+      { error: "validation_error", issues: e?.errors ?? String(e) },
+      422
+    );
   }
 
   // Column splits (same as POST)
@@ -198,7 +320,14 @@ characters.patch("/:id", async (c) => {
   const role = dto.role;
   const trope = dto.trope ?? null;
   const age = dto.age ?? null;
-  const job = dto.jobOrBackground ?? null;
+
+  // allow either jobOrBackground or direct job in the patch
+  const job =
+    (dto as any).jobOrBackground ??
+    body.job ??
+    existing.job ??
+    null;
+
   const catchphrase = dto.catchphrase ?? null;
   const flaw = dto.flaw ?? null;
   const tropeAttribute = body.tropeAttribute ?? existing.tropeAttribute ?? null;
@@ -206,19 +335,43 @@ characters.patch("/:id", async (c) => {
   const feats = JSON.stringify(dto.feats ?? []);
   const attributes = JSON.stringify(dto.attributes ?? {});
   const skills = JSON.stringify(dto.skills ?? {});
-  const resources = JSON.stringify({
-    grit: dto.grit,
-    adrenaline: dto.adrenaline,
-    spotlight: dto.spotlight,
-    luck: dto.luck,
-    youLookSelected: dto.youLookSelected,
-    isBroken: dto.isBroken,
-    deathRoulette: dto.deathRoulette,
-    cash: dto.cash,
-  });
-  const gear = JSON.stringify(dto.storage ?? { backpack: [], bag: [], gunsAndGear: [] });
-  const conditions = JSON.stringify(dto.youLookSelected ?? []);
-  const notes = dto.missionOrTreasure ?? null;
+
+  // Merge resources:
+  //  - existing.resources (DB)
+  //  - body.resources (if provided)
+  //  - top-level overrides (grit, adrenaline, etc.) if provided
+  const bodyResourceObj =
+    body && typeof body.resources === "object" ? body.resources : {};
+  const topLevelOverrides = pickTopLevelResourceOverrides(body);
+  const mergedResources = safeMergeResources(
+    existingResources,
+    { ...bodyResourceObj, ...topLevelOverrides }
+  );
+  // Ensure dto coercion (like normalizeYouLook) also reflected if present:
+  const dtoOverlay = {
+    grit: (dto as any).grit,
+    adrenaline: (dto as any).adrenaline,
+    spotlight: (dto as any).spotlight,
+    luck: (dto as any).luck,
+    cash: (dto as any).cash,
+    youLookSelected: (dto as any).youLookSelected,
+    isBroken: (dto as any).isBroken,
+    deathRoulette: (dto as any).deathRoulette,
+  };
+  const resources = JSON.stringify(safeMergeResources(mergedResources, dtoOverlay));
+
+  const gear = JSON.stringify(
+    (dto as any).storage ?? { backpack: [], bag: [], gunsAndGear: [] }
+  );
+
+  // Prefer the youLookSelected that made it into resources
+  const conditions = JSON.stringify(mergedResources.youLookSelected ?? (dto as any).youLookSelected ?? []);
+
+  // Notes: keep existing unless an explicit "notes" string is provided
+  const notes =
+    typeof body.notes === "string"
+      ? body.notes
+      : existing.notes ?? null;
 
   await c.env.DB
     .prepare(
@@ -226,7 +379,7 @@ characters.patch("/:id", async (c) => {
         name=?, role=?, trope=?, age=?, job=?, catchphrase=?, flaw=?, tropeAttribute=?,
         feats=?, attributes=?, skills=?, resources=?, gear=?, conditions=?, notes=?,
         revision=COALESCE(revision,0)+1
-       WHERE id=?`,
+       WHERE id=?`
     )
     .bind(
       name,
@@ -244,11 +397,15 @@ characters.patch("/:id", async (c) => {
       gear,
       conditions,
       notes,
-      id,
+      id
     )
     .run();
 
-  const row = (await one(c.env.DB, "SELECT * FROM characters WHERE id = ?", [id])) as CharRow | null;
+  const row = (await one(
+    c.env.DB,
+    "SELECT * FROM characters WHERE id = ?",
+    [id]
+  )) as CharRow | null;
   if (!row) return c.notFound();
   parseJsonFields(row);
   return c.json(row);

@@ -11,15 +11,17 @@ const app = new Hono();
 // Router ping
 characters.get("/__ping", (c) => c.text("OK: characters router mounted"));
 // CORS (safe even if same-origin)
-app.use("*", cors({
-    origin: "*",
-    allowMethods: ["GET", "POST", "PATCH", "OPTIONS"],
-    allowHeaders: ["content-type", "authorization"],
+app.use('/*', cors({
+  origin: '*', // tighten to your Pages origin in prod
+  allowMethods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization'],
+  maxAge: 86400,
+  credentials: false,
 }));
 app.route("/campaigns", campaigns);
 app.route("/games", games);
 app.route("/", messages); // these already use absolute paths like /games/:id/messages
 app.route("/characters", characters);
-app.route("api/characters", characters);
+app.route("/api/characters", characters);
 app.route("/", rolls); // also uses absolute path /games/:id/rolls
 export default app;
