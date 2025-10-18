@@ -172,7 +172,7 @@ export function buildDerivedDTO(
       streetwise: 1,
     },
 
-    grit: { current: 6, max: 6 },
+    grit: { current: 0, max: 12 },
     adrenaline: 1, // start pool
     spotlight: 1,
     luck: 1,
