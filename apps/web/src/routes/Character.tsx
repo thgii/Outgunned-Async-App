@@ -181,6 +181,18 @@ function normalizeForSheet(c: any): Character {
 function mapToServerPayload(next: Character): any {
   const payload: any = { ...next };
 
+  // --- NEW: ensure backend gets `job` explicitly ---
+  // Accept strings or {name,label,value} and coerce to a plain string.
+  const coerceName = (v: any): string | null => {
+    if (v == null) return null;
+    if (typeof v === "object") return (v.name ?? v.label ?? v.value ?? "").toString() || null;
+    if (typeof v === "string") return v.trim() || null;
+    return String(v);
+  };
+  if ("jobOrBackground" in next) {
+    payload.job = coerceName(next.jobOrBackground);
+  }
+
   // Ensure resources exists
   payload.resources = { ...(payload.resources ?? {}) };
 
@@ -194,50 +206,26 @@ function mapToServerPayload(next: Character): any {
   payload.resources.luck = asNumber(next.luck, 0);
   payload.resources.cash = asNumber(next.cash, 0);
 
-  // Mirror storage if present, and sanitize it for the Worker
-  const rawStorage = next.storage ?? payload.resources.storage;
-  const storage = sanitizeStorage(rawStorage);
-  if (storage) {
-    payload.storage = storage;
-    payload.resources.storage = storage;
-  } else {
-    delete payload.storage;
-    delete payload.resources?.storage;
+  // Ride: keep top-level for UI but store as string under resources
+  const rideStr =
+    (typeof next.ride === "string" ? next.ride : next.ride?.name) ??
+    (typeof next.resources?.ride === "string" ? next.resources.ride : next.resources?.ride?.name) ??
+    null;
+  if (rideStr != null) payload.resources.ride = rideStr;
+
+  // Gear / storage normalization passthrough if present
+  if (next.storage) {
+    payload.resources.storage = next.storage;
+  } else if (next.resources?.storage) {
+    payload.resources.storage = next.resources.storage;
   }
 
-  // --- You Look / Death Roulette / Broken back to server ---
-  payload.resources.youLookSelected = Array.isArray(next.youLookSelected)
-    ? next.youLookSelected
-    : [];
-  payload.resources.deathRoulette =
-    Array.isArray(next.deathRoulette) && next.deathRoulette.length === 6
-      ? next.deathRoulette.map(Boolean)
-      : [false, false, false, false, false, false];
-  payload.resources.isBroken = !!next.isBroken;
+  // You Look / Broken / Death Roulette: keep whatever the sheet set
+  if (Array.isArray(next.youLookSelected)) payload.resources.youLookSelected = next.youLookSelected;
+  if (typeof next.isBroken === "boolean") payload.resources.isBroken = next.isBroken;
+  if (Array.isArray(next.deathRoulette)) payload.resources.deathRoulette = next.deathRoulette;
 
-  // Persist ride under resources, always as a string if present
-  const ride = getMaybeName(next.ride);
-  if (ride) payload.resources.ride = ride;
-  else delete payload.resources.ride;
-
-  // Keep legacy `conditions` in sync with `youLookSelected`
-  payload.conditions = payload.resources.youLookSelected;
-
-  // ---- JOB: convert UI field(s) to a single string 'job' ----
-  const selectedJob =
-    getMaybeName(next.job) ??
-    getMaybeName(next.jobOrBackground);
-  if (selectedJob) {
-    payload.job = selectedJob;          // Worker persists this
-  } else {
-    delete payload.job;                 // don’t send undefined/object
-  }
-
-  // Clean up legacy/noisy fields so Worker can’t get confused
-  delete payload.jobOrBackground;
-  delete payload.background;
-
-  // Remove duplicated top-level resource fields
+  // Clean top-level duplicates that are mirrored under resources
   delete payload.grit;
   delete payload.adrenaline;
   delete payload.spotlight;
