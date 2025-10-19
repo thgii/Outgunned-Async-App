@@ -214,30 +214,30 @@ function mapToServerPayload(next: Character): any {
       ? next.deathRoulette.map(Boolean)
       : [false, false, false, false, false, false];
   payload.resources.isBroken = !!next.isBroken;
+
   // Persist ride under resources, always as a string if present
   const ride = getMaybeName(next.ride);
-  if (ride) payload.resources.ride = ride; else delete payload.resources.ride;
+  if (ride) payload.resources.ride = ride;
+  else delete payload.resources.ride;
 
   // Keep legacy `conditions` in sync with `youLookSelected`
   payload.conditions = payload.resources.youLookSelected;
 
-// Push job/background back to a single field the API accepts (string only).
-const selectedJob =
-  (typeof next.job === "object" ? next.job?.name ?? next.job?.value : next.job) ??
-  (typeof next.jobOrBackground === "object"
-    ? next.jobOrBackground?.name ?? next.jobOrBackground?.value
-    : next.jobOrBackground);
+  // ---- JOB: convert UI field(s) to a single string 'job' ----
+  const selectedJob =
+    getMaybeName(next.job) ??
+    getMaybeName(next.jobOrBackground);
+  if (selectedJob) {
+    payload.job = selectedJob;          // Worker persists this
+  } else {
+    delete payload.job;                 // don’t send undefined/object
+  }
 
-if (selectedJob) {
-  payload.job = selectedJob;     // ← what your Worker persists
-} else {
-  delete payload.job;
-}
+  // Clean up legacy/noisy fields so Worker can’t get confused
+  delete payload.jobOrBackground;
+  delete payload.background;
 
-// Clean up legacy/noisy fields
-delete payload.jobOrBackground;
-delete payload.background;
-
+  // Remove duplicated top-level resource fields
   delete payload.grit;
   delete payload.adrenaline;
   delete payload.spotlight;

@@ -40,7 +40,7 @@ function parseJsonFields(row: CharRow): CharRow {
 /** -------- helpers -------- */
 function getMaybeName(v: any): string | undefined {
   if (v == null) return undefined;
-  if (typeof v === "object") return v.name ?? v.value ?? undefined;
+  if (typeof v === "object") return v.name ?? v.value ?? v.label ?? undefined;
   if (typeof v === "string") return v || undefined;
   return String(v);
 }
@@ -174,13 +174,13 @@ characters.post("/", async (c) => {
   const role = dto.role;
   const trope = dto.trope ?? null;
   const age = dto.age ?? null;
-  // Prefer the freshly provided body.job; fall back to background, then dto/existing
-const job =
-  getMaybeName(body.job) ??                         // new value from client
-  getMaybeName(body.background) ??                  // legacy safety (optional)
-  getMaybeName((dto as any).jobOrBackground) ??     // normalized fallback
-  existing.job ??                                   // keep old if nothing new
-  null;
+
+  // Prefer body.job; then legacy background; then dto.jobOrBackground
+  const job =
+    getMaybeName(body.job) ??
+    getMaybeName(body.background) ??
+    getMaybeName((dto as any).jobOrBackground) ??
+    null;
 
   const catchphrase = dto.catchphrase ?? null;
   const flaw = dto.flaw ?? null;
@@ -325,7 +325,6 @@ characters.patch("/:id", async (c) => {
       : {}),
     storage: existingGear,
     feats: existingFeats,
-    // intentionally no "missionOrTreasure"
   };
 
   // Merge PATCH body over the reconstructed DTO and validate
@@ -345,10 +344,11 @@ characters.patch("/:id", async (c) => {
   const trope = dto.trope ?? null;
   const age = dto.age ?? null;
 
-  // allow either jobOrBackground or direct job in the patch
+  // Prefer new body.job value; support legacy background; then fall back to dto/existing
   const job =
-    getMaybeName((dto as any).jobOrBackground) ??
     getMaybeName(body.job) ??
+    getMaybeName(body.background) ??
+    getMaybeName((dto as any).jobOrBackground) ??
     existing.job ??
     null;
 
@@ -396,28 +396,27 @@ characters.patch("/:id", async (c) => {
       ? body.notes
       : existing.notes ?? null;
 
-await c.env.DB
-  .prepare(
-    `UPDATE characters SET
-      name = COALESCE(?, name),
-      role = COALESCE(?, role),
-      trope = COALESCE(?, trope),
-      age = COALESCE(?, age),
-      job = COALESCE(?, job),
-      catchphrase = COALESCE(?, catchphrase),
-      flaw = COALESCE(?, flaw),
-      tropeAttribute = COALESCE(?, tropeAttribute),
-      feats = COALESCE(?, feats),
-      attributes = COALESCE(?, attributes),
-      skills = COALESCE(?, skills),
-      resources = COALESCE(?, resources),
-      gear = COALESCE(?, gear),
-      conditions = COALESCE(?, conditions),
-      notes = COALESCE(?, notes),
-      revision = COALESCE(revision, 0) + 1
-    WHERE id = ?`
-  )
-
+  await c.env.DB
+    .prepare(
+      `UPDATE characters SET
+        name = COALESCE(?, name),
+        role = COALESCE(?, role),
+        trope = COALESCE(?, trope),
+        age = COALESCE(?, age),
+        job = COALESCE(?, job),
+        catchphrase = COALESCE(?, catchphrase),
+        flaw = COALESCE(?, flaw),
+        tropeAttribute = COALESCE(?, tropeAttribute),
+        feats = COALESCE(?, feats),
+        attributes = COALESCE(?, attributes),
+        skills = COALESCE(?, skills),
+        resources = COALESCE(?, resources),
+        gear = COALESCE(?, gear),
+        conditions = COALESCE(?, conditions),
+        notes = COALESCE(?, notes),
+        revision = COALESCE(revision, 0) + 1
+      WHERE id = ?`
+    )
     .bind(
       name,
       role,
