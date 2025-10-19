@@ -203,12 +203,12 @@ const reviewDTO = useMemo(() => {
           <Select label="Trope *" value={trope} onChange={setTrope} options={["", ...DATA.tropes.map(t=>t.name)]} />
 {roleDef && (
   <p className="text-sm mt-1 italic text-muted-foreground">
-    {roleDef.description || "No description available for this role."}
+    {"Role: " + (roleDef.description || "No description available for this role.")}
   </p>
 )}
 {tropeDef && (
   <p className="text-sm mt-1 italic text-muted-foreground">
-    {tropeDef.description || "No description available for this trope."}
+    {"Trope: " + (tropeDef.description || "No description available for this trope.")}
   </p>
 )}
 {/* Role & Trope skill grants */}
