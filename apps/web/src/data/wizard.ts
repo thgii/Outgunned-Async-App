@@ -56,6 +56,11 @@ export const FEATS_CATALOG: { name: string; description?: string }[] = (() => {
 export const FEAT_DESC: Record<string, string> =
   Object.fromEntries(FEATS_CATALOG.map((f) => [f.name, f.description || ""])) || {};
 
+/** Special Role helper */
+export function isSpecialRole(name: string | undefined | null): boolean {
+  const n = String(name ?? "").trim().toLowerCase();
+  return n.startsWith("special:");
+}
 
 /* ===============================
  * Lookups
@@ -193,6 +198,9 @@ export function buildDerivedDTO(
     updatedAt: undefined,
   };
 
+  // Special Role?
+  const specialRole = isSpecialRole(base.role);
+
   // Role adds
   const role = findRole(base.role);
   if (!role) throw new Error("Invalid role.");
@@ -203,19 +211,23 @@ export function buildDerivedDTO(
     if (key) dtoTemplate.skills[key] += 1;
   }
 
-  // Trope adds (required)
+  // Trope adds (Special Roles act as their own Trope; if no matching trope entry, skip adds)
   const trope = findTrope(base.trope);
-  if (!trope) throw new Error("Invalid trope.");
-  const tropeNeedsAttr = !!(trope.attribute_options?.length && !trope.attribute);
-  if (tropeNeedsAttr && !base.tropeAttribute) {
-    throw new Error("Select an attribute for the chosen trope.");
+  if (!trope) {
+    if (!specialRole) throw new Error("Invalid trope.");
+  } else {
+    const tropeNeedsAttr = !!(trope.attribute_options?.length && !trope.attribute);
+    if (tropeNeedsAttr && !base.tropeAttribute) {
+      throw new Error("Select an attribute for the chosen trope.");
+    }
+    const tAttr = trope.attribute ? ATTR_MAP[trope.attribute] : base.tropeAttribute;
+    if (tAttr) dtoTemplate.attributes[tAttr] += 1;
+    for (const s of trope.skills || []) {
+      const key = SKILL_MAP[s];
+      if (key) dtoTemplate.skills[key] += 1;
+    }
   }
-  const tAttr = trope.attribute ? ATTR_MAP[trope.attribute] : base.tropeAttribute;
-  if (tAttr) dtoTemplate.attributes[tAttr] += 1;
-  for (const s of trope.skills || []) {
-    const key = SKILL_MAP[s];
-    if (key) dtoTemplate.skills[key] += 1;
-  }
+
 
   // Feats by age (normalize, de-dupe, clamp)
   const picksByAge = base.age === "Young" ? 1 : base.age === "Old" ? 3 : 2;
@@ -240,13 +252,19 @@ export function buildDerivedDTO(
   }
 
   // Two extra skill bumps (+1 each; unique; clamp to 6)
-  const uniq = Array.from(new Set(base.skillBumps || [])).slice(0, 2);
+  const uniq = Array.from(new Set(base.skillBumps || [])).slice(0, specialRole ? 6 : 2);
   for (const k of uniq) {
     // Guard against undefined keys just in case
     if (k && k in dtoTemplate.skills) {
       dtoTemplate.skills[k] = Math.min(6, (dtoTemplate.skills[k] as number) + 1);
     }
   }
+
+  // Default Job/Background to the Special Role's name if left blank
+  if (specialRole && !dtoTemplate.jobOrBackground.trim()) {
+    dtoTemplate.jobOrBackground = base.role;
+  }
+
 
   // Gear → simple name-only entries
   if (base.gearChosen?.length) {

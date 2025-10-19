@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { CharacterDTO, SkillKey, AttrKey } from "@action-thread/types";
 import { api } from "../lib/api";
-import { DATA, findRole, findTrope, buildDerivedDTO, featsAllowanceByAge, roleOptionLists } from "../data/wizard";
+import { DATA, findRole, findTrope, buildDerivedDTO, featsAllowanceByAge, roleOptionLists, isSpecialRole } from "../data/wizard";
 import { useEffect } from "react";
 
 type Step =
@@ -44,6 +44,14 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
   const needs = !!(tropeDef?.attribute_options?.length && !tropeDef?.attribute);
   if (!needs) setTropeAttribute(undefined);
 }, [tropeDef]);
+  const specialRole = isSpecialRole(role);
+
+  // When Role is Special, force Trope = Role and keep them in sync
+  useEffect(() => {
+    if (specialRole && role) {
+      setTrope(role);
+    }
+  }, [specialRole, role]);
 
   const tropeNeedsAttr = !!(tropeDef?.attribute_options?.length && !tropeDef?.attribute);
   const featAllowance = featsAllowanceByAge(age);
@@ -67,7 +75,7 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
         return count >= needed;
       }
       case "skillBumps":
-        return new Set(skillBumps).size === 2;
+        return new Set(skillBumps).size === (specialRole ? 6 : 2);
       case "jobEtc":
         return true; // free-form ok
       case "gear":
@@ -75,7 +83,7 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
       case "review":
         return true;
     }
-  }, [step, name, role, trope, tropeNeedsAttr, tropeAttribute, age, selectedFeats, featAllowance.picks, skillBumps]);
+ }, [step, name, role, trope, tropeNeedsAttr, tropeAttribute, age, selectedFeats, featAllowance.picks, skillBumps, specialRole]);
 
   function next() {
     if (!canContinue) return;
@@ -200,7 +208,19 @@ const reviewDTO = useMemo(() => {
       {step === "roleTrope" && (
         <Card title="Role & Trope">
           <Select label="Role *" value={role} onChange={setRole} options={["", ...DATA.roles.map(r=>r.name)]} />
-          <Select label="Trope *" value={trope} onChange={setTrope} options={["", ...DATA.tropes.map(t=>t.name)]} />
+          <Select
+  label="Trope *"
+  value={trope}
+  onChange={setTrope}
+  options={["", ...DATA.tropes.map(t=>t.name)]}
+  disabled={specialRole}
+/>
+{specialRole && (
+  <div className="text-xs text-muted-foreground mt-1">
+    Special Role: Trope is fixed to match Role.
+  </div>
+)}
+
 {roleDef && (
   <p className="text-sm mt-1 italic text-muted-foreground">
     {"Role: " + (roleDef.description || "No description available for this role.")}
@@ -294,13 +314,21 @@ const reviewDTO = useMemo(() => {
 
       {step === "skillBumps" && (
         <Card title="Extra Skill Points">
-          <p className="text-sm">Choose <b>two different skills</b> to gain +1 each.</p>
+          <p className="text-sm">
+  Choose <b>{specialRole ? 6 : 2} different skills</b> to gain +1 each.
+</p>
+<p className="text-sm">Choose <b>two different skills</b> to gain +1 each.</p>
           <SkillPicker value={skillBumps} onChange={setSkillBumps} />
         </Card>
       )}
 
       {step === "jobEtc" && (
         <Card title="Background, Flaw & Catchphrase">
+{specialRole && (
+  <p className="text-xs text-muted-foreground mb-2">
+    Special Role: if left blank, Job / Background will default to <b>{role}</b>.
+  </p>
+)}
           <Datalist
             label="Job / Background (or type your own)"
             value={jobOrBackground}
