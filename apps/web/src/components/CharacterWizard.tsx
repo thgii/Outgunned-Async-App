@@ -29,6 +29,15 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
   const [age, setAge] = useState<"Young"|"Adult"|"Old">((initial?.age as any) ?? "Adult");
 
   const [selectedFeats, setSelectedFeats] = useState<string[]>([]);
+useEffect(() => {
+  if (age === "Young") {
+    setSelectedFeats((prev) => prev.includes("Too Young to Die") ? prev : ["Too Young to Die", ...prev]);
+  } else {
+    // remove TYtD when not Young
+    setSelectedFeats((prev) => prev.filter((f) => f !== "Too Young to Die"));
+  }
+}, [age]);
+
   const [skillBumps, setSkillBumps] = useState<SkillKey[]>([]);
 
   const [jobOrBackground, setJob] = useState(initial?.jobOrBackground ?? "");
@@ -57,6 +66,31 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
   const featAllowance = featsAllowanceByAge(age);
 
   const { jobs, flaws, catchphrases, gear } = roleOptionLists(role);
+
+// Feats pools (separated by source)
+const roleFeats = useMemo(() => Array.from(new Set(roleDef?.feats || [])), [roleDef]);
+const tropeFeats = useMemo(() => {
+  const t = new Set<string>();
+  if (tropeDef?.feats) tropeDef.feats.forEach((f: string) => t.add(f));
+  if (tropeDef?.feat_options) tropeDef.feat_options.forEach((f: string) => t.add(f));
+  // Avoid duplicate display if a feat is already in the role list
+  roleFeats.forEach(f => t.delete(f));
+  return Array.from(t);
+}, [tropeDef, roleFeats]);
+
+const featRule = useMemo(
+  () => featRules(age, specialRole, roleFeats.length, tropeFeats.length),
+  [age, specialRole, roleFeats.length, tropeFeats.length]
+);
+
+// Flat union (for DTO), include auto feats for display when Young
+const featsPool = useMemo(() => {
+  const pool = new Set<string>();
+  roleFeats.forEach(f => pool.add(f));
+  tropeFeats.forEach(f => pool.add(f));
+  featRule.auto.forEach(f => pool.add(f));
+  return Array.from(pool);
+}, [roleFeats, tropeFeats, featRule.auto]);
 
   const canContinue = useMemo(() => {
     switch (step) {
@@ -90,7 +124,7 @@ case "feats": {
       case "review":
         return true;
     }
- }, [step, name, role, trope, tropeNeedsAttr, tropeAttribute, age, selectedFeats, featAllowance.picks, skillBumps, specialRole]);
+}, [step, name, role, trope, tropeNeedsAttr, tropeAttribute, age, selectedFeats, roleFeats, tropeFeats, featRule.total, featRule.roleMin, featRule.tropeMin, skillBumps, specialRole]);
 
   function next() {
     if (!canContinue) return;
@@ -113,32 +147,6 @@ case "feats": {
     else if (step === "gear") setStep("jobEtc");
     else if (step === "review") setStep("gear");
   }
-
-// Feats pools (separated by source)
-const roleFeats = useMemo(() => Array.from(new Set(roleDef?.feats || [])), [roleDef]);
-const tropeFeats = useMemo(() => {
-  const t = new Set<string>();
-  if (tropeDef?.feats) tropeDef.feats.forEach((f: string) => t.add(f));
-  if (tropeDef?.feat_options) tropeDef.feat_options.forEach((f: string) => t.add(f));
-  // Avoid duplicate display if a feat is already in the role list
-  roleFeats.forEach(f => t.delete(f));
-  return Array.from(t);
-}, [tropeDef, roleFeats]);
-
-const featRule = useMemo(
-  () => featRules(age, specialRole, roleFeats.length, tropeFeats.length),
-  [age, specialRole, roleFeats.length, tropeFeats.length]
-);
-
-// Flat union (for DTO), include auto feats for display when Young
-const featsPool = useMemo(() => {
-  const pool = new Set<string>();
-  roleFeats.forEach(f => pool.add(f));
-  tropeFeats.forEach(f => pool.add(f));
-  featRule.auto.forEach(f => pool.add(f));
-  return Array.from(pool);
-}, [roleFeats, tropeFeats, featRule.auto]);
-
 
 function toggleFeat(f: string) {
   // prevent toggling away auto TYtD
@@ -358,7 +366,7 @@ const reviewDTO = useMemo(() => {
         <Card title="Age">
           <Select label="Age" value={age} onChange={v=>setAge(v as any)} options={["Young","Adult","Old"]} />
           <p className="text-xs text-muted-foreground mt-2">
-            Young: 1 feat + “Too Young to Die”. Adult: 2 feats. Old: 3 feats and start with 2 lethal bullets.
+            Young: 2 feats + “Too Young to Die”. Adult: 3 feats. Old: 4 feats and start with 2 lethal bullets.
           </p>
         </Card>
       )}
@@ -383,8 +391,8 @@ const reviewDTO = useMemo(() => {
     <div className="grid grid-cols-2 gap-4 mt-3">
       <div>
         <h4 className="font-semibold text-sm mb-1">
-          Role Feats{!specialRole && age === "Adult" ? ` (${featRule.role} required)` : ""}
-        </h4>
+  Role Feats{!specialRole && age === "Adult" ? ` (${featRule.roleMin} required)` : ""}
+</h4>
         <div className="grid gap-2">
           {roleFeats.map(f => (
             <label
@@ -406,9 +414,9 @@ const reviewDTO = useMemo(() => {
       </div>
 
       <div>
-        <h4 className="font-semibold text-sm mb-1">
-          Trope Feats{!specialRole && age === "Adult" ? ` (${featRule.trope} required)` : ""}
-        </h4>
+<h4 className="font-semibold text-sm mb-1">
+  Trope Feats{!specialRole && age === "Adult" ? ` (${featRule.tropeMin} required)` : ""}
+</h4>
         <div className="grid gap-2">
           {tropeFeats.length ? tropeFeats.map(f => (
             <label
