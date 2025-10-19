@@ -312,15 +312,18 @@ const reviewDTO = useMemo(() => {
         </Card>
       )}
 
-      {step === "skillBumps" && (
-        <Card title="Extra Skill Points">
-          <p className="text-sm">
-  Choose <b>{specialRole ? 6 : 2} different skills</b> to gain +1 each.
-</p>
-<p className="text-sm">Choose <b>two different skills</b> to gain +1 each.</p>
-          <SkillPicker value={skillBumps} onChange={setSkillBumps} />
-        </Card>
-      )}
+{step === "skillBumps" && (
+  <Card title="Extra Skill Points">
+    <p className="text-sm">
+      Choose <b>{specialRole ? 6 : 2} different skills</b> to gain +1 each.
+    </p>
+    <SkillPicker
+      value={skillBumps}
+      onChange={setSkillBumps}
+      max={specialRole ? 6 : 2}
+    />
+  </Card>
+)}
 
       {step === "jobEtc" && (
         <Card title="Background, Flaw & Catchphrase">
@@ -447,21 +450,27 @@ const ALL_SKILLS: SkillKey[] = [
   "Awareness","Dexterity","Stealth","Streetwise"
 ];
 
-function SkillPicker({value, onChange}:{value: SkillKey[]; onChange:(s:SkillKey[])=>void}) {
+function SkillPicker({value, onChange, max = 2}:{value: SkillKey[]; onChange:(s:SkillKey[])=>void; max?: number}) {
   const chosen = new Set(value);
   function toggle(k: SkillKey) {
     const arr = [...chosen];
     const idx = arr.indexOf(k);
     if (idx>=0) arr.splice(idx,1);
     else arr.push(k);
-    // enforce unique and max 2
-    onChange(Array.from(new Set(arr)).slice(0,2) as SkillKey[]);
+    // enforce unique and max n
+    onChange(Array.from(new Set(arr)).slice(0, max) as SkillKey[]);
   }
   return (
     <div className="grid grid-cols-2 gap-2">
       {ALL_SKILLS.map(k => (
         <label key={k} className={`border rounded px-3 py-2 cursor-pointer ${chosen.has(k) ? "bg-zinc-100" : ""}`}>
-          <input type="checkbox" className="mr-2" checked={chosen.has(k)} onChange={()=>toggle(k)} />
+          <input
+  type="checkbox"
+  className="mr-2"
+  checked={chosen.has(k)}
+  onChange={()=>toggle(k)}
+  disabled={!chosen.has(k) && chosen.size >= max}
+/>
           {k}
         </label>
       ))}
