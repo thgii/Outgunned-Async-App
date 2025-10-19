@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { CharacterDTO, SkillKey, AttrKey } from "@action-thread/types";
 import { api } from "../lib/api";
-import { DATA, findRole, findTrope, buildDerivedDTO, featsAllowanceByAge, roleOptionLists, isSpecialRole } from "../data/wizard";
+import { DATA, findRole, findTrope, buildDerivedDTO, featsAllowanceByAge, featRules, roleOptionLists, isSpecialRole } from "../data/wizard";
 import { useEffect } from "react";
 
 type Step =
@@ -68,12 +68,19 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
         return !tropeNeedsAttr || !!tropeAttribute;
       case "age":
         return age === "Young" || age === "Adult" || age === "Old";
-      case "feats": {
-        const count = selectedFeats.filter(f => f !== "Too Young to Die").length;
-        const needed = featAllowance.picks;
-        // ensure TYtD auto is present for display when Young
-        return count >= needed;
-      }
+case "feats": {
+  const picksOnly = selectedFeats.filter(f => f !== "Too Young to Die");
+  const roleCount = picksOnly.filter(f => roleFeats.includes(f)).length;
+  const tropeCount = picksOnly.filter(f => tropeFeats.includes(f)).length;
+
+  // Always require total and minimums; Special has mins = 0
+  const totalsOk = picksOnly.length >= featRule.total;
+  const minsOk = roleCount >= featRule.roleMin && tropeCount >= featRule.tropeMin;
+
+  return totalsOk && minsOk;
+}
+
+
       case "skillBumps":
         return new Set(skillBumps).size === (specialRole ? 6 : 2);
       case "jobEtc":
@@ -107,31 +114,95 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
     else if (step === "review") setStep("gear");
   }
 
-  // Feats pool shown to the user
-  const featsPool = useMemo(() => {
-    const pool = new Set<string>();
-    if (roleDef?.feats) roleDef.feats.forEach(f => pool.add(f));
-    if (tropeDef?.feats) tropeDef.feats.forEach(f => pool.add(f));
-    // Trope feat_options (if any)
-    if (tropeDef?.feat_options) tropeDef.feat_options.forEach(f => pool.add(f));
-    // Age auto-feat (Young)
-    featAllowance.auto.forEach(f => pool.add(f));
-    return Array.from(pool);
-  }, [roleDef, tropeDef, featAllowance.auto]);
+// Feats pools (separated by source)
+const roleFeats = useMemo(() => Array.from(new Set(roleDef?.feats || [])), [roleDef]);
+const tropeFeats = useMemo(() => {
+  const t = new Set<string>();
+  if (tropeDef?.feats) tropeDef.feats.forEach((f: string) => t.add(f));
+  if (tropeDef?.feat_options) tropeDef.feat_options.forEach((f: string) => t.add(f));
+  // Avoid duplicate display if a feat is already in the role list
+  roleFeats.forEach(f => t.delete(f));
+  return Array.from(t);
+}, [tropeDef, roleFeats]);
 
-  function toggleFeat(f: string) {
-    // prevent toggling away auto TYtD
-    if (age === "Young" && f === "Too Young to Die") return;
-    setSelectedFeats(prev => {
-      const have = new Set(prev);
-      if (have.has(f)) have.delete(f);
-      else have.add(f);
-      // clamp to N picks (+ TYtD shown but not counted in picks)
-      const picksOnly = Array.from(have).filter(x => x !== "Too Young to Die");
-      if (picksOnly.length > featAllowance.picks) picksOnly.splice(featAllowance.picks);
-      return age === "Young" ? ["Too Young to Die", ...picksOnly] : picksOnly;
-    });
-  }
+const featRule = useMemo(
+  () => featRules(age, specialRole, roleFeats.length, tropeFeats.length),
+  [age, specialRole, roleFeats.length, tropeFeats.length]
+);
+
+// Flat union (for DTO), include auto feats for display when Young
+const featsPool = useMemo(() => {
+  const pool = new Set<string>();
+  roleFeats.forEach(f => pool.add(f));
+  tropeFeats.forEach(f => pool.add(f));
+  featRule.auto.forEach(f => pool.add(f));
+  return Array.from(pool);
+}, [roleFeats, tropeFeats, featRule.auto]);
+
+
+function toggleFeat(f: string) {
+  // prevent toggling away auto TYtD
+  if (age === "Young" && f === "Too Young to Die") return;
+
+  const isRole = roleFeats.includes(f);
+  const isTrope = tropeFeats.includes(f);
+
+  setSelectedFeats(prev => {
+    const have = new Set(prev);
+
+    // remove
+    if (have.has(f)) {
+      have.delete(f);
+      return age === "Young"
+        ? ["Too Young to Die", ...Array.from(have).filter(x => x !== "Too Young to Die")]
+        : Array.from(have);
+    }
+
+    // add
+    const picksOnly = Array.from(have).filter(x => x !== "Too Young to Die");
+    const roleCount = picksOnly.filter(x => roleFeats.includes(x)).length;
+    const tropeCount = picksOnly.filter(x => tropeFeats.includes(x)).length;
+
+    // Special: only total matters (3)
+    if (specialRole) {
+      if (picksOnly.length >= featRule.total) return prev;
+      have.add(f);
+      return Array.from(have);
+    }
+
+    // Young: exactly 1 Role + 1 Trope (auto TYtD handled separately)
+    if (age === "Young") {
+      // cap total user picks to featRule.total
+      if (picksOnly.length >= featRule.total) return prev;
+      // enforce per-source cap = min = 1 each (if trope available)
+      if (isRole) {
+        if (roleCount >= Math.max(1, featRule.roleMin)) return prev;
+      } else if (isTrope) {
+        if (featRule.tropeMin > 0 && tropeCount >= featRule.tropeMin) return prev;
+      }
+      have.add(f);
+      return ["Too Young to Die", ...Array.from(have).filter(x => x !== "Too Young to Die")];
+    }
+
+    // Adult: exactly 2 Role + 1 Trope (or 3 Role if no trope feats)
+    if (age === "Adult") {
+      if (picksOnly.length >= featRule.total) return prev;
+      if (isRole) {
+        if (roleCount >= featRule.roleMin) return prev;
+      } else if (isTrope) {
+        if (featRule.tropeMin > 0 && tropeCount >= featRule.tropeMin) return prev;
+      }
+      have.add(f);
+      return Array.from(have);
+    }
+
+    // Old: total 4; the 4th pick can be Role or Trope. No per-source caps here.
+    if (picksOnly.length >= featRule.total) return prev;
+    have.add(f);
+    return Array.from(have);
+  });
+}
+
 
   function toggleGear(g: string) {
     setGearChosen(prev => prev.includes(g) ? prev.filter(x=>x!==g) : [...prev, g]);
@@ -292,25 +363,76 @@ const reviewDTO = useMemo(() => {
         </Card>
       )}
 
-      {step === "feats" && (
-        <Card title="Feats">
-          <p className="text-sm">Pick {featAllowance.picks} feat(s){age==="Young" && " (Too Young to Die is added automatically)"}.</p>
-          <div className="grid grid-cols-2 gap-2 mt-2">
-            {featsPool.map(f => (
-              <label key={f} className={`border rounded px-3 py-2 cursor-pointer ${selectedFeats.includes(f) ? "bg-zinc-100" : ""}`}>
-                <input
-                  type="checkbox"
-                  className="mr-2"
-                  checked={selectedFeats.includes(f) || (age==="Young" && f==="Too Young to Die")}
-                  onChange={()=>toggleFeat(f)}
-                  disabled={age==="Young" && f==="Too Young to Die"}
-                />
-                {f}
-              </label>
-            ))}
-          </div>
-        </Card>
-      )}
+{step === "feats" && (
+  <Card title="Feats">
+{specialRole ? (
+  <p className="text-sm">Pick <b>3</b> feats from the lists below (Special Role).</p>
+) : age === "Young" ? (
+  <p className="text-sm">
+    <b>Young:</b> <i>Too Young to Die</i> is added automatically. Choose <b>1 Role feat</b> and <b>1 Trope feat</b>.
+  </p>
+) : age === "Adult" ? (
+  <p className="text-sm">Pick <b>2 Role feats</b> and <b>1 Trope feat</b>.</p>
+) : (
+  <p className="text-sm">
+    <b>Old:</b> Choose <b>4</b> feats total (minimum <b>2 Role</b> and <b>1 Trope</b>; the extra can be from either list).
+  </p>
+)}
+
+
+    <div className="grid grid-cols-2 gap-4 mt-3">
+      <div>
+        <h4 className="font-semibold text-sm mb-1">
+          Role Feats{!specialRole && age === "Adult" ? ` (${featRule.role} required)` : ""}
+        </h4>
+        <div className="grid gap-2">
+          {roleFeats.map(f => (
+            <label
+              key={`role-${f}`}
+              className={`border rounded px-3 py-2 text-sm flex items-center gap-2 cursor-pointer ${selectedFeats.includes(f) ? "bg-zinc-100" : ""}`}
+            >
+              <input
+                type="checkbox"
+                className="mr-2"
+                checked={selectedFeats.includes(f) || (age === "Young" && f === "Too Young to Die")}
+                onChange={() => toggleFeat(f)}
+                disabled={age === "Young" && f === "Too Young to Die"}
+              />
+              <span>{f}</span>
+              <span className="ml-auto text-[10px] uppercase tracking-wide opacity-60">Role</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h4 className="font-semibold text-sm mb-1">
+          Trope Feats{!specialRole && age === "Adult" ? ` (${featRule.trope} required)` : ""}
+        </h4>
+        <div className="grid gap-2">
+          {tropeFeats.length ? tropeFeats.map(f => (
+            <label
+              key={`trope-${f}`}
+              className={`border rounded px-3 py-2 text-sm flex items-center gap-2 cursor-pointer ${selectedFeats.includes(f) ? "bg-zinc-100" : ""}`}
+            >
+              <input
+                type="checkbox"
+                className="mr-2"
+                checked={selectedFeats.includes(f)}
+                onChange={() => toggleFeat(f)}
+              />
+              <span>{f}</span>
+              <span className="ml-auto text-[10px] uppercase tracking-wide opacity-60">Trope</span>
+            </label>
+          )) : (
+            <div className="text-xs italic text-muted-foreground">No trope feats available.</div>
+          )}
+        </div>
+      </div>
+    </div>
+  </Card>
+)}
+
 
 {step === "skillBumps" && (
   <Card title="Extra Skill Points">

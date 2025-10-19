@@ -289,6 +289,51 @@ export function featsAllowanceByAge(age: "Young" | "Adult" | "Old") {
     : { picks: 2, auto: [] };
 }
 
+/** Feat selection rules (source-aware):
+ * Young: auto TYtD, and choose 1 Role + 1 Trope (exactly).
+ * Adult: 2 Role + 1 Trope (exactly; if no Trope feats exist, fallback to 3 Role).
+ * Old: Adult + 1 extra from either source → total 4 with mins (Role>=2, Trope>=1).
+ * Special: any 3 from Role/Trope.
+ *
+ * We return totals and minimums (roleMin/tropeMin). The UI enforces caps for
+ * Young/Adult; Old only caps by total (and Next requires mins satisfied).
+ */
+export function featRules(
+  age: "Young" | "Adult" | "Old",
+  isSpecial: boolean,
+  roleFeatsCount: number,
+  tropeFeatsCount: number
+): { total: number; roleMin: number; tropeMin: number; auto: string[] } {
+  if (isSpecial) {
+    return { total: 3, roleMin: 0, tropeMin: 0, auto: [] };
+  }
+
+  if (age === "Young") {
+    // Always include TYtD, plus exactly 1 Role and 1 Trope pick
+    const hasTrope = tropeFeatsCount > 0;
+    return {
+      total: hasTrope ? 2 : 1,        // user picks (auto TYtD is separate)
+      roleMin: hasTrope ? 1 : 1,      // require 1 role
+      tropeMin: hasTrope ? 1 : 0,     // require 1 trope only if available
+      auto: ["Too Young to Die"],
+    };
+  }
+
+  if (age === "Adult") {
+    const hasTrope = tropeFeatsCount > 0;
+    return hasTrope
+      ? { total: 3, roleMin: 2, tropeMin: 1, auto: [] }
+      : { total: 3, roleMin: 3, tropeMin: 0, auto: [] }; // fallback if no trope feats
+  }
+
+  // Old: Adult + 1 flexible pick (either source), keep mins Role>=2, Trope>=1
+  const hasTrope = tropeFeatsCount > 0;
+  return hasTrope
+    ? { total: 4, roleMin: 2, tropeMin: 1, auto: [] }
+    : { total: 4, roleMin: 4, tropeMin: 0, auto: [] }; // if no trope feats exist
+}
+
+
 /* ===============================
  * Role option lists
  * =============================== */
