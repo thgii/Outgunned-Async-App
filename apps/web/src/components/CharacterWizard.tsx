@@ -211,6 +211,43 @@ const reviewDTO = useMemo(() => {
     {tropeDef.description || "No description available for this trope."}
   </p>
 )}
+{/* Role & Trope skill grants */}
+{(roleDef?.skills?.length || tropeDef?.skills?.length) ? (
+  <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+    {/* Role skills */}
+    <div className="rounded-xl border p-3">
+      <div className="text-xs font-semibold uppercase text-gray-600 mb-2">
+        Role Skills
+      </div>
+      {roleDef?.skills?.length ? (
+        <ul className="list-disc ml-5 text-sm leading-6" style={{ columns: 2 }}>
+          {roleDef.skills.map((s) => (
+            <li key={`role-skill-${s}`}>{s}</li>
+          ))}
+        </ul>
+      ) : (
+        <div className="text-sm text-gray-500">No skills listed for this role.</div>
+      )}
+    </div>
+
+    {/* Trope skills */}
+    <div className="rounded-xl border p-3">
+      <div className="text-xs font-semibold uppercase text-gray-600 mb-2">
+        Trope Skills
+      </div>
+      {tropeDef?.skills?.length ? (
+        <ul className="list-disc ml-5 text-sm leading-6" style={{ columns: 2 }}>
+          {tropeDef.skills.map((s) => (
+            <li key={`trope-skill-${s}`}>{s}</li>
+          ))}
+        </ul>
+      ) : (
+        <div className="text-sm text-gray-500">No skills listed for this trope.</div>
+      )}
+    </div>
+  </div>
+) : null}
+
         </Card>
       )}
 
