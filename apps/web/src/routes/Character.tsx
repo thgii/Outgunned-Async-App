@@ -114,9 +114,12 @@ function normalizeForSheet(c: any): Character {
   };
 
   // Numbers commonly stored under resources
-  const adrenaline = asNumber(fromResources("adrenaline", 0), 0);
+  const adrenalineRaw = asNumber(fromResources("adrenaline", 0), 0);
+  const luckRaw = asNumber(fromResources("luck", 0), 0);
+  const adrenaline = Math.max(adrenalineRaw, luckRaw); // unified pool
   const spotlight = asNumber(fromResources("spotlight", 0), 0);
-  const luck = asNumber(fromResources("luck", 0), 0);
+  const luck = adrenaline; // keep mirror equal
+
   const cash = asNumber(fromResources("cash", 0), 0);
 
   // Storage: accept top-level, resources.storage, or fall back to gear list
@@ -152,7 +155,7 @@ function normalizeForSheet(c: any): Character {
   resources.grit = { current: grit.current ?? 0, max: grit.max ?? 12 };
   resources.adrenaline = adrenaline;
   resources.spotlight = spotlight;
-  resources.luck = luck;
+  resources.luck = adrenaline;
   resources.cash = cash;
   if (storage !== undefined) resources.storage = storage;
   resources.youLookSelected = youLookSelected;

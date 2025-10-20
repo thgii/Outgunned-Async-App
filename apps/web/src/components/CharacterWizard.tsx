@@ -916,7 +916,7 @@ function Preview({dto}:{dto: CharacterDTO}) {
         }
       </div>
 
-      <div>Adrenaline: {dto.adrenaline} | Luck: {dto.luck} | Spotlight: {dto.spotlight} | Cash: {dto.cash}</div>
+      <div>Adrenaline/Luck: {dto.adrenaline ?? dto.luck} | Spotlight: {dto.spotlight} | Cash: {dto.cash}</div>
 <div className="mt-6">
   <b>Attributes & Skills</b>
 

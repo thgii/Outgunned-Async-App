@@ -92,16 +92,25 @@ function pickTopLevelResourceOverrides(body: any) {
   const r: Record<string, any> = {};
   if (body == null) return r;
   if ("grit" in body) r.grit = body.grit;
-  if ("adrenaline" in body) r.adrenaline = body.adrenaline;
   if ("spotlight" in body) r.spotlight = body.spotlight;
-  if ("luck" in body) r.luck = body.luck;
   if ("cash" in body) r.cash = body.cash;
   if ("ride" in body) r.ride = body.ride;
   if ("youLookSelected" in body) r.youLookSelected = body.youLookSelected;
   if ("isBroken" in body) r.isBroken = body.isBroken;
   if ("deathRoulette" in body) r.deathRoulette = body.deathRoulette;
+
+  // 🔗 Unify adrenaline/luck (either can be provided; treat as one pool)
+  const a = body?.adrenaline;
+  const l = body?.luck;
+  if (a != null || l != null) {
+    const v = Number(a ?? l) || 0;
+    r.adrenaline = v;
+    r.luck = v;
+  }
+
   return r;
 }
+
 
 // 🔎 quick ping
 characters.get("/__ping", (c) => c.text("OK: characters router mounted"));
@@ -379,7 +388,14 @@ characters.patch("/:id", async (c) => {
     deathRoulette: (dto as any).deathRoulette,
   };
   const finalResourcesPatch = safeMergeResources(mergedResources, dtoYouLookOverlay);
+
+  // 🔗 Final guard: keep adrenaline and luck equal (single pool)
+  const vPool = Number(finalResourcesPatch?.adrenaline ?? finalResourcesPatch?.luck ?? 0) || 0;
+  finalResourcesPatch.adrenaline = vPool;
+  finalResourcesPatch.luck = vPool;
+
   const resources = JSON.stringify(finalResourcesPatch);
+
 
   const gear = JSON.stringify(
     (dto as any).storage ?? { backpack: [], bag: [], gunsAndGear: [] }

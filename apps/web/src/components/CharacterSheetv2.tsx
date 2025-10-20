@@ -270,14 +270,18 @@ export default function CharacterSheetV2({
     });
   };
 
-  const adrenaline = Math.max(0, Math.min(6, local.adrenaline ?? 0));
+  // Treat adrenaline and luck as the same pool for reading
+  const adrenaline = Math.max(0, Math.min(6, (local.adrenaline ?? local.luck ?? 0)));
+
   const setAdrenaline = (n: number) => {
     const clamped = Math.max(0, Math.min(6, n));
     update({
       adrenaline: clamped,
-      resources: { ...(local.resources ?? {}), adrenaline: clamped },
+      luck: clamped,
+      resources: { ...(local.resources ?? {}), adrenaline: clamped, luck: clamped },
     });
   };
+
 
   const spotlight = Math.max(0, Math.min(3, local.spotlight ?? 0));
   const setSpotlight = (n: number) => {
@@ -525,7 +529,7 @@ export default function CharacterSheetV2({
       {/* Adrenaline + Spotlight */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <Card>
-          <SectionTitle>Adrenaline</SectionTitle>
+          <SectionTitle>Adrenaline/Luck</SectionTitle>
           <div className="mt-3">
             <BoxRow count={6} value={adrenaline} onChange={setAdrenaline} />
             <p className="mt-3 text-xs text-zinc-700">
