@@ -515,6 +515,19 @@ const preBumpDTO = useMemo(() => {
       onChange={(v) => setTropeAttribute((v || undefined) as AttrKey)}
       options={["", ...tropeAttrOptions]}
     />
+    {tropeAttribute && preBumpDTO && (() => {
+      const attr = tropeAttribute as AttrKey;
+      const withTrope = (preBumpDTO.attributes?.[attr] as number) ?? 0;
+      // Since this block only renders when tropeNeedsAttr is true,
+      // Trope is contributing +1 to the selected attribute.
+      const beforeTrope = withTrope - 1;
+      return beforeTrope >= 3 ? (
+        <div className="text-xs text-amber-600 mt-1">
+          This choice would push <b>{attr}</b> above the cap of 3 because your Role already brought it to 3.
+          The extra point from your Trope will be <b>lost</b>.
+        </div>
+      ) : null;
+    })()}
     {!tropeAttribute && (
       <div className="text-xs text-amber-600 mt-1">
         Select an attribute to continue.
@@ -761,6 +774,7 @@ className={`border rounded px-3 py-2 text-sm cursor-pointer transition-colors ${
       value={skillBumps}
       onChange={setSkillBumps}
       max={specialRole ? 6 : 2}
+      baseLevels={(preBumpDTO?.skills as Record<SkillKey, number>) || {}}
     />
   </Card>
 )}
@@ -909,10 +923,12 @@ function SkillPicker({
   value,
   onChange,
   max = 2,
+  baseLevels = {},
 }: {
   value: SkillKey[];
   onChange: (s: SkillKey[]) => void;
   max?: number;
+  baseLevels?: Partial<Record<SkillKey, number>>;
 }) {
   // value is a multiset expressed as an array (duplicates allowed)
   const counts = useMemo(() => {
@@ -935,47 +951,57 @@ function SkillPicker({
     onChange(next);
   }
 
-  return (
-    <div className="space-y-2">
-      <div className="text-sm text-muted-foreground">
-        Skill bumps selected: <b>{total}</b> / {max}
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        {ALL_SKILLS.map((k) => {
-          const c = counts.get(k as SkillKey) || 0;
-          return (
-            <div
-              key={k}
-              className="border rounded px-3 py-2 flex items-center justify-between"
-            >
-              <span className="mr-2">{k}</span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  className="px-2 py-1 border rounded disabled:opacity-50"
-                  onClick={() => removeOne(k as SkillKey)}
-                  disabled={c === 0}
-                  aria-label={`Remove ${k}`}
-                >
-                  −
-                </button>
-                <span className="tabular-nums w-6 text-center">{c}</span>
-                <button
-                  type="button"
-                  className="px-2 py-1 border rounded disabled:opacity-50"
-                  onClick={() => add(k as SkillKey)}
-                  disabled={total >= max}
-                  aria-label={`Add ${k}`}
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+return (
+  <div className="space-y-2">
+    <div className="text-sm text-muted-foreground">
+      Skill bumps selected: <b>{total}</b> / {max}
     </div>
-  );
+    <div className="grid grid-cols-2 gap-2">
+      {ALL_SKILLS.map((k) => {
+        const c = counts.get(k as SkillKey) || 0;
+        const baseVal = (baseLevels[k as SkillKey] as number) ?? 0;
+        const currentWithBumps = baseVal + c;
+
+        return (
+          <div
+            key={k}
+            className="border rounded px-3 py-2 flex items-center justify-between"
+          >
+            <span className="mr-2">{k}</span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="px-2 py-1 border rounded disabled:opacity-50"
+                onClick={() => removeOne(k as SkillKey)}
+                disabled={c === 0}
+                aria-label={`Remove ${k}`}
+              >
+                −
+              </button>
+
+              <span className="tabular-nums w-6 text-center">{c}</span>
+
+              {currentWithBumps >= 3 && (
+                <span className="text-[10px] uppercase opacity-60">cap</span>
+              )}
+
+              <button
+                type="button"
+                className="px-2 py-1 border rounded disabled:opacity-50"
+                onClick={() => add(k as SkillKey)}
+                disabled={total >= max || currentWithBumps >= 3}
+                aria-label={`Add ${k}`}
+              >
+                +
+              </button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+);
+
 }
 
 

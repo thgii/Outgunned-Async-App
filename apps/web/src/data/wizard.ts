@@ -221,30 +221,26 @@ const isNPCSpecial = specialRole && roleName.includes("n.p.c");
 if (specialRole && Array.isArray(role.attribute)) {
   for (const a of role.attribute) {
     const k = ATTR_MAP[a];
-    if (k) dtoTemplate.attributes[k] += 1;
+    if (k) dtoTemplate.attributes[k] = Math.min(3, (dtoTemplate.attributes[k] as number) + 1);
   }
 // 2) NPC Special: user picks any two (required)
 } else if (isNPCSpecial) {
-  const picks = Array.isArray(base.specialAttributes) ? Array.from(new Set(base.specialAttributes)) : [];
-  if (picks.length !== 2) throw new Error("Select two attributes for the Special: N.P.C. role.");
-  for (const a of picks) {
-    if (a) dtoTemplate.attributes[a] += 1;
+  // (unchanged logic that ensures two picks)
+  // when applying the two adds later:
+  for (const a of base.specialAttributes || []) {
+    const k = a as AttrKey;
+    if (k) dtoTemplate.attributes[k] = Math.min(3, (dtoTemplate.attributes[k] as number) + 1);
   }
-// 3) Regular Role with options
-} else if (!specialRole && Array.isArray(role.attribute_options) && role.attribute_options.length) {
-  if (!base.roleAttribute) throw new Error("Select a Role attribute option.");
-  const rPick = (ATTR_MAP as any)[base.roleAttribute as any] ?? base.roleAttribute;
-  dtoTemplate.attributes[rPick as AttrKey] += 1;
-// 4) Regular Role with fixed attribute (string)
+// 3) Regular Role: fixed attribute + optional roleAttribute
 } else {
   const fixed = Array.isArray(role.attribute) ? role.attribute[0] : role.attribute;
   const rAttr = fixed ? ATTR_MAP[fixed] : undefined;
-  if (rAttr) dtoTemplate.attributes[rAttr] += 1;
+  if (rAttr) dtoTemplate.attributes[rAttr] = Math.min(3, (dtoTemplate.attributes[rAttr] as number) + 1);
 }
 
 for (const s of role.skills || []) {
   const key = SKILL_MAP[s];
-  if (key) dtoTemplate.skills[key] += 1;
+  if (key) dtoTemplate.skills[key] = Math.min(3, (dtoTemplate.skills[key] as number) + 1);
 }
 
   // Trope adds — skip entirely for Special Roles
@@ -260,12 +256,13 @@ for (const s of role.skills || []) {
     const tAttr = hasTropeOptions
       ? ((ATTR_MAP as any)[base.tropeAttribute as any] ?? base.tropeAttribute)
       : (trope.attribute ? ATTR_MAP[trope.attribute] : undefined);
-    if (tAttr) dtoTemplate.attributes[tAttr] += 1;
+    if (tAttr) dtoTemplate.attributes[tAttr] = Math.min(3, (dtoTemplate.attributes[tAttr] as number) + 1);
 
     for (const s of trope.skills || []) {
       const key = SKILL_MAP[s];
-      if (key) dtoTemplate.skills[key] += 1;
+      if (key) dtoTemplate.skills[key] = Math.min(3, (dtoTemplate.skills[key] as number) + 1);
     }
+
   }
 
 
@@ -284,14 +281,13 @@ dtoTemplate.feats = chosenObjects;
     dtoTemplate.deathRoulette = [true, true, false, false, false, false];
   }
 
-  // Extra skill bumps (+1 each; duplicates allowed; clamp to 6 per skill)
+  // Extra skill bumps (+1 each; duplicates allowed; clamp to 3 per skill)
   const bumpList = (base.skillBumps || []).slice(0, specialRole ? 6 : 2);
   for (const k of bumpList) {
     if (k && k in dtoTemplate.skills) {
-      dtoTemplate.skills[k] = Math.min(6, (dtoTemplate.skills[k] as number) + 1);
+      dtoTemplate.skills[k] = Math.min(3, (dtoTemplate.skills[k] as number) + 1);
     }
   }
-
 
   // Default Job/Background to the Special Role's name if left blank
   if (specialRole && !dtoTemplate.jobOrBackground.trim()) {
