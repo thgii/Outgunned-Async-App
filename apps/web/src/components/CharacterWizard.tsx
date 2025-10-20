@@ -387,7 +387,7 @@ const dto = buildDerivedDTO({
   gearChosen,
 });
 
-    const created = await api("/character", { method: "POST", json: dto });
+    const created = await api("/characters", { method: "POST", json: dto });
     onComplete?.(created);
   } catch (err: any) {
     alert(err?.message || "Failed to save character.");
