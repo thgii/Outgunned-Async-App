@@ -499,9 +499,10 @@ const dto = buildDerivedDTO({
   </div>
 ) : null}
 
-        </Card>
+        </div>
       )}
-
+</Card>
+)}
       {step === "age" && (
         <Card title="Age">
           <Select label="Age" value={age} onChange={v=>setAge(v as any)} options={["Young","Adult","Old"]} />
