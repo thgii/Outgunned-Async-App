@@ -380,6 +380,15 @@ const dto = buildDerivedDTO({
     <div className="text-xs text-muted-foreground mb-1">
       Choose an attribute granted by your Trope.
     </div>
+    {/* Trope gained by the Role (display the current Trope) */}
+    <div className="text-xs mb-1">
+      <span className="uppercase tracking-wide text-gray-500">Trope:</span>{" "}
+      <span className="font-medium">{tropeDef?.name ?? trope}</span>
+      {tropeDef?.description ? (
+        <span className="opacity-70"> — {tropeDef.description}</span>
+      ) : null}
+    </div>
+
     <Select
       label="Choose Trope Attribute *"
       value={tropeAttribute ?? ""}
