@@ -265,28 +265,22 @@ if (tAttr) dtoTemplate.attributes[tAttr] += 1;
 const picksByAge = base.age === "Young" ? 1 : base.age === "Old" ? 3 : 2;
 const autoYoung = base.age === "Young" ? ["Too Young to Die"] : [];
 
-// Combine Role + Trope + Selected feats into one unified list
-const allAvailableFeats = new Set<string>();
-if (roleDef?.feats) roleDef.feats.forEach((f) => allAvailableFeats.add(f));
-if (tropeDef?.feats) tropeDef.feats.forEach((f) => allAvailableFeats.add(f));
-if (tropeDef?.feat_options)
-  tropeDef.feat_options.forEach((f) => allAvailableFeats.add(f));
-
-// Normalize names, de-dupe, and apply age logic
+// Normalize names, de-dupe, and prevent carrying TYtD outside of Young
 const cleaned = Array.from(new Set(base.selectedFeats || []))
   .map(normalizeName)
   .filter(Boolean)
   .filter((f) => (base.age === "Young" ? true : f !== "Too Young to Die"));
 
-// Clamp number of picks by age
+// Aged caps operate on total user picks (source-agnostic: Role or Trope)
 const chosenNames =
   base.age === "Young"
     ? [...autoYoung, ...cleaned.slice(0, picksByAge)]
     : cleaned.slice(0, picksByAge);
 
-// ✅ Build feat objects, pulling descriptions from FEAT_DESC
+// 👉 Enrich feats so DTO carries { name, description }
 const chosenObjects = chosenNames.map(featObject);
 dtoTemplate.feats = chosenObjects;
+
 
   if (base.age === "Old") {
     dtoTemplate.deathRoulette = [true, true, false, false, false, false];
