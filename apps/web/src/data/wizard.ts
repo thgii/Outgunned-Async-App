@@ -265,20 +265,20 @@ if (tAttr) dtoTemplate.attributes[tAttr] += 1;
 const picksByAge = base.age === "Young" ? 1 : base.age === "Old" ? 3 : 2;
 const autoYoung = base.age === "Young" ? ["Too Young to Die"] : [];
 
-// Normalize names, de-dupe, and prevent carrying TYtD outside of Young
+// Normalize, de-dupe, and filter for age
 const cleaned = Array.from(new Set(base.selectedFeats || []))
   .map(normalizeName)
   .filter(Boolean)
   .filter((f) => (base.age === "Young" ? true : f !== "Too Young to Die"));
 
-// Aged caps operate on total user picks (source-agnostic: Role or Trope)
+// Clamp number of picks by age
 const chosenNames =
   base.age === "Young"
     ? [...autoYoung, ...cleaned.slice(0, picksByAge)]
     : cleaned.slice(0, picksByAge);
 
-// 👉 Enrich feats so DTO carries { name, description }
-const chosenObjects = chosenNames.map(featObject);
+// Build feat objects from FEAT_DESC so descriptions appear in review/sheet
+const chosenObjects = chosenNames.map((name) => featObject(name));
 dtoTemplate.feats = chosenObjects;
 
 
