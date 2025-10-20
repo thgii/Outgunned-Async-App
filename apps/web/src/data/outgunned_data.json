@@ -928,7 +928,7 @@
     {
       "name": "Special: The Assassin",
       "source": "OGWoK",
-      "attribute": "Brawn and Crime",
+      "attribute": ["brawn", "crime"],
       "skills": [
         "Endure",
         "Fight",
@@ -1420,7 +1420,7 @@
     {
       "name": "Special: Master of the Multiverse",
       "source": "OGAF-EO",
-      "attribute": "Nerves and Focus",
+      "attribute": ["nerves", "focus"],
       "skills": [
         "Endure",
         "Fight",
@@ -2100,7 +2100,7 @@
     {
       "name": "Special: The Fortune Seeker",
       "source": "OGA",
-      "attribute": "Brawn and Nerves",
+      "attribute": ["brawn", "nerves"],
       "skills": [
         "Fight",
         "Stunt",
