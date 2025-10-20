@@ -26,6 +26,12 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
   const [trope, setTrope] = useState(initial?.trope ?? "");
   const [tropeAttribute, setTropeAttribute] = useState<AttrKey | undefined>(undefined);
 
+// Role attribute (when role provides attribute_options)
+const [roleAttribute, setRoleAttribute] = useState<AttrKey | undefined>(undefined);
+
+// Special: N.P.C. — choose any two attributes
+const [specialAttrs, setSpecialAttrs] = useState<AttrKey[]>([]);
+
   const [age, setAge] = useState<"Young"|"Adult"|"Old">((initial?.age as any) ?? "Adult");
 
   const [selectedFeats, setSelectedFeats] = useState<string[]>([]);
@@ -46,25 +52,37 @@ useEffect(() => {
 
   const [gearChosen, setGearChosen] = useState<string[]>([]);
 
-  // Data derived from selections
-  const roleDef = useMemo(() => role ? findRole(role) : null, [role]);
-  const tropeDef = useMemo(() => trope ? findTrope(trope) : null, [trope]);
-useEffect(() => {
-  const options = tropeDef?.attribute_options as AttrKey[] | undefined;
-  const hasFixed = !!tropeDef?.attribute;
-  const needs = !!(options?.length && !hasFixed);
+// Data derived from selections
+const roleDef = useMemo(() => (role ? findRole(role) : null), [role]);
+const tropeDef = useMemo(() => (trope ? findTrope(trope) : null), [trope]);
 
-  // If not needed (fixed or none), clear the user-picked attribute.
-  if (!needs) {
+const specialRole = isSpecialRole(role);
+const npcSpecial = specialRole && String(role).toLowerCase().includes("n.p.c");
+
+// Role attribute options (regular roles)
+const roleAttrOptions = (roleDef?.attribute_options as AttrKey[] | undefined) || [];
+
+// Trope attribute options (prefer options from JSON; disabled for Special Roles)
+const tropeAttrOptions = (tropeDef?.attribute_options as AttrKey[] | undefined) || [];
+
+useEffect(() => {
+  // Clear role pick if not applicable
+  if (!roleAttrOptions.length || specialRole) setRoleAttribute(undefined);
+
+  // Clear special picks if not NPC special
+  if (!npcSpecial) setSpecialAttrs([]);
+
+  // Trope attribute is only needed for non-special roles when trope provides options
+  if (specialRole || !tropeAttrOptions.length) {
     setTropeAttribute(undefined);
     return;
   }
 
-  // If needed and current selection is not valid for the new trope, clear it.
-  if (needs && tropeAttribute && !options?.includes(tropeAttribute)) {
+  // Validate the current tropeAttribute against tropeAttrOptions
+  if (tropeAttribute && !tropeAttrOptions.includes(tropeAttribute)) {
     setTropeAttribute(undefined);
   }
-}, [tropeDef, tropeAttribute]);
+}, [specialRole, npcSpecial, roleAttrOptions, tropeAttrOptions]);
 
   const specialRole = isSpecialRole(role);
 
@@ -75,7 +93,11 @@ useEffect(() => {
     }
   }, [specialRole, role]);
 
-  const tropeNeedsAttr = !!(tropeDef?.attribute_options?.length && !tropeDef?.attribute);
+// Trope attribute needed when the trope exposes options AND role is not Special
+const tropeNeedsAttr = !!(tropeAttrOptions.length) && !specialRole;
+
+// Role attribute needed when the role exposes options AND role is not Special
+const roleNeedsAttr = !!(roleAttrOptions.length) && !specialRole;
   const featAllowance = featsAllowanceByAge(age);
 
   const { jobs, flaws, catchphrases, gear } = roleOptionLists(role);
@@ -240,9 +262,11 @@ const canBuild = useMemo(() => {
   if (!name.trim()) return false;
   if (!role) return false;
   if (!trope) return false;
-  if (tropeNeedsAttr && !tropeAttribute) return false;
-  return true;
-}, [name, role, trope, tropeNeedsAttr, tropeAttribute]);
+if (roleNeedsAttr && !roleAttribute) return false;
+if (tropeNeedsAttr && !tropeAttribute) return false;
+if (npcSpecial && specialAttrs.length !== 2) return false;
+return true;
+}, [name, role, trope, roleNeedsAttr, roleAttribute, tropeNeedsAttr, tropeAttribute, npcSpecial, specialAttrs]);
 
 // Only build when it's safe (and preferably only when needed)
 const reviewDTO = useMemo(() => {
@@ -271,19 +295,22 @@ const reviewDTO = useMemo(() => {
 
   async function save() {
   try {
-    const dto = buildDerivedDTO({
-      name: name.trim(),
-      role,
-      trope,
-      age,
-      tropeAttribute,
-      selectedFeats,
-      skillBumps,
-      jobOrBackground: jobOrBackground.trim(),
-      flaw: flaw.trim(),
-      catchphrase: catchphrase.trim(),
-      gearChosen,
-    });
+const dto = buildDerivedDTO({
+  name,
+  role,
+  trope,
+  age,
+  roleAttribute,                 // NEW
+  tropeAttribute,
+  specialAttributes: specialAttrs, // NEW (NPC Special)
+  selectedFeats,
+  skillBumps,
+  jobOrBackground: jobOrBackground.trim(),
+  flaw: flaw.trim(),
+  catchphrase: catchphrase.trim(),
+  gearChosen,
+});
+
     const created = await api("/characters", { method: "POST", json: dto });
     onComplete?.(created);
   } catch (err: any) {
@@ -317,6 +344,16 @@ const reviewDTO = useMemo(() => {
   <div className="text-xs text-muted-foreground mt-1">
     Special Role: Trope is fixed to match Role.
   </div>
+)}
+
+{/* Role Attribute (only when role exposes options and not Special) */}
+{!specialRole && roleNeedsAttr && (
+  <Select
+    label="Role Attribute *"
+    value={roleAttribute ?? ""}
+    onChange={(v) => setRoleAttribute((v || undefined) as AttrKey)}
+    options={["", ...roleAttrOptions]}
+  />
 )}
 
 {roleDef && (
@@ -353,38 +390,75 @@ const reviewDTO = useMemo(() => {
       </div>
     )}
 
-    {/* Choice among options */}
-    {!tropeDef.attribute && !!tropeDef.attribute_options?.length && (
-      <>
-        {specialRole && (
-          <div className="text-xs text-muted-foreground mb-1">
-            Special Role: choose one attribute from the available options.
-          </div>
-        )}
-        <Select
-          label="Choose Trope Attribute *"
-          value={tropeAttribute ?? ""}
-          onChange={(v) => setTropeAttribute((v || undefined) as AttrKey)}
-          options={[
-            "",
-            ...((tropeDef.attribute_options as string[]) || []),
-          ]}
-        />
-        {!tropeAttribute && (
-          <div className="text-xs text-amber-600 mt-1">
-            Select an attribute to continue.
-          </div>
-        )}
-      </>
-    )}
-
-    {/* No attribute info in data */}
-    {!tropeDef.attribute && !tropeDef.attribute_options?.length && (
-      <div className="text-xs text-muted-foreground">
-        This trope does not specify an attribute.
+{/* Trope Attribute (only when the trope exposes options AND role is not Special) */}
+{tropeNeedsAttr && (
+  <>
+    <div className="text-xs text-muted-foreground mb-1">
+      Choose an attribute granted by your Trope.
+    </div>
+    <Select
+      label="Choose Trope Attribute *"
+      value={tropeAttribute ?? ""}
+      onChange={(v) => setTropeAttribute((v || undefined) as AttrKey)}
+      options={["", ...tropeAttrOptions]}
+    />
+    {!tropeAttribute && (
+      <div className="text-xs text-amber-600 mt-1">
+        Select an attribute to continue.
       </div>
     )}
+  </>
+)}
+
+{/* No attribute info in data (non-Special role, no options, no fixed attr) */}
+{!specialRole && !tropeAttrOptions.length && !tropeDef?.attribute && (
+  <div className="text-xs text-muted-foreground">
+    This trope does not specify an attribute.
   </div>
+)}
+
+{/* Special: N.P.C. — pick any two attributes */}
+{npcSpecial && (
+  <Card title="Special: N.P.C. — Attributes">
+    <div className="text-xs text-muted-foreground mb-2">
+      Choose <b>any two</b> attributes to gain +1 each.
+    </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <Select
+        label="Special Attribute #1 *"
+        value={specialAttrs[0] ?? ""}
+        onChange={(v) => {
+          const a = (v || undefined) as AttrKey | undefined;
+          setSpecialAttrs((prev) => {
+            const second = prev[1] && prev[1] !== a ? prev[1] : (prev[1] === a ? undefined : prev[1]);
+            return [a!, second!].filter(Boolean) as AttrKey[];
+          });
+        }}
+        options={["", "brawn","nerves","smooth","focus","crime"].map(x =>
+          typeof x === "string" && ["brawn","nerves","smooth","focus","crime"].includes(x) ? x : x
+        )}
+      />
+      <Select
+        label="Special Attribute #2 *"
+        value={specialAttrs[1] ?? ""}
+        onChange={(v) => {
+          const b = (v || undefined) as AttrKey | undefined;
+          setSpecialAttrs((prev) => {
+            const first = prev[0] && prev[0] !== b ? prev[0] : (prev[0] === b ? undefined : prev[0]);
+            const next = [first!, b!].filter(Boolean) as AttrKey[];
+            // enforce uniqueness
+            return Array.from(new Set(next)).slice(0, 2) as AttrKey[];
+          });
+        }}
+        options={["", "brawn","nerves","smooth","focus","crime"]}
+      />
+    </div>
+    {specialAttrs.length !== 2 && (
+      <div className="text-xs text-destructive mt-1">
+        Required: select two distinct attributes.
+      </div>
+    )}
+  </Card>
 )}
 
 {/* Role & Trope skill grants */}
