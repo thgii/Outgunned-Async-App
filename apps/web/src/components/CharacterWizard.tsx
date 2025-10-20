@@ -7,7 +7,6 @@ import { useEffect } from "react";
 type Step =
   | "identity"
   | "roleTrope"
-  | "tropeAttr"
   | "age"
   | "feats"
   | "skillBumps"
@@ -84,8 +83,6 @@ useEffect(() => {
   }
 }, [specialRole, npcSpecial, roleAttrOptions, tropeAttrOptions]);
 
-  const specialRole = isSpecialRole(role);
-
   // When Role is Special, force Trope = Role and keep them in sync
   useEffect(() => {
     if (specialRole && role) {
@@ -137,10 +134,14 @@ const featsPool = useMemo(() => {
     switch (step) {
       case "identity":
         return name.trim().length > 0;
-      case "roleTrope":
-  return !!role && !!trope && (!tropeNeedsAttr || !!tropeAttribute);
-      case "tropeAttr":
-        return !tropeNeedsAttr || !!tropeAttribute;
+case "roleTrope":
+  return (
+    !!role &&
+    !!trope &&
+    (!roleNeedsAttr || !!roleAttribute) &&
+    (!tropeNeedsAttr || !!tropeAttribute) &&
+    (!npcSpecial || specialAttrs.length === 2)
+  );
       case "age":
         return age === "Young" || age === "Adult" || age === "Old";
 case "feats": {
@@ -170,8 +171,7 @@ case "feats": {
   function next() {
     if (!canContinue) return;
     if (step === "identity") setStep("roleTrope");
-else if (step === "roleTrope") setStep("age");
-    else if (step === "tropeAttr") setStep("age");
+    else if (step === "roleTrope") setStep("age");
     else if (step === "age") setStep("feats");
     else if (step === "feats") setStep("skillBumps");
     else if (step === "skillBumps") setStep("jobEtc");
@@ -180,8 +180,7 @@ else if (step === "roleTrope") setStep("age");
   }
   function back() {
     if (step === "roleTrope") setStep("identity");
-    else if (step === "tropeAttr") setStep("roleTrope");
-else if (step === "age") setStep("roleTrope");
+    else if (step === "age") setStep("roleTrope");
     else if (step === "feats") setStep("age");
     else if (step === "skillBumps") setStep("feats");
     else if (step === "jobEtc") setStep("skillBumps");
@@ -277,7 +276,9 @@ const reviewDTO = useMemo(() => {
       role,
       trope,
       age,
+      roleAttribute,
       tropeAttribute,
+      specialAttributes: specialAttrs,
       selectedFeats,
       skillBumps,
       jobOrBackground: jobOrBackground.trim(),
@@ -290,7 +291,7 @@ const reviewDTO = useMemo(() => {
   }
   // You can also narrow this to step === "review" if you want:
   // }, [step, canBuild, name, role, trope, age, tropeAttribute, selectedFeats, skillBumps, jobOrBackground, flaw, catchphrase, gearChosen]);
-}, [canBuild, name, role, trope, age, tropeAttribute, selectedFeats, skillBumps, jobOrBackground, flaw, catchphrase, gearChosen]);
+}, [canBuild, name, role, trope, age, roleAttribute, tropeAttribute, specialAttrs, selectedFeats, skillBumps, jobOrBackground, flaw, catchphrase, gearChosen]);
 
 
   async function save() {
@@ -498,18 +499,6 @@ const dto = buildDerivedDTO({
   </div>
 ) : null}
 
-        </Card>
-      )}
-
-      {step === "tropeAttr" && tropeNeedsAttr && (
-        <Card title="Trope Attribute">
-          <p className="text-sm text-muted-foreground">This trope requires you to choose an Attribute.</p>
-          <Select
-            label="Trope Attribute"
-            value={tropeAttribute ?? ""}
-            onChange={(v)=>setTropeAttribute((v||undefined) as AttrKey)}
-            options={["","brawn","nerves","smooth","focus","crime"]}
-          />
         </Card>
       )}
 
