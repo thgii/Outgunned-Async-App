@@ -405,7 +405,11 @@ const reviewDTO = useMemo(() => {
   return (
     <label
       key={`role-${f}`}
-      className={`border rounded px-3 py-2 text-sm cursor-pointer ${selectedFeats.includes(f) ? "bg-zinc-100" : ""}`}
+className={`border rounded px-3 py-2 text-sm cursor-pointer transition-colors ${
+  selectedFeats.includes(f)
+    ? "bg-black text-white border-black"
+    : "hover:bg-zinc-100"
+}`}
     >
       <div className="flex items-center gap-2">
         <input
@@ -440,7 +444,11 @@ const reviewDTO = useMemo(() => {
   return (
     <label
       key={`trope-${f}`}
-      className={`border rounded px-3 py-2 text-sm cursor-pointer ${selectedFeats.includes(f) ? "bg-zinc-100" : ""}`}
+className={`border rounded px-3 py-2 text-sm cursor-pointer transition-colors ${
+  selectedFeats.includes(f)
+    ? "bg-black text-white border-black"
+    : "hover:bg-zinc-100"
+}`}
     >
       <div className="flex items-center gap-2">
         <input
