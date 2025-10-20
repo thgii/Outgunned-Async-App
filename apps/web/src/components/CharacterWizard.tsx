@@ -371,7 +371,7 @@ const dto = buildDerivedDTO({
 {tropeDef && (
   <div className="mt-4 rounded-xl border p-3">
     <div className="text-xs font-semibold uppercase text-gray-600 mb-2">
-      Trope Attribute
+      Attributes and Skills
     </div>
 
     {/* Fixed attribute (no choice) */}
