@@ -4,6 +4,13 @@ import { api } from "../lib/api";
 import { DATA, findRole, findTrope, buildDerivedDTO, featRules, roleOptionLists, isSpecialRole, FEAT_DESC } from "../data/wizard";
 import { useEffect } from "react";
 
+// ---- local attribute normalizer for warnings ----
+const normalizeAttr = (a?: string | null) => {
+  if (!a) return null;
+  const k = a.trim().toLowerCase();
+  return ["brawn", "nerves", "smooth", "focus", "crime"].includes(k) ? (k as any) : null;
+};
+
 // ---------------- Display helpers ----------------
 function labelize(s: string) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
@@ -156,7 +163,7 @@ const roleGainedAttrs = useMemo((): string[] => {
 
   // Special roles with array attributes: show both
   if (specialRole && Array.isArray(roleDef.attribute)) {
-    return roleDef.attribute.map(String);
+    return roleDef.attribute.map((a: any) => (normalizeAttr(String(a)) ?? String(a)));
   }
 
   // Special: N.P.C. — show whatever the user has picked so far (if any)
@@ -171,7 +178,7 @@ const roleGainedAttrs = useMemo((): string[] => {
 
   // Regular role with fixed attribute
   if (!specialRole && typeof roleDef.attribute === "string") {
-    return [String(roleDef.attribute)];
+    return [normalizeAttr(String(roleDef.attribute)) ?? String(roleDef.attribute)];
   }
 
   return [];
@@ -508,19 +515,27 @@ const preBumpDTO = useMemo(() => {
     <div className="text-xs text-muted-foreground mb-1">
       Choose an attribute granted by your Trope.
     </div>
-    
+
     <Select
       label="Choose Trope Attribute *"
       value={tropeAttribute ?? ""}
       onChange={(v) => setTropeAttribute((v || undefined) as AttrKey)}
       options={["", ...tropeAttrOptions]}
     />
+
+    {/* Lost-point warning: Role already at 3 → Trope +1 is wasted */}
     {tropeAttribute && preBumpDTO && (() => {
-      const attr = tropeAttribute as AttrKey;
+      // Normalize to be defensive, though tropeAttribute is AttrKey.
+      const attr = normalizeAttr(tropeAttribute) as AttrKey | null;
+      if (!attr) return null;
+
+      // preBumpDTO already includes the Trope +1 for the selected attribute.
       const withTrope = (preBumpDTO.attributes?.[attr] as number) ?? 0;
-      // Since this block only renders when tropeNeedsAttr is true,
-      // Trope is contributing +1 to the selected attribute.
+
+      // Remove the Trope +1 to see the value before Trope was applied.
       const beforeTrope = withTrope - 1;
+
+      // If Role (and anything else before Trope) already had it at 3, Trope point is lost.
       return beforeTrope >= 3 ? (
         <div className="text-xs text-amber-600 mt-1">
           This choice would push <b>{attr}</b> above the cap of 3 because your Role already brought it to 3.
@@ -528,6 +543,7 @@ const preBumpDTO = useMemo(() => {
         </div>
       ) : null;
     })()}
+
     {!tropeAttribute && (
       <div className="text-xs text-amber-600 mt-1">
         Select an attribute to continue.

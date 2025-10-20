@@ -2,6 +2,25 @@
 import raw from "./outgunned_data.json";
 import type { CharacterDTO, AttrKey, SkillKey } from "@action-thread/types";
 
+// ---- attribute normalizers (array/single, case-insensitive) ----
+const ATTR_KEYS: AttrKey[] = ["brawn", "nerves", "smooth", "focus", "crime"];
+
+export const normalizeAttr = (a?: string | null): AttrKey | null => {
+  if (!a) return null;
+  const k = a.trim().toLowerCase();
+  return (ATTR_KEYS as string[]).includes(k) ? (k as AttrKey) : null;
+};
+
+export const getRoleAttrOptions = (role?: { attribute?: string | string[] }): AttrKey[] => {
+  if (!role || !role.attribute) return [];
+  const raw = role.attribute;
+  if (Array.isArray(raw)) {
+    return raw.map(normalizeAttr).filter(Boolean) as AttrKey[];
+  }
+  const one = normalizeAttr(raw);
+  return one ? [one] : [];
+};
+
 /* ===============================
  * Types reflecting your JSON shape
  * =============================== */
@@ -208,8 +227,8 @@ export function buildDerivedDTO(
     updatedAt: undefined,
   };
 
-  // Role adds
-  const role = findRole(base.role);
+ // Role adds
+const role = findRole(base.role);
 if (!role) throw new Error("Invalid role.");
 
 // Special?
@@ -217,27 +236,33 @@ const specialRole = isSpecialRole(base.role);
 const roleName = String(base.role || "").toLowerCase();
 const isNPCSpecial = specialRole && roleName.includes("n.p.c");
 
-// 1) Special Role with array: add both fixed attributes from the array
-if (specialRole && Array.isArray(role.attribute)) {
-  for (const a of role.attribute) {
-    const k = ATTR_MAP[a];
+// ---- normalizer so "Brawn"/"brawn" both work and map safely ----
+const toAttrKey = (x: any): AttrKey | undefined => {
+  if (!x) return undefined;
+  const k = String(x).trim().toLowerCase() as AttrKey;
+  return (["brawn","nerves","smooth","focus","crime"] as const).includes(k) ? k : undefined;
+};
+
+// 1) NPC Special: do NOT auto-add; user will choose any two later (handled elsewhere)
+if (isNPCSpecial) {
+  // no-op here; see later where you apply base.specialAttributes picks (+2 total)
+}
+// 2) Special Role (non-NPC): add +1 for each listed attribute (array or single), capped at 3
+else if (specialRole) {
+  const attrs = Array.isArray(role.attribute) ? role.attribute : [role.attribute];
+  for (const a of attrs) {
+    const k = toAttrKey(a);
     if (k) dtoTemplate.attributes[k] = Math.min(3, (dtoTemplate.attributes[k] as number) + 1);
   }
-// 2) NPC Special: user picks any two (required)
-} else if (isNPCSpecial) {
-  // (unchanged logic that ensures two picks)
-  // when applying the two adds later:
-  for (const a of base.specialAttributes || []) {
-    const k = a as AttrKey;
-    if (k) dtoTemplate.attributes[k] = Math.min(3, (dtoTemplate.attributes[k] as number) + 1);
-  }
-// 3) Regular Role: fixed attribute + optional roleAttribute
-} else {
+}
+// 3) Regular Role: fixed attribute, capped at 3
+else {
   const fixed = Array.isArray(role.attribute) ? role.attribute[0] : role.attribute;
-  const rAttr = fixed ? ATTR_MAP[fixed] : undefined;
+  const rAttr = toAttrKey(fixed);
   if (rAttr) dtoTemplate.attributes[rAttr] = Math.min(3, (dtoTemplate.attributes[rAttr] as number) + 1);
 }
 
+// Role skills (+1 each, cap=3)
 for (const s of role.skills || []) {
   const key = SKILL_MAP[s];
   if (key) dtoTemplate.skills[key] = Math.min(3, (dtoTemplate.skills[key] as number) + 1);
