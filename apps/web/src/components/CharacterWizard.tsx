@@ -320,6 +320,33 @@ const reviewDTO = useMemo(() => {
   // }, [step, canBuild, name, role, trope, age, tropeAttribute, selectedFeats, skillBumps, jobOrBackground, flaw, catchphrase, gearChosen]);
 }, [canBuild, name, role, trope, age, roleAttribute, tropeAttribute, specialAttrs, selectedFeats, skillBumps, jobOrBackground, flaw, catchphrase, gearChosen]);
 
+// Snapshot BEFORE extra Skill Bumps (so players see current values)
+const preBumpDTO = useMemo(() => {
+  if (!canBuild) return null;
+  try {
+    return buildDerivedDTO({
+      name: name.trim(),
+      role,
+      trope,
+      age,
+      roleAttribute,
+      tropeAttribute,
+      specialAttributes: specialAttrs,
+      selectedFeats,
+      // ⬇️ NO extra bumps in this preview
+      skillBumps: [],
+      jobOrBackground: jobOrBackground.trim(),
+      flaw: flaw.trim(),
+      catchphrase: catchphrase.trim(),
+      gearChosen,
+    });
+  } catch {
+    return null;
+  }
+}, [
+  canBuild, name, role, trope, age, roleAttribute, tropeAttribute,
+  specialAttrs, selectedFeats, jobOrBackground, flaw, catchphrase, gearChosen
+]);
 
   async function save() {
   try {
@@ -644,8 +671,35 @@ className={`border rounded px-3 py-2 text-sm cursor-pointer transition-colors ${
 {step === "skillBumps" && (
   <Card title="Extra Skill Points">
     <p className="text-sm">
-      Choose <b>{specialRole ? 6 : 2} different skills</b> to gain +1 each.
+      Choose <b>{specialRole ? 6 : 2} skills</b> to gain +1 each.
     </p>
+
+    {/* Current values BEFORE extra bumps, grouped by attribute */}
+    {preBumpDTO && (
+      <div className="mt-3 mb-3">
+        <div className="text-xs text-muted-foreground mb-2">
+          Current values (before these extra points):
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
+          {ATTR_ORDER.map((attr) => (
+            <div key={attr} className="rounded border p-2">
+              <div className="font-semibold text-sm capitalize mb-1">
+                {attr}: <span className="tabular-nums">{preBumpDTO.attributes[attr] as any}</span>
+              </div>
+              <ul className="grid grid-cols-2 gap-x-4 text-sm">
+                {ATTR_SKILL_GROUPS[attr].map((sk) => (
+                  <li key={sk} className="flex justify-between">
+                    <span>{sk}</span>
+                    <span className="tabular-nums">{(preBumpDTO.skills[sk] as any) ?? 0}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
     <SkillPicker
       value={skillBumps}
       onChange={setSkillBumps}
@@ -653,6 +707,7 @@ className={`border rounded px-3 py-2 text-sm cursor-pointer transition-colors ${
     />
   </Card>
 )}
+
 
       {step === "jobEtc" && (
         <Card title="Background, Flaw & Catchphrase">
@@ -774,6 +829,16 @@ function AddLine({label, onAdd}:{label:string; onAdd:(txt:string)=>void}){
     <button className="border rounded px-3 py-1" onClick={()=>{ onAdd(txt.trim()); setTxt(""); }}>Add</button>
   </div>;
 }
+
+// Attribute → Skills grouping (display order)
+const ATTR_SKILL_GROUPS: Record<AttrKey, SkillKey[]> = {
+  brawn:  ["Endure","Fight","Force","Stunt"],
+  nerves: ["Cool","Drive","Shoot","Survival"],
+  smooth: ["Flirt","Leadership","Speech","Style"],
+  focus:  ["Detect","Fix","Heal","Know"],
+  crime:  ["Awareness","Dexterity","Stealth","Streetwise"],
+};
+const ATTR_ORDER: AttrKey[] = ["brawn","nerves","smooth","focus","crime"];
 
 const ALL_SKILLS: SkillKey[] = [
   "Endure","Fight","Force","Stunt",
