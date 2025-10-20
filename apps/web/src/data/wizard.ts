@@ -261,26 +261,10 @@ if (tAttr) dtoTemplate.attributes[tAttr] += 1;
   }
 
 
-// Feats by age (normalize, de-dupe, clamp)
-const picksByAge = base.age === "Young" ? 1 : base.age === "Old" ? 3 : 2;
-const autoYoung = base.age === "Young" ? ["Too Young to Die"] : [];
-
-// Normalize, de-dupe, and filter for age
-const cleaned = Array.from(new Set(base.selectedFeats || []))
+const chosenObjects = Array.from(new Set(base.selectedFeats || []))
   .map(normalizeName)
-  .filter(Boolean)
-  .filter((f) => (base.age === "Young" ? true : f !== "Too Young to Die"));
-
-// Clamp number of picks by age
-const chosenNames =
-  base.age === "Young"
-    ? [...autoYoung, ...cleaned.slice(0, picksByAge)]
-    : cleaned.slice(0, picksByAge);
-
-// Build feat objects from FEAT_DESC so descriptions appear in review/sheet
-const chosenObjects = chosenNames.map((name) => featObject(name));
+  .map(featObject);
 dtoTemplate.feats = chosenObjects;
-
 
   if (base.age === "Old") {
     dtoTemplate.deathRoulette = [true, true, false, false, false, false];
