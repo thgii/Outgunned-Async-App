@@ -340,19 +340,22 @@ const preBumpDTO = useMemo(() => {
       gearChosen,
     });
 
-    // Apply display rules: every skill starts at 1, and role/trope skills +1 more
-    const roleSkillSet = new Set(roleDef?.skills || []);
-    const tropeSkillSet = new Set(tropeDef?.skills || []);
-    const allSkills = Object.keys(dto.skills);
+const roleSkillSet = new Set((roleDef?.skills || []).map(s => s.toLowerCase()));
+const tropeSkillSet = new Set((tropeDef?.skills || []).map(s => s.toLowerCase()));
+const allSkills = Object.keys(dto.skills);
 
-    allSkills.forEach((key) => {
-      // Base 1
-      let baseVal = 1;
-      // +1 if Role or Trope grants it
-      if (roleSkillSet.has(key) || tropeSkillSet.has(key)) baseVal += 1;
-      // overwrite for preview
-      dto.skills[key] = baseVal;
-    });
+allSkills.forEach((key) => {
+  // base 1 (already true in dto)
+  let baseVal = dto.skills[key] ?? 1;
+
+  // +1 if Role or Trope grants it
+  if (roleSkillSet.has(key.toLowerCase()) || tropeSkillSet.has(key.toLowerCase())) {
+    baseVal += 1;
+  }
+
+  dto.skills[key] = baseVal;
+});
+
 
     return dto;
   } catch {
