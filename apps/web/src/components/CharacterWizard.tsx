@@ -320,11 +320,11 @@ const reviewDTO = useMemo(() => {
   // }, [step, canBuild, name, role, trope, age, tropeAttribute, selectedFeats, skillBumps, jobOrBackground, flaw, catchphrase, gearChosen]);
 }, [canBuild, name, role, trope, age, roleAttribute, tropeAttribute, specialAttrs, selectedFeats, skillBumps, jobOrBackground, flaw, catchphrase, gearChosen]);
 
-// Snapshot BEFORE extra Skill Bumps (so players see current values)
+// Snapshot BEFORE extra Skill Bumps, showing base 1 + Role/Trope bonuses
 const preBumpDTO = useMemo(() => {
   if (!canBuild) return null;
   try {
-    return buildDerivedDTO({
+    const dto = buildDerivedDTO({
       name: name.trim(),
       role,
       trope,
@@ -333,19 +333,36 @@ const preBumpDTO = useMemo(() => {
       tropeAttribute,
       specialAttributes: specialAttrs,
       selectedFeats,
-      // ⬇️ NO extra bumps in this preview
       skillBumps: [],
       jobOrBackground: jobOrBackground.trim(),
       flaw: flaw.trim(),
       catchphrase: catchphrase.trim(),
       gearChosen,
     });
+
+    // Apply display rules: every skill starts at 1, and role/trope skills +1 more
+    const roleSkillSet = new Set(roleDef?.skills || []);
+    const tropeSkillSet = new Set(tropeDef?.skills || []);
+    const allSkills = Object.keys(dto.skills);
+
+    allSkills.forEach((key) => {
+      // Base 1
+      let baseVal = 1;
+      // +1 if Role or Trope grants it
+      if (roleSkillSet.has(key) || tropeSkillSet.has(key)) baseVal += 1;
+      // overwrite for preview
+      dto.skills[key] = baseVal;
+    });
+
+    return dto;
   } catch {
     return null;
   }
 }, [
-  canBuild, name, role, trope, age, roleAttribute, tropeAttribute,
-  specialAttrs, selectedFeats, jobOrBackground, flaw, catchphrase, gearChosen
+  canBuild, name, role, trope, age,
+  roleAttribute, tropeAttribute, specialAttrs,
+  selectedFeats, jobOrBackground, flaw, catchphrase,
+  gearChosen, roleDef, tropeDef
 ]);
 
   async function save() {
