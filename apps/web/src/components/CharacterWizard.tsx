@@ -1,8 +1,7 @@
-import { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import type { CharacterDTO, SkillKey, AttrKey } from "@action-thread/types";
 import { api } from "../lib/api";
 import { DATA, findRole, findTrope, buildDerivedDTO, featsAllowanceByAge, featRules, roleOptionLists, isSpecialRole, FEAT_DESC, isNpcSpecialRole } from "../data/wizard";
-import { useEffect } from "react";
 
 const [npcSpecialAttrs, setNpcSpecialAttrs] = useState<AttrKey[]>([]);
 const npcSpecial = isNpcSpecialRole(role);
