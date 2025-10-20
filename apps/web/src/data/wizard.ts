@@ -229,7 +229,8 @@ if (specialRole && Array.isArray(role.attribute)) {
 // 3) Regular Role with options
 } else if (!specialRole && Array.isArray(role.attribute_options) && role.attribute_options.length) {
   if (!base.roleAttribute) throw new Error("Select a Role attribute option.");
-  dtoTemplate.attributes[base.roleAttribute] += 1;
+  const rPick = (ATTR_MAP as any)[base.roleAttribute as any] ?? base.roleAttribute;
+  dtoTemplate.attributes[rPick as AttrKey] += 1;
 // 4) Regular Role with fixed attribute (string)
 } else {
   const fixed = Array.isArray(role.attribute) ? role.attribute[0] : role.attribute;
@@ -253,7 +254,7 @@ if (hasTropeOptions && !base.tropeAttribute) {
   throw new Error("Select an attribute for the chosen trope.");
 }
 const tAttr = hasTropeOptions
-  ? base.tropeAttribute
+  ? ((ATTR_MAP as any)[base.tropeAttribute as any] ?? base.tropeAttribute)
   : (trope.attribute ? ATTR_MAP[trope.attribute] : undefined);
 if (tAttr) dtoTemplate.attributes[tAttr] += 1;
     for (const s of trope.skills || []) {

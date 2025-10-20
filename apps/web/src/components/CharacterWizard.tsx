@@ -852,11 +852,11 @@ function AddLine({label, onAdd}:{label:string; onAdd:(txt:string)=>void}){
 
 // Attribute → Skills grouping (display order)
 const ATTR_SKILL_GROUPS: Record<AttrKey, SkillKey[]> = {
-  brawn:  ["Endure","Fight","Force","Stunt"],
-  nerves: ["Cool","Drive","Shoot","Survival"],
-  smooth: ["Flirt","Leadership","Speech","Style"],
-  focus:  ["Detect","Fix","Heal","Know"],
-  crime:  ["Awareness","Dexterity","Stealth","Streetwise"],
+  brawn:  ["endure","fight","force","stunt"],
+  nerves: ["cool","drive","shoot","survival"],
+  smooth: ["flirt","leadership","speech","style"],
+  focus:  ["detect","fix","heal","know"],
+  crime:  ["awareness","dexterity","stealth","streetwise"],
 };
 const ATTR_ORDER: AttrKey[] = ["brawn","nerves","smooth","focus","crime"];
 
