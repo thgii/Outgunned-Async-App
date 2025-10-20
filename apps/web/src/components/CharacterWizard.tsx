@@ -21,6 +21,40 @@ function asName(x: any): string {
   return "";
 }
 
+function sanitizeFeats(
+  picks: string[],
+  roleFeats: string[],
+  tropeFeats: string[],
+  featRule: { total: number; roleMin: number; tropeMin: number; auto: string[] },
+  specialRole: boolean,
+  age: "Young" | "Adult" | "Old"
+) {
+  // Ignore auto feat when counting (display-only)
+  const AUTO = "Too Young to Die";
+  const base = picks.filter(f => f !== AUTO);
+
+  if (specialRole) {
+    // Special roles: only total matters
+    const out = base.slice(0, Math.max(0, featRule.total));
+    return age === "Young" ? [AUTO, ...out] : out;
+  }
+
+  // Partition by source
+  const roleChosen  = base.filter(f => roleFeats.includes(f));
+  const tropeChosen = base.filter(f => tropeFeats.includes(f));
+
+  // Enforce minimums first
+  let keptRole  = roleChosen.slice(0, Math.max(0, featRule.roleMin));
+  let keptTrope = tropeChosen.slice(0, Math.max(0, featRule.tropeMin));
+
+  // Fill remaining capacity from whatever remains (prefers stability)
+  const remaining = base.filter(f => !keptRole.includes(f) && !keptTrope.includes(f));
+  const capacity = Math.max(0, featRule.total - keptRole.length - keptTrope.length);
+  const filler = remaining.slice(0, capacity);
+
+  const out = [...keptRole, ...keptTrope, ...filler];
+  return age === "Young" ? [AUTO, ...out] : out;
+}
 
 type Step =
   | "identity"
@@ -113,7 +147,13 @@ const tropeNeedsAttr = !!(tropeAttrOptions.length) && !specialRole;
 
 // Role attribute needed when the role exposes options AND role is not Special
 const roleNeedsAttr = !!(roleAttrOptions.length) && !specialRole;
-  const featAllowance = featsAllowanceByAge(age);
+  const featAllowanceRaw = featsAllowanceByAge(age);
+  const featRule = {
+    total: Number.isFinite((featAllowanceRaw as any)?.total) ? (featAllowanceRaw as any).total : (specialRole ? 3 : 3),
+    roleMin: Number.isFinite((featAllowanceRaw as any)?.roleMin) ? (featAllowanceRaw as any).roleMin : (specialRole ? 0 : (age === "Adult" ? 2 : 1)),
+    tropeMin: Number.isFinite((featAllowanceRaw as any)?.tropeMin) ? (featAllowanceRaw as any).tropeMin : (specialRole ? 0 : (age === "Adult" ? 1 : (age === "Young" ? 1 : 1))),
+  };
+
 
   const { jobs, flaws, catchphrases, gear } = roleOptionLists(role);
 
@@ -203,7 +243,7 @@ case "feats": {
 
 
       case "skillBumps":
-        return new Set(skillBumps).length === (specialRole ? 6 : 2);
+        return skillBumps.length === (specialRole ? 6 : 2);
       case "jobEtc":
         return true; // free-form ok
       case "gear":
@@ -316,6 +356,7 @@ return true;
 const reviewDTO = useMemo(() => {
   if (!canBuild) return null;
   try {
+    const safeFeats = sanitizeFeats(selectedFeats, roleFeats, tropeFeats, featRule, specialRole, age);
     return buildDerivedDTO({
       name: name.trim(),
       role,
@@ -342,6 +383,7 @@ const reviewDTO = useMemo(() => {
 const preBumpDTO = useMemo(() => {
   if (!canBuild) return null;
   try {
+    const safeFeats = sanitizeFeats(selectedFeats, roleFeats, tropeFeats, featRule, specialRole, age);
     const dto = buildDerivedDTO({
       name: name.trim(),
       role,
@@ -370,22 +412,23 @@ const preBumpDTO = useMemo(() => {
 ]);
 
   async function save() {
-  try {
-const dto = buildDerivedDTO({
-  name,
-  role,
-  trope,
-  age,
-  roleAttribute,                 // NEW
-  tropeAttribute,
-  specialAttributes: specialAttrs, // NEW (NPC Special)
-  selectedFeats,
-  skillBumps,
-  jobOrBackground: jobOrBackground.trim(),
-  flaw: flaw.trim(),
-  catchphrase: catchphrase.trim(),
-  gearChosen,
-});
+    try {
+      const safeFeats = sanitizeFeats(selectedFeats, roleFeats, tropeFeats, featRule, specialRole, age);
+      const dto = buildDerivedDTO({
+        name,
+        role,
+        trope,
+        age,
+        roleAttribute,                 // NEW
+        tropeAttribute,
+        specialAttributes: specialAttrs, // NEW (NPC Special)
+        selectedFeats,
+        skillBumps,
+        jobOrBackground: jobOrBackground.trim(),
+        flaw: flaw.trim(),
+        catchphrase: catchphrase.trim(),
+        gearChosen,
+      });
 
     const created = await api("/characters", { method: "POST", json: dto });
     onComplete?.(created);
