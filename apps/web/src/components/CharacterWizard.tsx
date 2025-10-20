@@ -4,6 +4,24 @@ import { api } from "../lib/api";
 import { DATA, findRole, findTrope, buildDerivedDTO, featsAllowanceByAge, featRules, roleOptionLists, isSpecialRole, FEAT_DESC } from "../data/wizard";
 import { useEffect } from "react";
 
+// ---------------- Display helpers ----------------
+function labelize(s: string) {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+}
+
+// Accepts string | { name?: string; value?: any } | unknown
+function asName(x: any): string {
+  if (x == null) return "";
+  if (typeof x === "string") return x;
+  if (typeof x === "number") return String(x);
+  if (typeof x === "object") {
+    if ("name" in x && x.name) return String((x as any).name);
+    if ("value" in x && (x as any).value != null) return String((x as any).value);
+  }
+  return "";
+}
+
+
 type Step =
   | "identity"
   | "roleTrope"
@@ -886,22 +904,45 @@ function Preview({dto}:{dto: CharacterDTO}) {
       <div>Job: {dto.jobOrBackground || "—"}</div>
       <div>Catchphrase: {dto.catchphrase || "—"}</div>
       <div>Flaw: {dto.flaw || "—"}</div>
-      <div>Feats: {dto.feats.join(", ") || "—"}</div>
-      <div>Adrenaline: {dto.adrenaline} | Luck: {dto.luck} | Spotlight: {dto.spotlight} | Cash: {dto.cash}</div>
-      <div className="grid grid-cols-2 gap-2">
-        <div>
-          <b>Attributes</b>
-          <ul className="list-disc ml-5">
-            {Object.entries(dto.attributes).map(([k,v]) => <li key={k}>{k}: {v as any}</li>)}
-          </ul>
-        </div>
-        <div>
-          <b>Skills</b>
-          <ul className="list-disc ml-5" style={{columns:2}}>
-            {Object.entries(dto.skills).map(([k,v]) => <li key={k}>{k}: {v as any}</li>)}
-          </ul>
-        </div>
+      <div>
+        Feats: {
+          (dto.feats?.length
+            ? dto.feats.map((f: any) =>
+                typeof f === "string"
+                  ? f
+                  : (f?.name ?? (f?.value != null ? String(f.value) : ""))
+              ).filter(Boolean).join(", ")
+            : "—")
+        }
       </div>
+
+      <div>Adrenaline: {dto.adrenaline} | Luck: {dto.luck} | Spotlight: {dto.spotlight} | Cash: {dto.cash}</div>
+<div className="mt-6">
+  <b>Attributes & Skills</b>
+
+  <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3">
+    {Object.entries(ATTR_SKILL_GROUPS).map(([attrKey, skills]) => (
+      <div key={attrKey} className="rounded-lg border p-2">
+        {/* Attribute header */}
+        <div className="flex items-center justify-between font-semibold">
+          <span>{attrKey.charAt(0).toUpperCase() + attrKey.slice(1)}</span>
+          <span>{dto.attributes?.[attrKey as AttrKey] ?? 0}</span>
+        </div>
+
+        {/* Skills list under that attribute */}
+        <ul className="mt-2 ml-3 space-y-0.5">
+          {skills.map((sk) => (
+            <li key={sk} className="flex items-center justify-between text-sm">
+              <span>{sk.charAt(0).toUpperCase() + sk.slice(1)}</span>
+              <span>{dto.skills?.[sk as SkillKey] ?? 0}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </div>
+</div>
+
       {!!dto.storage.gunsAndGear.length && (
         <div><b>Gear</b>: {dto.storage.gunsAndGear.map(g=>g.name).join(", ")}</div>
       )}
