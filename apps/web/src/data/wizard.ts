@@ -204,9 +204,6 @@ export function buildDerivedDTO(
     updatedAt: undefined,
   };
 
-  // Special Role?
-  const specialRole = isSpecialRole(base.role);
-
   // Role adds
   const role = findRole(base.role);
 if (!role) throw new Error("Invalid role.");
