@@ -869,33 +869,79 @@ const ALL_SKILLS: SkillKey[] = [
   "awareness", "dexterity", "stealth", "streetwise",
 ];
 
-function SkillPicker({value, onChange, max = 2}:{value: SkillKey[]; onChange:(s:SkillKey[])=>void; max?: number}) {
-  const chosen = new Set(value);
-  function toggle(k: SkillKey) {
-    const arr = [...chosen];
-    const idx = arr.indexOf(k);
-    if (idx>=0) arr.splice(idx,1);
-    else arr.push(k);
-    // enforce unique and max n
-    onChange(Array.from(new Set(arr)).slice(0, max) as SkillKey[]);
+function SkillPicker({
+  value,
+  onChange,
+  max = 2,
+}: {
+  value: SkillKey[];
+  onChange: (s: SkillKey[]) => void;
+  max?: number;
+}) {
+  // value is a multiset expressed as an array (duplicates allowed)
+  const counts = useMemo(() => {
+    const m = new Map<SkillKey, number>();
+    for (const k of value) m.set(k, (m.get(k) || 0) + 1);
+    return m;
+  }, [value]);
+
+  const total = value.length;
+
+  function add(k: SkillKey) {
+    if (total >= max) return; // cap
+    onChange([...value, k]);
   }
+  function removeOne(k: SkillKey) {
+    const idx = value.indexOf(k);
+    if (idx === -1) return;
+    const next = value.slice();
+    next.splice(idx, 1);
+    onChange(next);
+  }
+
   return (
-    <div className="grid grid-cols-2 gap-2">
-      {ALL_SKILLS.map(k => (
-        <label key={k} className={`border rounded px-3 py-2 cursor-pointer ${chosen.has(k) ? "bg-zinc-100" : ""}`}>
-          <input
-  type="checkbox"
-  className="mr-2"
-  checked={chosen.has(k)}
-  onChange={()=>toggle(k)}
-  disabled={!chosen.has(k) && chosen.size >= max}
-/>
-          {k}
-        </label>
-      ))}
+    <div className="space-y-2">
+      <div className="text-sm text-muted-foreground">
+        Skill bumps selected: <b>{total}</b> / {max}
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {ALL_SKILLS.map((k) => {
+          const c = counts.get(k as SkillKey) || 0;
+          return (
+            <div
+              key={k}
+              className="border rounded px-3 py-2 flex items-center justify-between"
+            >
+              <span className="mr-2">{k}</span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="px-2 py-1 border rounded disabled:opacity-50"
+                  onClick={() => removeOne(k as SkillKey)}
+                  disabled={c === 0}
+                  aria-label={`Remove ${k}`}
+                >
+                  −
+                </button>
+                <span className="tabular-nums w-6 text-center">{c}</span>
+                <button
+                  type="button"
+                  className="px-2 py-1 border rounded disabled:opacity-50"
+                  onClick={() => add(k as SkillKey)}
+                  disabled={total >= max}
+                  aria-label={`Add ${k}`}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
+
 
 function Preview({dto}:{dto: CharacterDTO}) {
   return (

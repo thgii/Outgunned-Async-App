@@ -270,14 +270,14 @@ dtoTemplate.feats = chosenObjects;
     dtoTemplate.deathRoulette = [true, true, false, false, false, false];
   }
 
-  // Two extra skill bumps (+1 each; unique; clamp to 6)
-  const uniq = Array.from(new Set(base.skillBumps || [])).slice(0, specialRole ? 6 : 2);
-  for (const k of uniq) {
-    // Guard against undefined keys just in case
+  // Extra skill bumps (+1 each; duplicates allowed; clamp to 6 per skill)
+  const bumpList = (base.skillBumps || []).slice(0, specialRole ? 6 : 2);
+  for (const k of bumpList) {
     if (k && k in dtoTemplate.skills) {
       dtoTemplate.skills[k] = Math.min(6, (dtoTemplate.skills[k] as number) + 1);
     }
   }
+
 
   // Default Job/Background to the Special Role's name if left blank
   if (specialRole && !dtoTemplate.jobOrBackground.trim()) {
