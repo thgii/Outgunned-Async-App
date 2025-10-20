@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { CharacterDTO, SkillKey, AttrKey } from "@action-thread/types";
 import { api } from "../lib/api";
-import { DATA, findRole, findTrope, buildDerivedDTO, featsAllowanceByAge, featRules, roleOptionLists, isSpecialRole } from "../data/wizard";
+import { DATA, findRole, findTrope, buildDerivedDTO, featsAllowanceByAge, featRules, roleOptionLists, isSpecialRole, FEAT_DESC } from "../data/wizard";
 import { useEffect } from "react";
 
 type Step =
@@ -66,6 +66,12 @@ useEffect(() => {
   const featAllowance = featsAllowanceByAge(age);
 
   const { jobs, flaws, catchphrases, gear } = roleOptionLists(role);
+
+// Feat description getter (uses catalog built from the JSON)
+function describeFeat(name: string): string {
+  return FEAT_DESC[name] || "";
+}
+
 
 // Feats pools (separated by source)
 const roleFeats = useMemo(() => Array.from(new Set(roleDef?.feats || [])), [roleDef]);
@@ -394,22 +400,33 @@ const reviewDTO = useMemo(() => {
   Role Feats{!specialRole && age === "Adult" ? ` (${featRule.roleMin} required)` : ""}
 </h4>
         <div className="grid gap-2">
-          {roleFeats.map(f => (
-            <label
-              key={`role-${f}`}
-              className={`border rounded px-3 py-2 text-sm flex items-center gap-2 cursor-pointer ${selectedFeats.includes(f) ? "bg-zinc-100" : ""}`}
-            >
-              <input
-                type="checkbox"
-                className="mr-2"
-                checked={selectedFeats.includes(f) || (age === "Young" && f === "Too Young to Die")}
-                onChange={() => toggleFeat(f)}
-                disabled={age === "Young" && f === "Too Young to Die"}
-              />
-              <span>{f}</span>
-              <span className="ml-auto text-[10px] uppercase tracking-wide opacity-60">Role</span>
-            </label>
-          ))}
+          {roleFeats.map(f => {
+  const desc = describeFeat(f);
+  return (
+    <label
+      key={`role-${f}`}
+      className={`border rounded px-3 py-2 text-sm cursor-pointer ${selectedFeats.includes(f) ? "bg-zinc-100" : ""}`}
+    >
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          className="mr-2"
+          checked={selectedFeats.includes(f) || (age === "Young" && f === "Too Young to Die")}
+          onChange={() => toggleFeat(f)}
+          disabled={age === "Young" && f === "Too Young to Die"}
+        />
+        <span>{f}</span>
+        <span className="ml-auto text-[10px] uppercase tracking-wide opacity-60">Role</span>
+      </div>
+      {desc ? (
+        <div className="mt-1 text-xs leading-snug text-muted-foreground">
+          {desc}
+        </div>
+      ) : null}
+    </label>
+  );
+})}
+
         </div>
       </div>
 
@@ -418,21 +435,32 @@ const reviewDTO = useMemo(() => {
   Trope Feats{!specialRole && age === "Adult" ? ` (${featRule.tropeMin} required)` : ""}
 </h4>
         <div className="grid gap-2">
-          {tropeFeats.length ? tropeFeats.map(f => (
-            <label
-              key={`trope-${f}`}
-              className={`border rounded px-3 py-2 text-sm flex items-center gap-2 cursor-pointer ${selectedFeats.includes(f) ? "bg-zinc-100" : ""}`}
-            >
-              <input
-                type="checkbox"
-                className="mr-2"
-                checked={selectedFeats.includes(f)}
-                onChange={() => toggleFeat(f)}
-              />
-              <span>{f}</span>
-              <span className="ml-auto text-[10px] uppercase tracking-wide opacity-60">Trope</span>
-            </label>
-          )) : (
+          {tropeFeats.length ? tropeFeats.map(f => {
+  const desc = describeFeat(f);
+  return (
+    <label
+      key={`trope-${f}`}
+      className={`border rounded px-3 py-2 text-sm cursor-pointer ${selectedFeats.includes(f) ? "bg-zinc-100" : ""}`}
+    >
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          className="mr-2"
+          checked={selectedFeats.includes(f)}
+          onChange={() => toggleFeat(f)}
+        />
+        <span>{f}</span>
+        <span className="ml-auto text-[10px] uppercase tracking-wide opacity-60">Trope</span>
+      </div>
+      {desc ? (
+        <div className="mt-1 text-xs leading-snug text-muted-foreground">
+          {desc}
+        </div>
+      ) : null}
+    </label>
+  );
+}) : (
+
             <div className="text-xs italic text-muted-foreground">No trope feats available.</div>
           )}
         </div>
