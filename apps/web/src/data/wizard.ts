@@ -247,25 +247,27 @@ for (const s of role.skills || []) {
   if (key) dtoTemplate.skills[key] += 1;
 }
 
-  // Trope adds (Special Roles act as their own Trope; if no matching trope entry, skip adds)
-  const trope = findTrope(base.trope);
-  if (!trope) {
-    if (!specialRole) throw new Error("Invalid trope.");
-  } else {
-// Prefer attribute_options if present; otherwise fall back to fixed attribute
-const hasTropeOptions = !!(trope.attribute_options?.length);
-if (hasTropeOptions && !base.tropeAttribute) {
-  throw new Error("Select an attribute for the chosen trope.");
-}
-const tAttr = hasTropeOptions
-  ? ((ATTR_MAP as any)[base.tropeAttribute as any] ?? base.tropeAttribute)
-  : (trope.attribute ? ATTR_MAP[trope.attribute] : undefined);
-if (tAttr) dtoTemplate.attributes[tAttr] += 1;
+  // Trope adds — skip entirely for Special Roles
+  if (!specialRole) {
+    const trope = findTrope(base.trope);
+    if (!trope) throw new Error("Invalid trope.");
+
+    // Prefer attribute_options if present; otherwise fall back to fixed attribute
+    const hasTropeOptions = !!(trope.attribute_options?.length);
+    if (hasTropeOptions && !base.tropeAttribute) {
+      throw new Error("Select an attribute for the chosen trope.");
+    }
+    const tAttr = hasTropeOptions
+      ? ((ATTR_MAP as any)[base.tropeAttribute as any] ?? base.tropeAttribute)
+      : (trope.attribute ? ATTR_MAP[trope.attribute] : undefined);
+    if (tAttr) dtoTemplate.attributes[tAttr] += 1;
+
     for (const s of trope.skills || []) {
       const key = SKILL_MAP[s];
       if (key) dtoTemplate.skills[key] += 1;
     }
   }
+
 
 
 // 🔧 FIX: Feats (source-agnostic, no DTO-side caps)
