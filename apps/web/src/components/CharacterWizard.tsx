@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { CharacterDTO, SkillKey, AttrKey } from "@action-thread/types";
 import { api } from "../lib/api";
-import { DATA, findRole, findTrope, buildDerivedDTO, featsAllowanceByAge, featRules, roleOptionLists, isSpecialRole, FEAT_DESC } from "../data/wizard";
+import { DATA, findRole, findTrope, buildDerivedDTO, featRules, roleOptionLists, isSpecialRole, FEAT_DESC } from "../data/wizard";
 import { useEffect } from "react";
 
 // ---------------- Display helpers ----------------
@@ -147,13 +147,6 @@ const tropeNeedsAttr = !!(tropeAttrOptions.length) && !specialRole;
 
 // Role attribute needed when the role exposes options AND role is not Special
 const roleNeedsAttr = !!(roleAttrOptions.length) && !specialRole;
-  const featAllowanceRaw = featsAllowanceByAge(age);
-  const featRule = {
-    total: Number.isFinite((featAllowanceRaw as any)?.total) ? (featAllowanceRaw as any).total : (specialRole ? 3 : 3),
-    roleMin: Number.isFinite((featAllowanceRaw as any)?.roleMin) ? (featAllowanceRaw as any).roleMin : (specialRole ? 0 : (age === "Adult" ? 2 : 1)),
-    tropeMin: Number.isFinite((featAllowanceRaw as any)?.tropeMin) ? (featAllowanceRaw as any).tropeMin : (specialRole ? 0 : (age === "Adult" ? 1 : (age === "Young" ? 1 : 1))),
-  };
-
 
   const { jobs, flaws, catchphrases, gear } = roleOptionLists(role);
 
@@ -365,7 +358,7 @@ const reviewDTO = useMemo(() => {
       roleAttribute,
       tropeAttribute,
       specialAttributes: specialAttrs,
-      selectedFeats,
+      selectedFeats: safeFeats,
       skillBumps,
       jobOrBackground: jobOrBackground.trim(),
       flaw: flaw.trim(),
@@ -392,7 +385,7 @@ const preBumpDTO = useMemo(() => {
       roleAttribute,
       tropeAttribute,
       specialAttributes: specialAttrs,
-      selectedFeats,
+      selectedFeats: safeFeats,
       skillBumps: [],
       jobOrBackground: jobOrBackground.trim(),
       flaw: flaw.trim(),
@@ -422,7 +415,7 @@ const preBumpDTO = useMemo(() => {
         roleAttribute,                 // NEW
         tropeAttribute,
         specialAttributes: specialAttrs, // NEW (NPC Special)
-        selectedFeats,
+        selectedFeats: safeFeats,
         skillBumps,
         jobOrBackground: jobOrBackground.trim(),
         flaw: flaw.trim(),
