@@ -99,6 +99,33 @@ const roleNeedsAttr = !!(roleAttrOptions.length) && !specialRole;
 
   const { jobs, flaws, catchphrases, gear } = roleOptionLists(role);
 
+// What attribute(s) the ROLE already grants (to display above the Trope picker)
+const roleGainedAttrs = useMemo((): string[] => {
+  if (!roleDef) return [];
+
+  // Special roles with array attributes: show both
+  if (specialRole && Array.isArray(roleDef.attribute)) {
+    return roleDef.attribute.map(String);
+  }
+
+  // Special: N.P.C. — show whatever the user has picked so far (if any)
+  if (npcSpecial && specialAttrs.length) {
+    return specialAttrs.map(String);
+  }
+
+  // Regular role with options: show the chosen roleAttribute (if picked)
+  if (roleNeedsAttr && roleAttribute) {
+    return [String(roleAttribute)];
+  }
+
+  // Regular role with fixed attribute
+  if (!specialRole && typeof roleDef.attribute === "string") {
+    return [String(roleDef.attribute)];
+  }
+
+  return [];
+}, [roleDef, specialRole, npcSpecial, specialAttrs, roleNeedsAttr, roleAttribute]);
+
 // Feat description getter (uses catalog built from the JSON)
 function describeFeat(name: string): string {
   return FEAT_DESC[name] || "";
@@ -374,21 +401,30 @@ const dto = buildDerivedDTO({
       Attributes and Skills
     </div>
 
+    {/* Role attribute(s) gained (shown before the Trope selection) */}
+    {roleGainedAttrs.length > 0 && (
+      <div className="mb-3">
+        <div className="text-xs text-muted-foreground mb-1">Role grants:</div>
+        <div className="flex flex-wrap gap-2">
+          {roleGainedAttrs.map((a) => (
+            <span
+              key={`role-attr-chip-${a}`}
+              className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs"
+            >
+              {a}
+            </span>
+          ))}
+        </div>
+      </div>
+    )}
+
 {/* Trope Attribute (only when the trope exposes options AND role is not Special) */}
 {tropeNeedsAttr && (
   <>
     <div className="text-xs text-muted-foreground mb-1">
       Choose an attribute granted by your Trope.
     </div>
-    {/* Trope gained by the Role (display the current Trope) */}
-    <div className="text-xs mb-1">
-      <span className="uppercase tracking-wide text-gray-500">Trope:</span>{" "}
-      <span className="font-medium">{tropeDef?.name ?? trope}</span>
-      {tropeDef?.description ? (
-        <span className="opacity-70"> — {tropeDef.description}</span>
-      ) : null}
-    </div>
-
+    
     <Select
       label="Choose Trope Attribute *"
       value={tropeAttribute ?? ""}
