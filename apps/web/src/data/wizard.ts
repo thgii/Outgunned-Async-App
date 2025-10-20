@@ -157,7 +157,6 @@ export function buildDerivedDTO(
     jobOrBackground: base.jobOrBackground ?? "",
     catchphrase: base.catchphrase ?? "",
     flaw: base.flaw ?? "",
-
     // Base scores: attributes = 2 each, skills = 1 each
     attributes: { brawn: 2, nerves: 2, smooth: 2, focus: 2, crime: 2 },
     skills: {
@@ -182,12 +181,10 @@ export function buildDerivedDTO(
       stealth: 1,
       streetwise: 1,
     },
-
     grit: { current: 0, max: 12 },
     adrenaline: 1, // start pool
     spotlight: 1,
     luck: 1,
-
     experiences: [],
     feats: [],
     youLookSelected: [],
@@ -264,23 +261,26 @@ if (tAttr) dtoTemplate.attributes[tAttr] += 1;
   }
 
 
-  // Feats by age (normalize, de-dupe, clamp)
-  const picksByAge = base.age === "Young" ? 1 : base.age === "Old" ? 3 : 2;
-  const autoYoung = base.age === "Young" ? ["Too Young to Die"] : [];
+// Feats by age (normalize, de-dupe, clamp)
+const picksByAge = base.age === "Young" ? 1 : base.age === "Old" ? 3 : 2;
+const autoYoung = base.age === "Young" ? ["Too Young to Die"] : [];
 
-  const cleaned = Array.from(new Set(base.selectedFeats || []))
-    .map(normalizeName)
-    .filter(Boolean)
-    .filter((f) => (base.age === "Young" ? true : f !== "Too Young to Die"));
+// Normalize names, de-dupe, and prevent carrying TYtD outside of Young
+const cleaned = Array.from(new Set(base.selectedFeats || []))
+  .map(normalizeName)
+  .filter(Boolean)
+  .filter((f) => (base.age === "Young" ? true : f !== "Too Young to Die"));
 
-  const chosenNames =
-    base.age === "Young"
-      ? [...autoYoung, ...cleaned.slice(0, picksByAge)]
-      : cleaned.slice(0, picksByAge);
+// Aged caps operate on total user picks (source-agnostic: Role or Trope)
+const chosenNames =
+  base.age === "Young"
+    ? [...autoYoung, ...cleaned.slice(0, picksByAge)]
+    : cleaned.slice(0, picksByAge);
 
-  // 👉 Enrich feats so DTO carries { name, description }
-  const chosenObjects = chosenNames.map(featObject);
-  dtoTemplate.feats = chosenObjects;
+// 👉 Enrich feats so DTO carries { name, description }
+const chosenObjects = chosenNames.map(featObject);
+dtoTemplate.feats = chosenObjects;
+
 
   if (base.age === "Old") {
     dtoTemplate.deathRoulette = [true, true, false, false, false, false];
