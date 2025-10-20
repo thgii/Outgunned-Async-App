@@ -374,23 +374,6 @@ const dto = buildDerivedDTO({
       Attributes and Skills
     </div>
 
-    {/* Fixed attribute (no choice) */}
-    {tropeDef.attribute && (
-      <div className="text-sm">
-        {specialRole && (
-          <div className="text-xs text-muted-foreground mb-1">
-            Special Role: this sets a fixed attribute.
-          </div>
-        )}
-        <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs">
-          {String(tropeDef.attribute)}
-        </span>
-        <div className="text-xs text-muted-foreground mt-1">
-          This trope/role dictates the attribute; no selection needed.
-        </div>
-      </div>
-    )}
-
 {/* Trope Attribute (only when the trope exposes options AND role is not Special) */}
 {tropeNeedsAttr && (
   <>
