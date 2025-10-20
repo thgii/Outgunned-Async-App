@@ -408,7 +408,7 @@ const reviewDTO = useMemo(() => {
 className={`border rounded px-3 py-2 text-sm cursor-pointer transition-colors ${
   selectedFeats.includes(f)
     ? "bg-black text-white border-black"
-    : "hover:bg-zinc-100"
+    : "hover:bg-zinc-800 hover:text-white"
 }`}
     >
       <div className="flex items-center gap-2">
@@ -447,7 +447,7 @@ className={`border rounded px-3 py-2 text-sm cursor-pointer transition-colors ${
 className={`border rounded px-3 py-2 text-sm cursor-pointer transition-colors ${
   selectedFeats.includes(f)
     ? "bg-black text-white border-black"
-    : "hover:bg-zinc-100"
+    : "hover:bg-zinc-800 hover:text-white"
 }`}
     >
       <div className="flex items-center gap-2">
@@ -583,7 +583,11 @@ function Text({label, value, onChange}:{label:string; value:string; onChange:(v:
 function Select({label, value, onChange, options}:{label:string; value:string; onChange:(v:string)=>void; options:string[]}) {
   return <label className="grid gap-1 mb-2">
     <span className="text-sm">{label}</span>
-    <select value={value} onChange={e=>onChange(e.target.value)} className="border rounded px-2 py-1">
+<select
+  value={value}
+  onChange={e => onChange(e.target.value)}
+  className="border rounded px-2 py-1 bg-white text-black dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+>
       {options.map(o => <option key={o} value={o}>{o || "—"}</option>)}
     </select>
   </label>;
