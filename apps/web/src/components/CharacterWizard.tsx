@@ -340,23 +340,6 @@ const preBumpDTO = useMemo(() => {
       gearChosen,
     });
 
-const roleSkillSet = new Set((roleDef?.skills || []).map(s => s.toLowerCase()));
-const tropeSkillSet = new Set((tropeDef?.skills || []).map(s => s.toLowerCase()));
-const allSkills = Object.keys(dto.skills);
-
-allSkills.forEach((key) => {
-  // base 1 (already true in dto)
-  let baseVal = dto.skills[key] ?? 1;
-
-  // +1 if Role or Trope grants it
-  if (roleSkillSet.has(key.toLowerCase()) || tropeSkillSet.has(key.toLowerCase())) {
-    baseVal += 1;
-  }
-
-  dto.skills[key] = baseVal;
-});
-
-
     return dto;
   } catch {
     return null;
@@ -861,11 +844,11 @@ const ATTR_SKILL_GROUPS: Record<AttrKey, SkillKey[]> = {
 const ATTR_ORDER: AttrKey[] = ["brawn","nerves","smooth","focus","crime"];
 
 const ALL_SKILLS: SkillKey[] = [
-  "Endure","Fight","Force","Stunt",
-  "Cool","Drive","Shoot","Survival",
-  "Flirt","Leadership","Speech","Style",
-  "Detect","Fix","Heal","Know",
-  "Awareness","Dexterity","Stealth","Streetwise"
+  "endure", "fight", "force", "stunt",
+  "cool", "drive", "shoot", "survival",
+  "flirt", "leadership", "speech", "style",
+  "detect", "fix", "heal", "know",
+  "awareness", "dexterity", "stealth", "streetwise",
 ];
 
 function SkillPicker({value, onChange, max = 2}:{value: SkillKey[]; onChange:(s:SkillKey[])=>void; max?: number}) {
