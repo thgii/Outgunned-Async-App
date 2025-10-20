@@ -8,10 +8,8 @@ import type { CharacterDTO, AttrKey, SkillKey } from "@action-thread/types";
 type RoleDef = {
   name: string;
   description?: string;
-  /** For regular roles this is a single attribute string.
-   * For Special Roles this MAY be an array of 2 (eg ["Brawn","Crime"]). */
-  attribute: string | string[];
-  skills: string[];
+  attribute: string;           // "Brawn" etc
+  skills: string[];            // ["Endure", ...]
   feats: string[];
   gear_options?: string[];
   jobs_options?: string[];
@@ -22,15 +20,12 @@ type RoleDef = {
 type TropeDef = {
   name: string;
   description?: string;
-  /** Ignore any prose like "Brawn or Focus" here — use attribute_options instead. */
-  attribute?: string | string[];
-  /** Source of truth for players’ choices. One -> auto, many -> prompt. */
+  attribute?: string;
   attribute_options?: string[];
   skills: string[];
   feats: string[];
   feat_options?: string[];
 };
-
 
 type FeatCat = { name: string; description?: string };
 
@@ -66,11 +61,6 @@ export function isSpecialRole(name: string | undefined | null): boolean {
   const n = String(name ?? "").trim().toLowerCase();
   return n.startsWith("special:");
 }
-export function isNpcSpecialRole(name: string | undefined | null): boolean {
-  const n = String(name ?? "").toLowerCase();
-  return n.startsWith("special:") && n.includes("npc");
-}
-
 
 /* ===============================
  * Lookups
@@ -92,16 +82,6 @@ const ATTR_MAP: Record<string, AttrKey> = {
   Focus: "focus",
   Crime: "crime",
 };
-
-function normalizeAttrList(
-  src?: string | string[] | null
-): AttrKey[] {
-  if (!src) return [];
-  const arr = Array.isArray(src) ? src : [src];
-  return arr
-    .map(s => ATTR_MAP[String(s).trim() as keyof typeof ATTR_MAP])
-    .filter(Boolean) as AttrKey[];
-}
 
 const SKILL_MAP: Record<string, SkillKey> = {
   Endure: "endure",
@@ -148,10 +128,9 @@ export function buildDerivedDTO(
     role: string;
     trope: string; // ← required
     age: "Young" | "Adult" | "Old";
-tropeAttribute?: AttrKey;
-specialAttrPicks?: AttrKey[]; // for Special: NPC (choose any 2)
-selectedFeats: string[];
-skillBumps: SkillKey[];
+    tropeAttribute?: AttrKey; // required when trope has attribute_options
+    selectedFeats: string[]; // user-chosen feats (not including auto TYtD)
+    skillBumps: SkillKey[]; // exactly two skills to +1 (unique enforced)
     jobOrBackground?: string;
     flaw?: string;
     catchphrase?: string;
@@ -223,63 +202,26 @@ skillBumps: SkillKey[];
   const specialRole = isSpecialRole(base.role);
 
   // Role adds
-const role = findRole(base.role);
-if (!role) throw new Error("Invalid role.");
-
-const roleAttrs = normalizeAttrList(role.attribute);
-/** Special Roles may provide two attributes; regular roles typically one. */
-if (roleAttrs.length) {
-  for (const a of roleAttrs) {
-    dtoTemplate.attributes[a] = (dtoTemplate.attributes[a] as number) + 1;
-  }
-}
+  const role = findRole(base.role);
+  if (!role) throw new Error("Invalid role.");
+  const rAttr = ATTR_MAP[role.attribute];
+  if (rAttr) dtoTemplate.attributes[rAttr] += 1;
   for (const s of role.skills || []) {
     const key = SKILL_MAP[s];
     if (key) dtoTemplate.skills[key] += 1;
   }
-
-const npcSpecial = isNpcSpecialRole(base.role);
-
-if (npcSpecial) {
-  const picks = Array.isArray(base.specialAttrPicks) ? Array.from(new Set(base.specialAttrPicks)) : [];
-  if (picks.length !== 2) {
-    throw new Error("Choose 2 attributes for the NPC special role.");
-  }
-  for (const a of picks) {
-    if (a && a in dtoTemplate.attributes) {
-      dtoTemplate.attributes[a] = (dtoTemplate.attributes[a] as number) + 1;
-    }
-  }
-}
 
   // Trope adds (Special Roles act as their own Trope; if no matching trope entry, skip adds)
   const trope = findTrope(base.trope);
   if (!trope) {
     if (!specialRole) throw new Error("Invalid trope.");
   } else {
-   /** For tropes, ignore any freeform `attribute` prose.
- * Source of truth is `attribute_options`:
- *  - 0 options: no attribute from trope
- *  - 1 option : auto-assign it
- *  - 2+      : require user pick (base.tropeAttribute)
- */
-const tropeOptions = Array.isArray(trope.attribute_options) ? trope.attribute_options : [];
-const normalizedTropeOptions = normalizeAttrList(tropeOptions);
-
-if (normalizedTropeOptions.length === 1) {
-  // Auto-assign the only option
-  const a = normalizedTropeOptions[0];
-  dtoTemplate.attributes[a] = (dtoTemplate.attributes[a] as number) + 1;
-} else if (normalizedTropeOptions.length > 1) {
-  // Must come from UI selection
-  if (!base.tropeAttribute) {
-    throw new Error("Select an attribute for the chosen trope.");
-  }
-  const a = base.tropeAttribute;
-  dtoTemplate.attributes[a] = (dtoTemplate.attributes[a] as number) + 1;
-}
-// else: 0 options -> no attribute added by trope
-
+    const tropeNeedsAttr = !!(trope.attribute_options?.length && !trope.attribute);
+    if (tropeNeedsAttr && !base.tropeAttribute) {
+      throw new Error("Select an attribute for the chosen trope.");
+    }
+    const tAttr = trope.attribute ? ATTR_MAP[trope.attribute] : base.tropeAttribute;
+    if (tAttr) dtoTemplate.attributes[tAttr] += 1;
     for (const s of trope.skills || []) {
       const key = SKILL_MAP[s];
       if (key) dtoTemplate.skills[key] += 1;

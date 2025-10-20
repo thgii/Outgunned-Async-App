@@ -1,11 +1,8 @@
 import { useMemo, useState } from "react";
 import type { CharacterDTO, SkillKey, AttrKey } from "@action-thread/types";
 import { api } from "../lib/api";
-import { DATA, findRole, findTrope, buildDerivedDTO, featsAllowanceByAge, featRules, roleOptionLists, isSpecialRole, FEAT_DESC, isNpcSpecialRole } from "../data/wizard";
+import { DATA, findRole, findTrope, buildDerivedDTO, featsAllowanceByAge, featRules, roleOptionLists, isSpecialRole, FEAT_DESC } from "../data/wizard";
 import { useEffect } from "react";
-
-const [npcSpecialAttrs, setNpcSpecialAttrs] = useState<AttrKey[]>([]);
-const npcSpecial = isNpcSpecialRole(role);
 
 type Step =
   | "identity"
@@ -118,20 +115,8 @@ const featsPool = useMemo(() => {
     switch (step) {
       case "identity":
         return name.trim().length > 0;
-      case "roleTrope": {
-  // Trope chosen?
-  if (!role || !trope) return false;
-
-  // NPC special must pick 2 attributes
-  if (npcSpecial) return npcSpecialAttrs.length === 2;
-
-  // Regular trope: if 2+ options, must choose one
-  const needsTropeAttr = !!(tropeDef?.attribute_options?.length && tropeDef.attribute_options.length > 1);
-  if (needsTropeAttr && !tropeAttribute) return false;
-
-  return true;
-}
-
+      case "roleTrope":
+  return !!role && !!trope && (!tropeNeedsAttr || !!tropeAttribute);
       case "tropeAttr":
         return !tropeNeedsAttr || !!tropeAttribute;
       case "age":
@@ -269,7 +254,6 @@ const reviewDTO = useMemo(() => {
       trope,
       age,
       tropeAttribute,
-      specialAttrPicks: npcSpecial ? npcSpecialAttrs : undefined,
       selectedFeats,
       skillBumps,
       jobOrBackground: jobOrBackground.trim(),
@@ -293,7 +277,6 @@ const reviewDTO = useMemo(() => {
       trope,
       age,
       tropeAttribute,
-      specialAttrPicks: npcSpecial ? npcSpecialAttrs : undefined,
       selectedFeats,
       skillBumps,
       jobOrBackground: jobOrBackground.trim(),
@@ -330,51 +313,6 @@ const reviewDTO = useMemo(() => {
   options={["", ...DATA.tropes.map(t=>t.name)]}
   disabled={specialRole}
 />
-{/* ---- Inline attribute pickers ---- */}
-{npcSpecial && (
-  <div className="mt-2 rounded-lg border p-3">
-    <div className="text-xs font-semibold uppercase text-gray-600 mb-1">NPC Special: Choose any 2 attributes</div>
-    <div className="flex flex-wrap gap-2">
-      {(["brawn","nerves","smooth","focus","crime"] as AttrKey[]).map(a => {
-        const on = npcSpecialAttrs.includes(a);
-        const disabled = !on && npcSpecialAttrs.length >= 2;
-        return (
-          <label key={`npc-attr-${a}`} className={`px-2 py-1 border rounded cursor-pointer ${on ? "bg-zinc-900 text-white" : "hover:bg-zinc-100"}`}>
-            <input
-              type="checkbox"
-              className="mr-1"
-              checked={on}
-              disabled={disabled}
-              onChange={() => {
-                setNpcSpecialAttrs(prev => on ? prev.filter(x=>x!==a) : [...prev,a]);
-              }}
-            />
-            {a}
-          </label>
-        );
-      })}
-    </div>
-  </div>
-)}
-
-{!npcSpecial && tropeDef?.attribute_options?.length ? (
-  <div className="mt-2 rounded-lg border p-3">
-    <div className="text-xs font-semibold uppercase text-gray-600 mb-1">Trope Attribute</div>
-    {tropeDef.attribute_options.length === 1 ? (
-      <div className="text-sm text-muted-foreground">
-        This trope grants <b>{tropeDef.attribute_options[0]}</b>.
-      </div>
-    ) : (
-      <Select
-        label="Choose one"
-        value={tropeAttribute ?? ""}
-        onChange={(v)=>setTropeAttribute((v||undefined) as AttrKey)}
-        options={["","brawn","nerves","smooth","focus","crime"]}
-      />
-    )}
-  </div>
-) : null}
-
 {specialRole && (
   <div className="text-xs text-muted-foreground mt-1">
     Special Role: Trope is fixed to match Role.
