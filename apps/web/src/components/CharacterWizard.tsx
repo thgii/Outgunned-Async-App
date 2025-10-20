@@ -203,7 +203,7 @@ case "feats": {
 
 
       case "skillBumps":
-        return new Set(skillBumps).size === (specialRole ? 6 : 2);
+        return new Set(skillBumps).length === (specialRole ? 6 : 2);
       case "jobEtc":
         return true; // free-form ok
       case "gear":
@@ -953,14 +953,17 @@ function Preview({dto}:{dto: CharacterDTO}) {
       <div>
         Feats: {
           (dto.feats?.length
-            ? dto.feats.map((f: any) =>
-                typeof f === "string"
-                  ? f
-                  : (f?.name ?? (f?.value != null ? String(f.value) : ""))
-              ).filter(Boolean).join(", ")
+            ? dto.feats
+                .map((f: any) => {
+                  const name = typeof f === "string" ? f : (f?.name ?? (f?.value != null ? String(f.value) : ""));
+                  return name;
+                })
+                .filter(Boolean)
+                .join(", ")
             : "—")
         }
       </div>
+
 
       <div>Adrenaline/Luck: {dto.adrenaline ?? dto.luck} | Spotlight: {dto.spotlight} | Cash: {dto.cash}</div>
 <div className="mt-6">
@@ -989,7 +992,7 @@ function Preview({dto}:{dto: CharacterDTO}) {
   </div>
 </div>
 
-      {!!dto.storage.gunsAndGear.length && (
+      {!!(dto.storage?.gunsAndGear?.length) && (
         <div><b>Gear</b>: {dto.storage.gunsAndGear.map(g=>g.name).join(", ")}</div>
       )}
     </div>

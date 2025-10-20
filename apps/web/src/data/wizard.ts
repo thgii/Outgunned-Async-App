@@ -60,19 +60,26 @@ export const FEAT_DESC: Record<string, string> =
   Object.fromEntries(FEATS_CATALOG.map((f) => [f.name, f.description || ""])) || {};
 
 /** Special Role helper */
-export function isSpecialRole(name: string | undefined | null): boolean {
-  const n = String(name ?? "").trim().toLowerCase();
-  return n.startsWith("special:");
+export function isSpecialRole(name?: string | null) {
+  return !!name && name.trim().toLowerCase().startsWith("special:");
 }
 
 /* ===============================
  * Lookups
  * =============================== */
 export function findRole(name: string) {
-  return DATA.roles.find((r) => r.name === name) || null;
+  const needle = String(name ?? "").trim().toLowerCase();
+  return (
+    DATA.roles.find((r) => r.name.trim().toLowerCase() === needle) ||
+    null
+  );
 }
 export function findTrope(name: string) {
-  return DATA.tropes.find((t) => t.name === name) || null;
+  const needle = String(name ?? "").trim().toLowerCase();
+  return (
+    DATA.tropes.find((t) => t.name.trim().toLowerCase() === needle) ||
+    null
+  );
 }
 
 /* ===============================
@@ -261,10 +268,15 @@ if (tAttr) dtoTemplate.attributes[tAttr] += 1;
   }
 
 
-const chosenObjects = Array.from(new Set(base.selectedFeats || []))
-  .map(normalizeName)
-  .map(featObject);
+// 🔧 FIX: Feats (source-agnostic, no DTO-side caps)
+// The wizard UI already enforces how many feats can be picked.
+// Here we *only* normalize and enrich what the user actually selected.
+const chosenObjects = Array.from(
+  new Set((base.selectedFeats || []).map(normalizeName))
+).map((name) => featObject(name));
+
 dtoTemplate.feats = chosenObjects;
+
 
   if (base.age === "Old") {
     dtoTemplate.deathRoulette = [true, true, false, false, false, false];
