@@ -49,10 +49,23 @@ useEffect(() => {
   // Data derived from selections
   const roleDef = useMemo(() => role ? findRole(role) : null, [role]);
   const tropeDef = useMemo(() => trope ? findTrope(trope) : null, [trope]);
-  useEffect(() => {
-  const needs = !!(tropeDef?.attribute_options?.length && !tropeDef?.attribute);
-  if (!needs) setTropeAttribute(undefined);
-}, [tropeDef]);
+useEffect(() => {
+  const options = tropeDef?.attribute_options as AttrKey[] | undefined;
+  const hasFixed = !!tropeDef?.attribute;
+  const needs = !!(options?.length && !hasFixed);
+
+  // If not needed (fixed or none), clear the user-picked attribute.
+  if (!needs) {
+    setTropeAttribute(undefined);
+    return;
+  }
+
+  // If needed and current selection is not valid for the new trope, clear it.
+  if (needs && tropeAttribute && !options?.includes(tropeAttribute)) {
+    setTropeAttribute(undefined);
+  }
+}, [tropeDef, tropeAttribute]);
+
   const specialRole = isSpecialRole(role);
 
   // When Role is Special, force Trope = Role and keep them in sync
@@ -103,7 +116,7 @@ const featsPool = useMemo(() => {
       case "identity":
         return name.trim().length > 0;
       case "roleTrope":
-        return !!role && !!trope;
+  return !!role && !!trope && (!tropeNeedsAttr || !!tropeAttribute);
       case "tropeAttr":
         return !tropeNeedsAttr || !!tropeAttribute;
       case "age":
@@ -135,7 +148,7 @@ case "feats": {
   function next() {
     if (!canContinue) return;
     if (step === "identity") setStep("roleTrope");
-    else if (step === "roleTrope") setStep(tropeNeedsAttr ? "tropeAttr" : "age");
+else if (step === "roleTrope") setStep("age");
     else if (step === "tropeAttr") setStep("age");
     else if (step === "age") setStep("feats");
     else if (step === "feats") setStep("skillBumps");
@@ -146,7 +159,7 @@ case "feats": {
   function back() {
     if (step === "roleTrope") setStep("identity");
     else if (step === "tropeAttr") setStep("roleTrope");
-    else if (step === "age") setStep(tropeNeedsAttr ? "tropeAttr" : "roleTrope");
+else if (step === "age") setStep("roleTrope");
     else if (step === "feats") setStep("age");
     else if (step === "skillBumps") setStep("feats");
     else if (step === "jobEtc") setStep("skillBumps");
@@ -316,6 +329,64 @@ const reviewDTO = useMemo(() => {
     {"Trope: " + (tropeDef.description || "No description available for this trope.")}
   </p>
 )}
+{/* --- Trope Attribute on the same page --- */}
+{tropeDef && (
+  <div className="mt-4 rounded-xl border p-3">
+    <div className="text-xs font-semibold uppercase text-gray-600 mb-2">
+      Trope Attribute
+    </div>
+
+    {/* Fixed attribute (no choice) */}
+    {tropeDef.attribute && (
+      <div className="text-sm">
+        {specialRole && (
+          <div className="text-xs text-muted-foreground mb-1">
+            Special Role: this sets a fixed attribute.
+          </div>
+        )}
+        <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs">
+          {String(tropeDef.attribute)}
+        </span>
+        <div className="text-xs text-muted-foreground mt-1">
+          This trope/role dictates the attribute; no selection needed.
+        </div>
+      </div>
+    )}
+
+    {/* Choice among options */}
+    {!tropeDef.attribute && !!tropeDef.attribute_options?.length && (
+      <>
+        {specialRole && (
+          <div className="text-xs text-muted-foreground mb-1">
+            Special Role: choose one attribute from the available options.
+          </div>
+        )}
+        <Select
+          label="Choose Trope Attribute *"
+          value={tropeAttribute ?? ""}
+          onChange={(v) => setTropeAttribute((v || undefined) as AttrKey)}
+          options={[
+            "",
+            ...((tropeDef.attribute_options as string[]) || []),
+          ]}
+        />
+        {!tropeAttribute && (
+          <div className="text-xs text-amber-600 mt-1">
+            Select an attribute to continue.
+          </div>
+        )}
+      </>
+    )}
+
+    {/* No attribute info in data */}
+    {!tropeDef.attribute && !tropeDef.attribute_options?.length && (
+      <div className="text-xs text-muted-foreground">
+        This trope does not specify an attribute.
+      </div>
+    )}
+  </div>
+)}
+
 {/* Role & Trope skill grants */}
 {(roleDef?.skills?.length || tropeDef?.skills?.length) ? (
   <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
