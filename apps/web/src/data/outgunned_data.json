@@ -712,6 +712,10 @@
         "Sword (Katana)",
         "One $1 item of your choice"
       ],
+      "gear_grants": [
+        { "mode": "give", "items": ["sword"] },
+        { "mode": "credit", "amount": 1, "label": "$1 item of your choice" }
+      ],
       "jobs": [],
       "catchphrases": [],
       "flaws": [],
@@ -772,6 +776,10 @@
         "Pistol",
         "Telephone",
         "Weapon of choice"
+      ],
+      "gear_grants": [
+        { "mode": "give", "items": ["pistol", "telephone"] },
+        { "mode": "choose", "of": { "type": "kind", "kind": "weapon" }, "count": 1 }
       ],
       "jobs": [],
       "catchphrases": [],
@@ -834,6 +842,10 @@
         "Elegant Clothes",
         "Your choice of items adding up to $5."
       ],
+      "gear_grants": [
+        { "mode": "give", "items": ["elegant-clothes"] },
+        { "mode": "credit", "amount": 5, "label": "Items adding up to $5" }
+      ],
       "jobs": [],
       "catchphrases": [],
       "flaws": [],
@@ -892,7 +904,11 @@
       ],
       "gear": [
         "Trained Dog",
-        "Pistor or Rifle or Shotgun"
+        "Pistol or Rifle or Shotgun"
+      ],
+      "gear_grants": [
+        { "mode": "give", "items": ["wok-trained-dog"] },
+        { "mode": "choose", "of": { "type": "ids", "ids": ["pistol", "rifle", "shotgun"] }, "count": 1 }
       ],
       "jobs": [],
       "catchphrases": [],
@@ -907,7 +923,7 @@
       ],
       "gear_options": [
         "Trained Dog",
-        "Pistor or Rifle or Shotgun"
+        "Pistol or Rifle or Shotgun"
       ],
       "jobs_options": [
         "Bounty Hunter",
@@ -953,6 +969,7 @@
       "gear": [
         "Nothing"
       ],
+      "gear_grants": [],
       "jobs": [],
       "catchphrases": [],
       "flaws": [],
@@ -1021,6 +1038,9 @@
       "gear": [
         "Concealed Blade"
       ],
+      "gear_grants": [
+        { "mode": "give", "items": ["wok-concealed-blade"] }
+      ],
       "jobs": [],
       "catchphrases": [],
       "flaws": [],
@@ -1083,6 +1103,10 @@
       "gear": [
         "Starship with Speed 1",
         "Laser Pistol"
+      ],
+      "gear_grants": [
+        { "mode": "give", "items": ["starship-1"], "count": 1 },
+        { "mode": "give", "items": ["laser-pistol"] }
       ],
       "jobs": [],
       "catchphrases": [],
