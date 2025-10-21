@@ -687,7 +687,7 @@ const preTropeDTO = useMemo(() => {
         <Card title="Age">
           <Select label="Age" value={age} onChange={v=>setAge(v as any)} options={["Young","Adult","Old"]} />
           <p className="text-xs text-muted-foreground mt-2">
-            Young: 2 feats + “Too Young to Die”. Adult: 3 feats. Old: 4 feats and start with 2 lethal bullets.
+            Young: 2 feats + “Too Young to Die”; 2 Adrenaline/Luck. Adult: 3 feats. Old: 4 feats and start with 2 lethal bullets.
           </p>
         </Card>
       )}

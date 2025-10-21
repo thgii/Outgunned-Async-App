@@ -129,6 +129,7 @@ export default function DirectorsToolkit_AttributesAndSkills() {
         <div className="space-y-4">
           {filtered.map((block) => (
             <details
+              open
               key={block.key}
               id={`attr-${block.key}`}
               className="rounded-xl border border-gray-300 bg-white p-4 open:shadow-md"
