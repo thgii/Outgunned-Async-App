@@ -326,7 +326,7 @@ export const GEAR: GearItem[] = [
   { id: "plunger-rifle", name: "Plunger Rifle", kind: "weapon", tags: ["non-lethal","plunger"], note: "Shoot plungers at a distance with +1.", source: AF2_QT() },
 
   // ===== Action Flicks 2 — In-Console (Virtual) =====
-  { id: "extra-life", name: "Extra Life (Virtual)", kind: "virtual", cost: 999, tags: ["single-use"], note: "Use the 1 UP! Feat.", source: AF2_IC() },
+  { id: "extra-life", name: "Extra Life (Virtual)", kind: "virtual", tags: ["single-use"], note: "Use the 1 UP! Feat.", source: AF2_IC() },
   { id: "super-mushroom", name: "Super Mushroom (Virtual)", kind: "virtual", cost: 3, tags: ["single-use"], note: "Use the Power Up! Feat.", source: AF2_IC() },
   { id: "small-chest", name: "Small Chest (Virtual)", kind: "virtual", cost: 3, tags: ["single-use"], note: "Use the Heavy Machine Gun Feat.", source: AF2_IC() },
   { id: "flash-bomb-virtual", name: "Flash Bomb (Virtual)", kind: "virtual", cost: 3, tags: ["single-use"], note: "All Heroes auto-succeed in next Reaction Turn.", source: AF2_IC() },
