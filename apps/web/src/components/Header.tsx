@@ -37,7 +37,7 @@ export default function Header() {
             }
           >
             <span className="inline-flex items-center gap-2">
-              <Users className="h-4 w-4" /> Characters
+              <Users className="h-4 w-4" /> Heroes
             </span>
           </NavLink>
 

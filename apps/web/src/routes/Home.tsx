@@ -14,13 +14,13 @@ export default function Home() {
       <div className="space-x-4">
         <Link to="/characters/new">
           <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
-            Create Character
+            Create Hero
           </button>
         </Link>
 
         <Link to="/characters">
           <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
-            View All Characters
+            View All Heroes
           </button>
         </Link>
       </div>
