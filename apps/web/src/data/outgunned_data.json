@@ -126,8 +126,8 @@
       ],
       "gear_grants": [
         {
-          "mode": "give",
-          "items": ["cash-1"]
+          "mode": "credit",
+          "amount": [1]
         }
       ],
       "jobs": [],
@@ -187,7 +187,18 @@
       ],
       "gear": [
         "Ride with Speed 1",
-        "Pistor or Shotgun"
+        "Pistol or Shotgun"
+      ],
+      "gear_grants": [
+        {
+          "mode": "give",
+          "items": ["ride-generic-speed-1"]
+        },
+        {
+          "mode": "choose",
+          "of": { "type": "ids", "ids": ["pistol", "shotgun"] },
+          "count": 1
+        }
       ],
       "jobs": [],
       "catchphrases": [],

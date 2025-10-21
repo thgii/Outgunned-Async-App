@@ -157,7 +157,7 @@ export const GEAR: GearItem[] = [
   { id: "mags-2", name: "Mags (2)", kind: "consumable", cost: 1, tags: ["ammo"], note: "Mags for a type of weapon of your choice.", source: OG(102) },
 
   // Rides (generic + your “Common Rides”)
-  { id: "ride-generic-speed-1", name: "Common Rides (Speed 1)", kind: "ride", cost: 3, tags: ["ride"], props: { speed: 1 }, note: "Bikes, cars, nautical rides with Speed 1.", source: OG(105) },
+  { id: "ride-generic-speed-1", name: "Common Rides (Speed 1)- Update in Character Sheet", kind: "ride", cost: 3, tags: ["ride"], props: { speed: 1 }, note: "Bikes, cars, nautical rides with Speed 1.", source: OG(105) },
   // Added generics you’ll want for “of your choice” grants:
   { id: "ride-bike", name: "Ride (Bike)", kind: "ride", cost: 3, tags: ["ride","bike"], props: { type: "bike" }, source: OG(105) },
   { id: "ride-car", name: "Ride (Car)", kind: "ride", cost: 3, tags: ["ride","car"], props: { type: "car" }, source: OG(105) },
@@ -336,5 +336,5 @@ export const GEAR: GearItem[] = [
   { id: "super-star-virtual", name: "Super Star (Virtual)", kind: "virtual", cost: 3, tags: ["invincible","single-use"], note: "3 Turns: cannot lose Grit or suffer Conditions.", source: AF2_IC() },
 
   // ===== Utility: Credit token (not in your sheet, but needed for flexible grants) =====
-  { id: "cash-1", name: "1$ Credit", kind: "cash", cost: 1, tags: ["currency"], note: "Generic buying power unit for flexible grants.", source: OG(99) },
+  { id: "cash-1", name: "1$ Credit- Exchange for Gear", kind: "cash", cost: 1, tags: ["currency"], note: "Generic buying power unit for flexible grants.", source: OG(99) },
 ];
