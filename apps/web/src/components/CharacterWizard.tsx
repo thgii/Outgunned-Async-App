@@ -4,9 +4,9 @@ import { api } from "../lib/api";
 import { DATA, findRole, findTrope, buildDerivedDTO, featRules, roleOptionLists, isSpecialRole, FEAT_DESC } from "../data/wizard";
 import { useEffect } from "react";
 // data
-import { roleGearGrants, tropeGearGrants } from "@/data/wizard";
+import { roleGearGrants, tropeGearGrants } from "../data/wizard";
 // catalog resolver
-import { optionsForGrant, toNames } from "@/lib/gear";
+import { optionsForGrant, toNames } from "../lib/gear";
 
 
 // ---- local attribute normalizer for warnings ----
