@@ -5,6 +5,7 @@ import Game from "./Game";
 import Character from "./Character";
 import CharacterCreator from "./CharacterCreator";
 import CharactersList from "./CharactersList";
+import DirectorsToolkit from "./DirectorsToolkit";
 
 import Header from "../components/Header";
 
@@ -23,6 +24,7 @@ export const Router = () => (
           <Route path="/character/:id" element={<Character />} />
           <Route path="/characters/new" element={<CharacterCreator />} />
           <Route path="/characters" element={<CharactersList />} />
+          <Route path="/directors-toolkit" element={<DirectorsToolkit />} />
         </Routes>
       </div>
     </main>

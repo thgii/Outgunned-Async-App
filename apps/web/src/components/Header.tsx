@@ -42,6 +42,17 @@ export default function Header() {
           </NavLink>
 
           <NavLink
+            to="/directors-toolkit"
+            className={({ isActive }) =>
+              `${linkBase} ${isActive ? active : inactive}`
+            }
+          >
+            <span className="inline-flex items-center gap-2">
+              <Users className="h-4 w-4" /> Director's Toolkit
+            </span>
+          </NavLink>
+
+          <NavLink
             to="/chat"
             className={({ isActive }) =>
               `${linkBase} ${isActive ? active : inactive}`
