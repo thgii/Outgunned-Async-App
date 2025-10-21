@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { Film, Users, MessageSquare, Settings } from "lucide-react";
+import { Film, Users, MessageSquare, Settings, Clapperboard } from "lucide-react";
 
 const linkBase =
   "px-3 py-2 rounded-lg transition-colors text-sm font-medium hover:text-white";
@@ -48,7 +48,7 @@ export default function Header() {
             }
           >
             <span className="inline-flex items-center gap-2">
-              <Users className="h-4 w-4" /> Director's Toolkit
+              <Clapperboard className="h-4 w-4" /> Director's Toolkit
             </span>
           </NavLink>
 
