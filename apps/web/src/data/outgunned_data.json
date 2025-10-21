@@ -51,11 +51,11 @@
       "gear_grants": [
         {
           "mode": "give",
-          "items": ["oga-knife"]
+          "items": ["knife"]
         },
         {
           "mode": "choose",
-          "of": { "type": "ids", "ids": ["oga-lighter", "oga-radio"] },
+          "of": { "type": "ids", "ids": ["telephone", "radio"] },
           "count": 1
         },
         {

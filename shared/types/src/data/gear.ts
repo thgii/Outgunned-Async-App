@@ -125,7 +125,8 @@ export const GEAR: GearItem[] = [
   { id: "grappling-hook", name: "Grappling Hook", kind: "tool", cost: 1, tags: ["climb","mobility"], note: "Grants Help to climb and swing.", source: OG(103) },
   { id: "handcuffs", name: "Handcuffs", kind: "tool", cost: 1, tags: ["restraint","police"], note: "Grants Help to restrain people.", source: OG(103) },
   { id: "heavy-mace", name: "Heavy Mace", kind: "weapon", cost: 1, tags: ["melee","breach"], note: "Grants Help to break doors and smash things.", source: OG(103) },
-  { id: "knife-sword", name: "Knife/Sword", kind: "weapon", cost: 1, tags: ["melee","sharp"], note: "Grants Help to cut things.", source: OG(103) },
+  { id: "knife", name: "Knife", kind: "weapon", cost: 1, tags: ["melee","sharp"], note: "Grants Help to cut things.", source: OG(103) },
+  { id: "sword", name: "Sword", kind: "weapon", cost: 1, tags: ["melee","sharp"], note: "Grants Help to cut things.", source: OG(103) },
   { id: "lockpicking-set", name: "Lockpicking Set", kind: "tool", cost: 2, tags: ["infiltration","stealth"], note: "Grants Help to open locks or safes.", source: OG(103) },
   { id: "night-vision-device", name: "Night Vision Device", kind: "device", cost: 2, tags: ["darkness","surveillance"], note: "Grants Help to see in the dark.", source: OG(103) },
   { id: "portable-computer", name: "Portable Computer", kind: "device", cost: 2, tags: ["intel","hacking","network"], note: "Grants Help to find information and connect to a network.", source: OG(103) },
@@ -134,6 +135,8 @@ export const GEAR: GearItem[] = [
   { id: "telescopic-sight", name: "Telescopic Sight", kind: "device", cost: 2, tags: ["aim","weapon-mod"], note: "Grants the Precision Shot Feat to a rifle or assault rifle.", source: OG(103) },
   { id: "toolbox", name: "Toolbox", kind: "tool", cost: 1, tags: ["repair","rides"], note: "Grants Help to repair Rides and other things.", source: OG(103) },
   { id: "wingsuit", name: "Wingsuit", kind: "outfit", cost: 3, tags: ["mobility","aerial"], note: "Grants Help to glide. Includes a parachute.", source: OG(103) },
+  { id: "telephone", name: "Telephone", kind: "device", cost: 1, tags: ["comms"], note: "Communicate at a distance.", source: OG() },
+  { id: "radio", name: "Radio", kind: "device", cost: 3, tags: ["comms","bulky"], note: "Communicate at a distance. Bulky.", source: OG() },
 
   // ===== Outgunned Corebook — Firearms & Ammo =====
   { id: "pistol", name: "Pistol", kind: "weapon", cost: 1, tags: ["firearm"], props: { gun: { melee: 0, close: 0, medium: 0, long: -2 } }, note: "No Feat.", source: OG(100) },
