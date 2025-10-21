@@ -143,6 +143,7 @@ export const GEAR: GearItem[] = [
 
 
   // ===== Outgunned Corebook — Firearms & Ammo =====
+  { id: "weapon-placeholder", name: "Weapon Placeholder- Update in Character Sheet", kind: "weapon", note: "Placeholder- replace with other weapon.", source: OG() },
   { id: "pistol", name: "Pistol", kind: "weapon", cost: 1, tags: ["firearm"], props: { gun: { melee: 0, close: 0, medium: 0, long: -2 } }, note: "No Feat.", source: OG(100) },
   { id: "revolver", name: "Revolver", kind: "weapon", cost: 1, tags: ["firearm"], props: { gun: { melee: 0, close: 0, medium: 0, long: -2 } }, note: "No Feat.", source: OG(100) },
   { id: "machine-pistol", name: "Machine Pistol", kind: "weapon", cost: 2, tags: ["firearm","rapid-fire","short-range"], props: { gun: { melee: 0, close: +1, medium: 0, long: "X" } }, note: "Rapid Fire, Short Range.", source: OG(101) },
