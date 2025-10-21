@@ -156,7 +156,7 @@ export default function DirectorsToolkit_Gear() {
                     {g.note && <div className="mt-1 text-sm text-gray-700">{g.note}</div>}
 
                     {/* If ranged weapon, show compact range line */}
-                    <GunRangeLine {...({} as any)} />
+                    <GunRangeLine {...g} />
                     {/* ^ above won't render as-is; we need actual g passed in */}
                   </li>
                 ))}
