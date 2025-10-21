@@ -301,7 +301,10 @@ const chosenObjects = Array.from(
 
 dtoTemplate.feats = chosenObjects;
 
-
+  if (base.age === "Young") {
+    dtoTemplate.adrenaline = 2;
+  }
+  
   if (base.age === "Old") {
     dtoTemplate.deathRoulette = [true, true, false, false, false, false];
   }
