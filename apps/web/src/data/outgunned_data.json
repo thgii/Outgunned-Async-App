@@ -262,6 +262,11 @@
         "Badge",
         "Telephone or Radio"
       ],
+      "gear_grants": [
+        { "mode": "give", "items": ["pistol", "handcuffs"] },
+        { "mode": "choose", "of": { "type": "custom", "label": "Badge" }, "count": 1 },
+        { "mode": "choose", "of": { "type": "ids", "ids": ["telephone", "radio"] }, "count": 1 }
+      ],
       "jobs": [],
       "catchphrases": [],
       "flaws": [],
