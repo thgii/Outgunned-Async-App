@@ -215,7 +215,7 @@ export function buildDerivedDTO(
     feats: [],
     youLookSelected: [],
     isBroken: false,
-    deathRoulette: [false, false, false, false, false, false], // updated for Old
+    deathRoulette: [true, false, false, false, false, false], // updated for Old
 
     cash: 1,
     storage: { backpack: [], bag: [], gunsAndGear: [] },
