@@ -47,7 +47,7 @@ export default function Header() {
             className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}
           >
             <span className="inline-flex items-center gap-2">
-              <Clapperboard className="h-4 w-4" /> Characters
+              <Users className="h-4 w-4" /> Characters
             </span>
           </NavLink>
 
@@ -56,7 +56,7 @@ export default function Header() {
             className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}
           >
             <span className="inline-flex items-center gap-2">
-              <Users className="h-4 w-4" /> Director&apos;s Toolkit
+              <Clapperboard className="h-4 w-4" /> Director&apos;s Toolkit
             </span>
           </NavLink>
 
