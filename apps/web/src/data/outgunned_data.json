@@ -329,7 +329,7 @@
         "Precious item of choice"
       ],
       "gear_grants": [
-        { "mode": "give", "items": ["elegant-clothes", "precious-item"] },
+        { "mode": "give", "items": ["elegant-clothes", "precious-item"] }
       ],
       "jobs": [],
       "catchphrases": [],
@@ -454,7 +454,7 @@
         "Pencil"
       ],
       "gear_grants": [
-        { "mode": "give", "items": ["portable-computer", "notebook-and-pencil"] },
+        { "mode": "give", "items": ["portable-computer", "notebook-and-pencil"] }
       ],
       "jobs": [],
       "catchphrases": [],
