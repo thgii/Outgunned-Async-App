@@ -126,9 +126,8 @@
       ],
       "gear_grants": [
         {
-          "mode": "choose",
-          "of": { "type": "cost", "max": 1 },
-          "count": 1
+          "mode": "give",
+          "items": ["cash-1"]
         }
       ],
       "jobs": [],
