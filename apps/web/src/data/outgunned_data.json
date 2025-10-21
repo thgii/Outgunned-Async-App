@@ -124,6 +124,13 @@
       "gear": [
         "One $1 item of your choice"
       ],
+      "gear_grants": [
+        {
+          "mode": "choose",
+          "of": { "type": "cost", "max": 1 },
+          "count": 1
+        }
+      ],
       "jobs": [],
       "catchphrases": [],
       "flaws": [],
