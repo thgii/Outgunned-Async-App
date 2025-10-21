@@ -263,8 +263,7 @@
         "Telephone or Radio"
       ],
       "gear_grants": [
-        { "mode": "give", "items": ["pistol", "handcuffs"] },
-        { "mode": "choose", "of": { "type": "custom", "label": "Badge" }, "count": 1 },
+        { "mode": "give", "items": ["pistol", "handcuffs", "badge"] },
         { "mode": "choose", "of": { "type": "ids", "ids": ["telephone", "radio"] }, "count": 1 }
       ],
       "jobs": [],
@@ -329,6 +328,9 @@
         "Elegant Clothes",
         "Precious item of choice"
       ],
+      "gear_grants": [
+        { "mode": "give", "items": ["elegant-clothes", "precious-item"] },
+      ],
       "jobs": [],
       "catchphrases": [],
       "flaws": [],
@@ -387,6 +389,9 @@
       ],
       "gear": [
         "One $1 item of your choice or Old ride with Speed 0"
+      ],
+      "gear_grants": [
+        { "mode": "choose", "of": { "type": "ids", "ids": ["ride-generic-speed-0", "cash-1"] }, "count": 1 }
       ],
       "jobs": [],
       "catchphrases": [],
@@ -448,6 +453,9 @@
         "Notebook",
         "Pencil"
       ],
+      "gear_grants": [
+        { "mode": "give", "items": ["portable-computer", "notebook-and-pencil"] },
+      ],
       "jobs": [],
       "catchphrases": [],
       "flaws": [],
@@ -507,7 +515,11 @@
       ],
       "gear": [
         "One $1 item of your choice",
-        "Pistal or Rifle or Shotgun"
+        "Pistol or Rifle or Shotgun"
+      ],
+      "gear_grants": [
+        { "mode": "credit", "amount": 1, "label": "$1 item of your choice" },
+        { "mode": "choose", "of": { "type": "ids", "ids": ["pistol", "rifle", "shotgun"] }, "count": 1 }
       ],
       "jobs": [],
       "catchphrases": [],
@@ -569,6 +581,10 @@
         "Pistol",
         "Knife or Lockpicking Set or Handcuffs"
       ],
+      "gear_grants": [
+        { "mode": "give", "items": ["pistol"] },
+        { "mode": "choose", "of": { "type": "ids", "ids": ["knife", "lockpicking-set", "handcuffs"] }, "count": 1 }
+      ],
       "jobs": [],
       "catchphrases": [],
       "flaws": [],
@@ -629,6 +645,11 @@
         "Elegant Clothes",
         "Pistol with Silencer",
         "Item of Choice"
+      ],
+      "gear_grants": [
+        { "mode": "give", "items": ["elegant-clothes"] },
+        { "mode": "give", "items": ["pistol", "silencer"] },
+        { "mode": "choose", "of": { "type": "custom", "label": "Item of your choice" }, "count": 1 }
       ],
       "jobs": [],
       "catchphrases": [],

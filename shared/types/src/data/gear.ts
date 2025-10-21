@@ -137,6 +137,10 @@ export const GEAR: GearItem[] = [
   { id: "wingsuit", name: "Wingsuit", kind: "outfit", cost: 3, tags: ["mobility","aerial"], note: "Grants Help to glide. Includes a parachute.", source: OG(103) },
   { id: "telephone", name: "Telephone", kind: "device", cost: 1, tags: ["comms"], note: "Communicate at a distance.", source: OG() },
   { id: "radio", name: "Radio", kind: "device", cost: 3, tags: ["comms","bulky"], note: "Communicate at a distance. Bulky.", source: OG() },
+  { id: "badge", name: "Badge", kind: "outfit", cost: 1, tags: ["police"], note: "Grants Help where authority would support.", source: OG() },
+  { id: "precious-item", name: "Precious Item- Update in Character Sheet", kind: "cash", cost: 3, tags: ["currency"], note: "Generic precious item.", source: OG() },
+  { id: "notebook-and-pencil", name: "Notebook and Pencil", kind: "tool", cost: 1, tags: ["intel"], note: "Grants Help to remember information.", source: OG() },
+
 
   // ===== Outgunned Corebook — Firearms & Ammo =====
   { id: "pistol", name: "Pistol", kind: "weapon", cost: 1, tags: ["firearm"], props: { gun: { melee: 0, close: 0, medium: 0, long: -2 } }, note: "No Feat.", source: OG(100) },
@@ -158,6 +162,7 @@ export const GEAR: GearItem[] = [
 
   // Rides (generic + your “Common Rides”)
   { id: "ride-generic-speed-1", name: "Common Rides (Speed 1)- Update in Character Sheet", kind: "ride", cost: 3, tags: ["ride"], props: { speed: 1 }, note: "Bikes, cars, nautical rides with Speed 1.", source: OG(105) },
+  { id: "ride-generic-speed-0", name: "Old Ride (Speed 0)- Update in Character Sheet", kind: "ride", cost: 2, tags: ["ride"], props: { speed: 0 }, note: "Old Bikes, cars, nautical rides with Speed 0.", source: OG() },
   // Added generics you’ll want for “of your choice” grants:
   { id: "ride-bike", name: "Ride (Bike)", kind: "ride", cost: 3, tags: ["ride","bike"], props: { type: "bike" }, source: OG(105) },
   { id: "ride-car", name: "Ride (Car)", kind: "ride", cost: 3, tags: ["ride","car"], props: { type: "car" }, source: OG(105) },
