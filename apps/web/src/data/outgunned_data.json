@@ -48,6 +48,22 @@
         "Telephone or Radio",
         "Weapon of choice"
       ],
+      "gear_grants": [
+        {
+          "mode": "give",
+          "items": ["oga-knife"]
+        },
+        {
+          "mode": "choose",
+          "of": { "type": "ids", "ids": ["oga-lighter", "oga-radio"] },
+          "count": 1
+        },
+        {
+          "mode": "choose",
+          "of": { "type": "kind", "kind": "weapon" },
+          "count": 1
+        }
+      ]
       "jobs": [],
       "catchphrases": [],
       "flaws": [],

@@ -1,6 +1,9 @@
 // apps/web/src/data/wizard.ts
 import raw from "./outgunned_data.json";
 import type { CharacterDTO, AttrKey, SkillKey } from "@action-thread/types";
+// Gear grants (shared types)
+import type { GearGrant, GearSelector } from "@action-thread/types";
+
 
 // ---- attribute normalizers (array/single, case-insensitive) ----
 const ATTR_KEYS: AttrKey[] = ["brawn", "nerves", "smooth", "focus", "crime"];
@@ -145,6 +148,50 @@ function featObject(name: string): { name: string; description?: string } {
   const n = normalizeName(name);
   const d = normalizeName(FEAT_DESC[n]);
   return d ? { name: n, description: d } : { name: n };
+}
+
+// ---- Gear grants loader: prefer structured, fallback to strings ----
+function getGearGrants(def: { gear_grants?: GearGrant[]; gear?: string[] }): GearGrant[] {
+  if (Array.isArray(def.gear_grants) && def.gear_grants.length) {
+    return def.gear_grants;
+  }
+  // Minimal legacy fallback rules for common phrases
+  const strings = def.gear ?? [];
+  const grants: GearGrant[] = [];
+  for (const s of strings) {
+    const t = s.toLowerCase().trim();
+
+    if (t.includes("pistol or rifle or shotgun")) {
+      grants.push({ mode: "choose", of: { type: "ids", ids: ["pistol","rifle","shotgun"] }, count: 1 });
+      continue;
+    }
+    if (/\$1.*item.*choice/.test(t)) {
+      grants.push({ mode: "choose", of: { type: "custom", label: "$1 item of your choice", constraint: { costEq: 1 } }, count: 1 });
+      continue;
+    }
+    if (/ride.*speed\s*1/.test(t) || /common rides/i.test(t)) {
+      grants.push({ mode: "choose", of: { type: "ride", speed: 1 }, count: 1 });
+      continue;
+    }
+    if (/weapon of choice/.test(t)) {
+      grants.push({ mode: "choose", of: { type: "kind", kind: "weapon" }, count: 1 });
+      continue;
+    }
+    // Last resort: generic picker with a label (UI will handle)
+    grants.push({ mode: "choose", of: { type: "custom", label: s }, count: 1 });
+  }
+  return grants;
+}
+
+// === Expose gear grants for UI (role / trope) ===
+export function roleGearGrants(roleName: string): GearGrant[] {
+  const r = findRole(roleName);
+  return r ? getGearGrants(r as any) : [];
+}
+
+export function tropeGearGrants(tropeName: string): GearGrant[] {
+  const t = findTrope(tropeName);
+  return t ? getGearGrants(t as any) : [];
 }
 
 /* ===============================
@@ -396,11 +443,14 @@ export function featRules(
  * =============================== */
 export function roleOptionLists(roleName: string) {
   const r = findRole(roleName);
-  if (!r) return { jobs: [], flaws: [], catchphrases: [], gear: [] };
+  if (!r) return { jobs: [], flaws: [], catchphrases: [], gear: [], gear_grants: [] as GearGrant[] };
+
   return {
     jobs: r.jobs_options ?? [],
     flaws: r.flaws_options ?? [],
     catchphrases: r.catchphrases_options ?? [],
-    gear: r.gear_options ?? [],
+    gear: r.gear_options ?? [],                 // legacy strings still exposed
+    gear_grants: getGearGrants(r as any),       // <-- new: structured grants for the UI
   };
 }
+

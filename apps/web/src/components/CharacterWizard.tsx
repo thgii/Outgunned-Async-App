@@ -3,6 +3,11 @@ import type { CharacterDTO, SkillKey, AttrKey } from "@action-thread/types";
 import { api } from "../lib/api";
 import { DATA, findRole, findTrope, buildDerivedDTO, featRules, roleOptionLists, isSpecialRole, FEAT_DESC } from "../data/wizard";
 import { useEffect } from "react";
+// data
+import { roleGearGrants, tropeGearGrants } from "@/data/wizard";
+// catalog resolver
+import { optionsForGrant, toNames } from "@/lib/gear";
+
 
 // ---- local attribute normalizer for warnings ----
 const normalizeAttr = (a?: string | null) => {
@@ -113,6 +118,22 @@ useEffect(() => {
 // Data derived from selections
 const roleDef = useMemo(() => (role ? findRole(role) : null), [role]);
 const tropeDef = useMemo(() => (trope ? findTrope(trope) : null), [trope]);
+
+// === Gear grants (from JSON) ===
+const roleGrants  = useMemo(() => role ? roleGearGrants(role)   : [], [role]);
+const tropeGrants = useMemo(() => trope ? tropeGearGrants(trope) : [], [trope]);
+const allGrants   = useMemo(() => [...roleGrants, ...tropeGrants], [roleGrants, tropeGrants]);
+
+// Per-grant selections: array parallel to allGrants, each entry is a list of selected catalog IDs
+const [selectedByGrant, setSelectedByGrant] = useState<string[][]>(() => allGrants.map(() => []));
+// Freeform user-added items (strings)
+const [gearCustom, setGearCustom] = useState<string[]>([]);
+
+// Reset grant selections and custom adds when Role or Trope change
+useEffect(() => {
+  setSelectedByGrant(allGrants.map(() => []));
+  setGearCustom([]);
+}, [role, trope]);
 
 const specialRole = isSpecialRole(role);
 const npcSpecial = specialRole && String(role).toLowerCase().includes("n.p.c");
@@ -246,8 +267,16 @@ case "feats": {
         return skillBumps.length === (specialRole ? 6 : 2);
       case "jobEtc":
         return true; // free-form ok
-      case "gear":
-        return true;
+      case "gear": {
+      // All choose-grants must meet their pick count; credit/grant are free
+        const allOk = allGrants.every((g, idx) => {
+          if (g.mode !== "choose") return true;
+          const picked = selectedByGrant[idx]?.length ?? 0;
+          return picked >= g.count;
+        });
+        return allOk;
+      }
+
       case "review":
         return true;
     }
@@ -341,6 +370,27 @@ function toggleFeat(f: string) {
     setGearChosen(prev => prev.includes(g) ? prev.filter(x=>x!==g) : [...prev, g]);
   }
 
+  // Build human-readable names from grant selections
+function grantPickedNames(): string[] {
+  const out: string[] = [];
+  allGrants.forEach((g, idx) => {
+    if (g.mode === "give") {
+      // Convert give -> names via optionsForGrant shim
+      const giveNames = toNames(
+        optionsForGrant({ ...g, mode: "choose", of: { type: "ids", ids: g.items }, count: g.items.length } as any)
+      );
+      out.push(...giveNames);
+      return;
+    }
+    // choose / credit
+    const ids = selectedByGrant[idx] ?? [];
+    const chosenItems = optionsForGrant(g).filter(o => ids.includes(o.id));
+    out.push(...toNames(chosenItems));
+  });
+  return out;
+}
+
+
 // Can we legally build yet?
 const canBuild = useMemo(() => {
   if (!name.trim()) return false;
@@ -351,6 +401,11 @@ if (tropeNeedsAttr && !tropeAttribute) return false;
 if (npcSpecial && specialAttrs.length !== 2) return false;
 return true;
 }, [name, role, trope, roleNeedsAttr, roleAttribute, tropeNeedsAttr, tropeAttribute, npcSpecial, specialAttrs]);
+
+// Final gear list = grant picks + freeform user-added items
+const mergedGearChosen = useMemo(() => {
+  return [...grantPickedNames(), ...gearCustom];
+}, [selectedByGrant, allGrants, gearCustom]);
 
 // Only build when it's safe (and preferably only when needed)
 const reviewDTO = useMemo(() => {
@@ -370,14 +425,14 @@ const reviewDTO = useMemo(() => {
       jobOrBackground: jobOrBackground.trim(),
       flaw: flaw.trim(),
       catchphrase: catchphrase.trim(),
-      gearChosen,
+      gearChosen: mergedGearChosen,
     });
   } catch {
     return null; // never throw during render
   }
   // You can also narrow this to step === "review" if you want:
-  // }, [step, canBuild, name, role, trope, age, tropeAttribute, selectedFeats, skillBumps, jobOrBackground, flaw, catchphrase, gearChosen]);
-}, [canBuild, name, role, trope, age, roleAttribute, tropeAttribute, specialAttrs, selectedFeats, skillBumps, jobOrBackground, flaw, catchphrase, gearChosen]);
+  // }, [step, canBuild, name, role, trope, age, tropeAttribute, selectedFeats, skillBumps, jobOrBackground, flaw, catchphrase, mergedGearChosen]);
+}, [canBuild, name, role, trope, age, roleAttribute, tropeAttribute, specialAttrs, selectedFeats, skillBumps, jobOrBackground, flaw, catchphrase, mergedGearChosen]);
 
 // Snapshot BEFORE extra Skill Bumps, showing base 1 + Role/Trope bonuses
 const preBumpDTO = useMemo(() => {
@@ -397,7 +452,7 @@ const preBumpDTO = useMemo(() => {
       jobOrBackground: jobOrBackground.trim(),
       flaw: flaw.trim(),
       catchphrase: catchphrase.trim(),
-      gearChosen,
+      gearChosen: mergedGearChosen,
     });
 
     return dto;
@@ -408,7 +463,7 @@ const preBumpDTO = useMemo(() => {
   canBuild, name, role, trope, age,
   roleAttribute, tropeAttribute, specialAttrs,
   selectedFeats, jobOrBackground, flaw, catchphrase,
-  gearChosen, roleDef, tropeDef
+  mergedGearChosen, roleDef, tropeDef
 ]);
 
 // Snapshot BEFORE Trope attribute is applied (for lost-point warning math)
@@ -437,7 +492,7 @@ const preTropeDTO = useMemo(() => {
       jobOrBackground: jobOrBackground.trim(),
       flaw: flaw.trim(),
       catchphrase: catchphrase.trim(),
-      gearChosen,
+      gearChosen: mergedGearChosen,
     });
     return dto;
   } catch {
@@ -447,7 +502,7 @@ const preTropeDTO = useMemo(() => {
   canBuild, name, role, trope, age,
   roleAttribute, /* note: no tropeAttribute here on purpose */,
   specialAttrs, selectedFeats, jobOrBackground, flaw, catchphrase,
-  gearChosen, roleDef, tropeDef, featRule, roleFeats, tropeFeats, specialRole
+  mergedGearChosen, roleDef, tropeDef, featRule, roleFeats, tropeFeats, specialRole
 ]);
 
   async function save() {
@@ -466,7 +521,7 @@ const preTropeDTO = useMemo(() => {
         jobOrBackground: jobOrBackground.trim(),
         flaw: flaw.trim(),
         catchphrase: catchphrase.trim(),
-        gearChosen,
+        gearChosen: mergedGearChosen,
       });
 
     const created = await api("/characters", { method: "POST", json: dto });
@@ -863,27 +918,157 @@ className={`border rounded px-3 py-2 text-sm cursor-pointer transition-colors ${
         </Card>
       )}
 
-      {step === "gear" && (
-        <Card title="Gear">
-          {gear.length ? (
-            <>
-              <p className="text-sm">Choose any that fit your concept; you can add custom items below.</p>
-              <div className="grid grid-cols-2 gap-2 my-2">
-                {gear.map(g => (
-                  <label key={g} className={`border rounded px-3 py-2 cursor-pointer ${gearChosen.includes(g) ? "bg-zinc-100" : ""}`}>
-                    <input type="checkbox" className="mr-2" checked={gearChosen.includes(g)} onChange={()=>toggleGear(g)} />
-                    {g}
-                  </label>
-                ))}
+{step === "gear" && (
+  <Card title="Gear">
+    {allGrants.length ? (
+      <>
+        <p className="text-sm mb-2">
+          Pick your starting gear. Some are automatically granted, others let you choose. You can still add custom items below.
+        </p>
+
+        {/* Render each grant */}
+        <div className="space-y-4">
+          {allGrants.map((grant, idx) => {
+            // Auto-granted items
+            if (grant.mode === "give") {
+              const names = toNames(
+                optionsForGrant({ ...grant, mode: "choose", of: { type: "ids", ids: grant.items }, count: grant.items.length } as any)
+              );
+              return (
+                <div key={idx} className="border rounded p-2">
+                  <div className="text-sm font-medium">Granted:</div>
+                  <div className="text-sm">{names.join(", ")}</div>
+                </div>
+              );
+            }
+
+            // Budget grant
+            if (grant.mode === "credit") {
+              const options = optionsForGrant(grant);
+              const chosen = new Set(selectedByGrant[idx] ?? []);
+              const total = options
+                .filter(o => chosen.has(o.id))
+                .reduce((sum, o) => sum + (o.cost ?? 0), 0);
+
+              const toggle = (id: string) => {
+                setSelectedByGrant(prev => {
+                  const copy = prev.map(x => [...x]);
+                  const current = new Set(copy[idx] ?? []);
+                  if (current.has(id)) {
+                    current.delete(id);
+                  } else {
+                    const item = options.find(o => o.id === id)!;
+                    if (total + (item.cost ?? 0) > grant.amount) return prev; // keep budget
+                    current.add(id);
+                  }
+                  copy[idx] = [...current];
+                  return copy;
+                });
+              };
+
+              return (
+                <div key={idx} className="border rounded p-2">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-medium">
+                      {grant.label ?? `Spend up to $${grant.amount}`}
+                    </div>
+                    <div className="text-xs opacity-70">
+                      Selected: ${total} / ${grant.amount}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    {options.map(o => {
+                      const checked = chosen.has(o.id);
+                      const wouldExceed = !checked && (total + (o.cost ?? 0) > grant.amount);
+                      return (
+                        <label key={o.id} className={`border rounded px-2 py-1 text-sm flex items-center gap-2 ${wouldExceed ? "opacity-50" : ""}`}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggle(o.id)}
+                            disabled={wouldExceed}
+                          />
+                          <span>{o.name}{o.cost != null ? ` ($${o.cost})` : ""}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            }
+
+            // Choose-from options
+            const options = optionsForGrant(grant);
+            const chosen = new Set(selectedByGrant[idx] ?? []);
+            const limit = grant.count;
+
+            const toggle = (id: string) => {
+              setSelectedByGrant(prev => {
+                const copy = prev.map(x => [...x]);
+                const current = new Set(copy[idx] ?? []);
+                if (current.has(id)) {
+                  current.delete(id);
+                } else {
+                  if (current.size >= limit) return prev; // enforce pick count
+                  current.add(id);
+                }
+                copy[idx] = [...current];
+                return copy;
+              });
+            };
+
+            const label =
+              (("label" in (grant.of as any)) && (grant.of as any).label) ||
+              (grant.of.type === "ids"   ? "Choose" :
+               grant.of.type === "kind"  ? `Choose a ${grant.of.kind}` :
+               grant.of.type === "ride"  ? "Choose a ride" :
+               "Choose");
+
+            return (
+              <div key={idx} className="border rounded p-2">
+                <div className="text-sm font-medium">
+                  {label} {limit > 1 ? `(pick ${limit})` : `(pick 1)`}
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {options.map(o => {
+                    const checked = chosen.has(o.id);
+                    const full = !checked && (chosen.size >= limit);
+                    return (
+                      <label key={o.id} className={`border rounded px-2 py-1 text-sm flex items-center gap-2 ${full ? "opacity-50" : ""}`}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggle(o.id)}
+                          disabled={full}
+                        />
+                        <span>{o.name}{o.cost != null ? ` ($${o.cost})` : ""}</span>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
-            </>
-          ) : <p className="text-sm text-muted-foreground">No predefined gear for this Role.</p>}
-          <AddLine label="Add custom gear" onAdd={(txt)=> txt && setGearChosen(prev=>[...prev, txt])} />
-          {!!gearChosen.length && (
-            <ul className="list-disc ml-6 mt-2 text-sm">{gearChosen.map((g,i)=><li key={i}>{g}</li>)}</ul>
+            );
+          })}
+        </div>
+
+        {/* Custom additions */}
+        <div className="mt-4">
+          <AddLine label="Add custom gear" onAdd={(txt)=> txt && setGearCustom(prev => [...prev, txt])} />
+          {!!(grantPickedNames().length + gearCustom.length) && (
+            <ul className="list-disc ml-6 mt-2 text-sm">
+              {[...grantPickedNames(), ...gearCustom].map((g,i)=><li key={i}>{g}</li>)}
+            </ul>
           )}
-        </Card>
-      )}
+        </div>
+      </>
+    ) : (
+      // No grants? Fallback helper text.
+      <p className="text-sm text-muted-foreground">
+        No structured gear found for this Role/Trope. Add custom gear below.
+      </p>
+    )}
+  </Card>
+)}
 
 {step === "review" && (
   <Card title="Review & Save">

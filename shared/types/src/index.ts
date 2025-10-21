@@ -95,3 +95,11 @@ export interface Clock {
 }
 
 export * from "./character";
+
+export { GEAR } from "./data/gear";               // or GEAR_WITH_TAGS if you use it
+export type {
+  GearItem, GearKind, GearSource, GearId,
+  GunProfile, ParsedGunCell
+} from "./data/gear";
+export { parseGunCell, parseGunRanges } from "./data/gear";
+
