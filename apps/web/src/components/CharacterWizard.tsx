@@ -472,7 +472,7 @@ const preTropeDTO = useMemo(() => {
     const created = await api("/characters", { method: "POST", json: dto });
     onComplete?.(created);
   } catch (err: any) {
-    alert(err?.message || "Failed to save character.");
+    alert(err?.message || "Failed to save hero.");
   }
 }
 
@@ -480,7 +480,7 @@ const preTropeDTO = useMemo(() => {
   // Basic UI: (Tailwind present; keep it minimal and readable)
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-4">
-      <h1 className="text-2xl font-bold">Create Character</h1>
+      <h1 className="text-2xl font-bold">Create Hero</h1>
 
       {step === "identity" && (
         <Card title="Identity">
@@ -902,7 +902,7 @@ className={`border rounded px-3 py-2 text-sm cursor-pointer transition-colors ${
       <div className="flex gap-2 pt-2">
         {step!=="identity" && <button className="border rounded px-3 py-2" onClick={back}>Back</button>}
         {step!=="review" && <button className="rounded px-3 py-2 bg-black text-white disabled:opacity-40" onClick={next} disabled={!canContinue}>Next</button>}
-        {step==="review" && <button className="rounded px-3 py-2 bg-emerald-600 text-white" onClick={save}>Save Character</button>}
+        {step==="review" && <button className="rounded px-3 py-2 bg-emerald-600 text-white" onClick={save}>Save Hero</button>}
       </div>
     </div>
   );
