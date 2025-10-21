@@ -814,8 +814,8 @@ className={`border rounded px-3 py-2 text-sm cursor-pointer transition-colors ${
               <ul className="grid grid-cols-2 gap-x-4 text-sm">
                 {ATTR_SKILL_GROUPS[attr].map((sk) => (
                   <li key={sk} className="flex justify-between">
-                    <span>{sk}</span>
-                    {labelize(attr)}: <span className="tabular-nums">{preBumpDTO.attributes[attr] as any}</span>
+                    <span>{labelize(sk)}</span>
+                    <span className="tabular-nums">{(preBumpDTO.skills[sk] as any) ?? 0}</span>
                   </li>
                 ))}
               </ul>
