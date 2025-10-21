@@ -83,13 +83,6 @@ function GunRangeLine({ item }: { item: GearItem }) {
   );
 }
 
-  return (
-    <div className="text-xs text-gray-600">
-      Range — Melee: <b>{cell(gun.melee)}</b> · Close: <b>{cell(gun.close)}</b> · Medium: <b>{cell(gun.medium)}</b> · Long: <b>{cell(gun.long)}</b>
-    </div>
-  );
-}
-
 export default function DirectorsToolkit_Gear() {
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<GearItem["kind"] | "all">("all");
