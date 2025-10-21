@@ -170,6 +170,12 @@ useEffect(() => {
     }
   }, [specialRole, role]);
 
+  // --- NEW: reset gear selections when grants change ---
+  useEffect(() => {
+    setSelectedByGrant(allGrants.map(() => []));
+    setGearCustom([]);
+  }, [allGrants]);
+  
 // Trope attribute needed when the trope exposes options AND role is not Special
 const tropeNeedsAttr = !!(tropeAttrOptions.length) && !specialRole;
 
@@ -250,18 +256,17 @@ case "roleTrope":
   );
       case "age":
         return age === "Young" || age === "Adult" || age === "Old";
-case "feats": {
-  const picksOnly = selectedFeats.filter(f => f !== "Too Young to Die");
-  const roleCount = picksOnly.filter(f => roleFeats.includes(f)).length;
-  const tropeCount = picksOnly.filter(f => tropeFeats.includes(f)).length;
+      case "feats": {
+        const picksOnly = selectedFeats.filter(f => f !== "Too Young to Die");
+        const roleCount = picksOnly.filter(f => roleFeats.includes(f)).length;
+        const tropeCount = picksOnly.filter(f => tropeFeats.includes(f)).length;
 
-  // Always require total and minimums; Special has mins = 0
-  const totalsOk = picksOnly.length >= featRule.total;
-  const minsOk = roleCount >= featRule.roleMin && tropeCount >= featRule.tropeMin;
+        // Always require total and minimums; Special has mins = 0
+        const totalsOk = picksOnly.length >= featRule.total;
+        const minsOk = roleCount >= featRule.roleMin && tropeCount >= featRule.tropeMin;
 
-  return totalsOk && minsOk;
-}
-
+        return totalsOk && minsOk;
+      }
 
       case "skillBumps":
         return skillBumps.length === (specialRole ? 6 : 2);
@@ -280,7 +285,7 @@ case "feats": {
       case "review":
         return true;
     }
-}, [step, name, role, trope, tropeNeedsAttr, tropeAttribute, age, selectedFeats, roleFeats, tropeFeats, featRule.total, featRule.roleMin, featRule.tropeMin, skillBumps, specialRole]);
+}, [step, name, role, trope, tropeNeedsAttr, tropeAttribute, age, selectedFeats, roleFeats, tropeFeats, featRule.total, featRule.roleMin, featRule.tropeMin, skillBumps, specialRole, allGrants, selectedByGrant]);
 
   function next() {
     if (!canContinue) return;
