@@ -5,7 +5,6 @@ export type GearSelector =
   | { type: "tags"; anyOf?: string[]; allOf?: string[]; limit?: number }
   | { type: "ride"; speed?: number; minSpeed?: number; maxSpeed?: number; types?: Array<"car"|"bike"|"nautical"|"flying"|"armored">; armored?: boolean }
   | { type: "custom"; label: string; constraint?: { maxCost?: number; costEq?: number; kind?: string } };
-  | { type: "union"; options: GearSelector[] };
 
 export type GearGrant =
   | { mode: "give"; items: string[] }                           // auto-grant these catalog IDs
