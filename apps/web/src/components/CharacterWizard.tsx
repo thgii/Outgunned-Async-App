@@ -411,6 +411,45 @@ const preBumpDTO = useMemo(() => {
   gearChosen, roleDef, tropeDef
 ]);
 
+// Snapshot BEFORE Trope attribute is applied (for lost-point warning math)
+const preTropeDTO = useMemo(() => {
+  if (!canBuild) return null;
+  try {
+    const safeFeats = sanitizeFeats(
+      selectedFeats,
+      roleFeats,
+      tropeFeats,
+      featRule,
+      specialRole,
+      age
+    );
+    const dto = buildDerivedDTO({
+      name: name.trim(),
+      role,
+      trope,
+      age,
+      roleAttribute,
+      // IMPORTANT: omit Trope attribute here so we see the pre-Trope value
+      tropeAttribute: undefined,
+      specialAttributes: specialAttrs,
+      selectedFeats: safeFeats,
+      skillBumps: [],
+      jobOrBackground: jobOrBackground.trim(),
+      flaw: flaw.trim(),
+      catchphrase: catchphrase.trim(),
+      gearChosen,
+    });
+    return dto;
+  } catch {
+    return null;
+  }
+}, [
+  canBuild, name, role, trope, age,
+  roleAttribute, /* note: no tropeAttribute here on purpose */,
+  specialAttrs, selectedFeats, jobOrBackground, flaw, catchphrase,
+  gearChosen, roleDef, tropeDef, featRule, roleFeats, tropeFeats, specialRole
+]);
+
   async function save() {
     try {
       const safeFeats = sanitizeFeats(selectedFeats, roleFeats, tropeFeats, featRule, specialRole, age);
@@ -502,7 +541,7 @@ const preBumpDTO = useMemo(() => {
               key={`role-attr-chip-${a}`}
               className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs"
             >
-              {a}
+              {labelize(String(a))}
             </span>
           ))}
         </div>
@@ -524,25 +563,25 @@ const preBumpDTO = useMemo(() => {
     />
 
     {/* Lost-point warning: Role already at 3 → Trope +1 is wasted */}
-    {tropeAttribute && preBumpDTO && (() => {
-      // Normalize to be defensive, though tropeAttribute is AttrKey.
+    {tropeAttribute && preBumpDTO && preTropeDTO && (() => {
       const attr = normalizeAttr(tropeAttribute) as AttrKey | null;
       if (!attr) return null;
 
-      // preBumpDTO already includes the Trope +1 for the selected attribute.
-      const withTrope = (preBumpDTO.attributes?.[attr] as number) ?? 0;
+      const beforeTrope = (preTropeDTO.attributes?.[attr] as number) ?? 0; // value WITHOUT the Trope +1
+      const withTrope = (preBumpDTO.attributes?.[attr] as number) ?? 0;    // value WITH the Trope +1 (capped)
 
-      // Remove the Trope +1 to see the value before Trope was applied.
-      const beforeTrope = withTrope - 1;
+      // If pre-Trope is already at cap, the +1 is necessarily lost
+      const CAP = 3;
+      const lost = beforeTrope >= CAP || withTrope === beforeTrope;
 
-      // If Role (and anything else before Trope) already had it at 3, Trope point is lost.
-      return beforeTrope >= 3 ? (
+      return lost ? (
         <div className="text-xs text-amber-600 mt-1">
-          This choice would push <b>{attr}</b> above the cap of 3 because your Role already brought it to 3.
+          This choice would push <b>{labelize(attr)}</b> above the cap of 3 because your Role already brought it to 3.
           The extra point from your Trope will be <b>lost</b>.
         </div>
       ) : null;
     })()}
+
 
     {!tropeAttribute && (
       <div className="text-xs text-amber-600 mt-1">
@@ -770,7 +809,7 @@ className={`border rounded px-3 py-2 text-sm cursor-pointer transition-colors ${
           {ATTR_ORDER.map((attr) => (
             <div key={attr} className="rounded border p-2">
               <div className="font-semibold text-sm capitalize mb-1">
-                {attr}: <span className="tabular-nums">{preBumpDTO.attributes[attr] as any}</span>
+                {labelize(attr)}: <span className="tabular-nums">{preBumpDTO.attributes[attr] as any}</span>
               </div>
               <ul className="grid grid-cols-2 gap-x-4 text-sm">
                 {ATTR_SKILL_GROUPS[attr].map((sk) => (
@@ -888,15 +927,20 @@ function Text({label, value, onChange}:{label:string; value:string; onChange:(v:
 function Select({label, value, onChange, options}:{label:string; value:string; onChange:(v:string)=>void; options:string[]}) {
   return <label className="grid gap-1 mb-2">
     <span className="text-sm">{label}</span>
-<select
-  value={value}
-  onChange={e => onChange(e.target.value)}
-  className="border rounded px-2 py-1 bg-white text-black dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
->
-      {options.map(o => <option key={o} value={o}>{o || "—"}</option>)}
+    <select
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      className="border rounded px-2 py-1 bg-white text-black dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+    >
+      {options.map(o => (
+        <option key={o} value={o}>
+          {o ? labelize(o) : "—"}
+        </option>
+      ))}
     </select>
   </label>;
 }
+
 
 function Datalist({label, value, onChange, options}:{label:string; value:string; onChange:(v:string)=>void; options:string[]}) {
   const listId = label.replace(/\s+/g,"-") + "-list";
@@ -983,7 +1027,7 @@ return (
             key={k}
             className="border rounded px-3 py-2 flex items-center justify-between"
           >
-            <span className="mr-2">{k}</span>
+            <span className="mr-2">{labelize(k)}</span>
             <div className="flex items-center gap-2">
               <button
                 type="button"
