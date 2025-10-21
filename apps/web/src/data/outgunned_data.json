@@ -1168,8 +1168,17 @@
         "Weapon of Choice or One $1 item of choice"
       ],
       "gear_grants": [
-        { "mode": "choose", "of": { "type": "kind", "kind": "weapon" }, "count": 1 },
-        { "mode": "credit", "amount": 1, "label": "$1 item of your choice" }
+        {
+          "mode": "choose",
+          "of": {
+            "type": "union",
+            "options": [
+              { "type": "kind", "kind": "weapon" },
+              { "type": "custom", "label": "$1 item of your choice", "constraint": { "costEq": 1 } }
+            ]
+          },
+          "count": 1
+        }
       ],
       "jobs": [],
       "catchphrases": [],

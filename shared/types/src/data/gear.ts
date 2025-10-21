@@ -169,7 +169,7 @@ export const GEAR: GearItem[] = [
   { id: "ride-nautical", name: "Ride (Nautical)", kind: "ride", cost: 4, tags: ["ride","nautical"], props: { type: "nautical" }, source: OG(105) },
   { id: "ride-flying", name: "Ride (Flying)", kind: "ride", cost: 4, tags: ["ride","flying"], props: { type: "flying" }, source: OG(105) },
   { id: "ride-armored", name: "Ride (Armored)", kind: "ride", cost: 4, tags: ["ride","armored"], props: { type: "armored" }, source: OG(105) },
-  { id: "starship-1", name: "Starship (Speed 1)", kind: "ride", cost: 3, tags: ["ride"], props: { speed: 1 }, source: OGAF2-SK(24) },
+  { id: "starship-1", name: "Starship (Speed 1)", kind: "ride", cost: 3, tags: ["ride"], props: { speed: 1 }, source: AF(24) },
 
   // ===== World of Killers =====
   { id: "wok-viper", name: "Viper (Pistol)", kind: "weapon", tags: ["firearm","accurate","custom","silent"], props: { gun: { melee: 0, close: +1, medium: 0, long: -2 } }, source: WoK() },
