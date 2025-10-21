@@ -1,14 +1,6 @@
 import { useMemo, useState } from "react";
 
-/**
- * Director's Toolkit → Attributes & Skills (no external UI kit)
- * - Pure React + Tailwind
- * - Searchable
- * - Deep-link anchors for each Attribute
- */
-
 type Skill = { name: string; desc: string };
-
 type Block = {
   key: "brawn" | "nerves" | "smooth" | "focus" | "crime";
   title: string;
@@ -42,8 +34,7 @@ const BLOCKS: Block[] = [
   {
     key: "smooth",
     title: "SMOOTH",
-    blurb:
-      "Show off how smooth you are whenever you have to interact with other people or want to manipulate them.",
+    blurb: "Show off how smooth you are whenever you have to interact with other people or want to manipulate them.",
     skills: [
       { name: "Flirt", desc: "Seduce someone or use your charm." },
       { name: "Leadership", desc: "Inspire, give orders, or intimidate people." },
@@ -54,8 +45,7 @@ const BLOCKS: Block[] = [
   {
     key: "focus",
     title: "FOCUS",
-    blurb:
-      "You’ll need focus to concentrate, to notice details, and to recall memories and knowledge.",
+    blurb: "You’ll need focus to concentrate, to notice details, and to recall memories and knowledge.",
     skills: [
       { name: "Detect", desc: "Find clues and intel, notice details, sniff out lies." },
       { name: "Heal", desc: "Give first aid or comfort someone." },
@@ -66,16 +56,14 @@ const BLOCKS: Block[] = [
   {
     key: "crime",
     title: "CRIME",
-    blurb:
-      "Your aptitude for crime will come in handy when acting in secret or to notice incoming threats.",
+    blurb: "Your aptitude for crime will come in handy when acting in secret or to notice incoming threats.",
     skills: [
       { name: "Awareness", desc: "Keep your eyes and ears open, notice incoming threats." },
       { name: "Dexterity", desc: "Perform sleight of hand, steal something, pick a lock." },
       { name: "Stealth", desc: "Hide, sneak, or move quietly." },
       {
         name: "Streetwise",
-        desc:
-          "Interact with criminals, recall information useful for moving in seedy neighborhoods or dealing with organized crime.",
+        desc: "Interact with criminals, recall information useful for moving in seedy neighborhoods or dealing with organized crime.",
       },
     ],
   },
@@ -88,7 +76,7 @@ function highlight(text: string, q: string) {
   return (
     <>
       {text.slice(0, idx)}
-      <mark className="rounded px-0.5">{text.slice(idx, idx + q.length)}</mark>
+      <mark className="bg-yellow-200 text-black rounded px-0.5">{text.slice(idx, idx + q.length)}</mark>
       {text.slice(idx + q.length)}
     </>
   );
@@ -104,23 +92,22 @@ export default function DirectorsToolkit_AttributesAndSkills() {
       const skills = b.skills.filter(
         (s) => s.name.toLowerCase().includes(q) || s.desc.toLowerCase().includes(q)
       );
-      const matchAttr =
-        b.title.toLowerCase().includes(q) || b.blurb.toLowerCase().includes(q);
+      const matchAttr = b.title.toLowerCase().includes(q) || b.blurb.toLowerCase().includes(q);
       return matchAttr || skills.length ? { ...b, skills: skills.length ? skills : b.skills } : null;
     }).filter(Boolean) as Block[];
   }, [query]);
 
   return (
-    <div className="w-full max-w-4xl mx-auto rounded-2xl border shadow-xl bg-white">
-      <div className="p-6 border-b space-y-3">
-        <div className="text-xs uppercase tracking-widest text-gray-500">Director&apos;s Toolkit</div>
-        <h2 className="text-2xl font-semibold">Attributes & Skills</h2>
+    <div className="w-full max-w-4xl mx-auto rounded-2xl border border-gray-300 shadow-lg bg-gray-50 text-gray-900">
+      <div className="p-6 border-b border-gray-300 space-y-3 bg-gray-100 rounded-t-2xl">
+        <div className="text-xs uppercase tracking-widest text-gray-600">Director&apos;s Toolkit</div>
+        <h2 className="text-2xl font-bold text-gray-900">Attributes & Skills</h2>
         <div className="relative">
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search attributes or skills…"
-            className="w-full pl-3 pr-3 py-2 rounded border focus:outline-none focus:ring"
+            className="w-full pl-3 pr-3 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white text-gray-900 placeholder-gray-500"
           />
         </div>
       </div>
@@ -132,36 +119,34 @@ export default function DirectorsToolkit_AttributesAndSkills() {
             <a
               key={b.key}
               href={`#attr-${b.key}`}
-              className="text-xs px-2 py-1 rounded-full bg-gray-100 hover:bg-gray-200"
+              className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors"
             >
               {b.title}
             </a>
           ))}
         </nav>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           {filtered.map((block) => (
             <details
               key={block.key}
               id={`attr-${block.key}`}
-              className="rounded-2xl border p-3 open:shadow-sm"
+              className="rounded-xl border border-gray-300 bg-white p-4 open:shadow-md"
             >
               <summary className="cursor-pointer list-none">
                 <div className="flex flex-col items-start gap-1">
-                  <div className="text-lg font-semibold">
+                  <div className="text-lg font-semibold text-gray-900">
                     {highlight(block.title, query)}
                   </div>
-                  <p className="text-sm text-gray-600">
-                    {highlight(block.blurb, query)}
-                  </p>
+                  <p className="text-sm text-gray-700">{highlight(block.blurb, query)}</p>
                 </div>
               </summary>
 
-              <ul className="grid sm:grid-cols-2 gap-3 mt-3">
+              <ul className="grid sm:grid-cols-2 gap-3 mt-4">
                 {block.skills.map((s) => (
-                  <li key={s.name} className="rounded-xl p-3 bg-gray-50">
-                    <div className="font-medium">{highlight(s.name, query)}</div>
-                    <p className="text-sm text-gray-600">{highlight(s.desc, query)}</p>
+                  <li key={s.name} className="rounded-lg p-3 bg-gray-50 border border-gray-200">
+                    <div className="font-medium text-gray-900">{highlight(s.name, query)}</div>
+                    <p className="text-sm text-gray-700">{highlight(s.desc, query)}</p>
                   </li>
                 ))}
               </ul>
@@ -170,7 +155,7 @@ export default function DirectorsToolkit_AttributesAndSkills() {
         </div>
 
         <div className="mt-6 text-right">
-          <a href="#top" className="text-xs underline text-gray-600">
+          <a href="#top" className="text-xs underline text-gray-600 hover:text-gray-800">
             Back to top
           </a>
         </div>
