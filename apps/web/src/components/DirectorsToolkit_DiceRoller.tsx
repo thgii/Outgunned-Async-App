@@ -87,7 +87,6 @@ export default function DirectorsDiceRoller() {
           skill={skill}
           modifier={netModifier}
           defaultDifficulty="basic"
-          hasFreeReroll={false}
           canSpendAdrenaline={true}
         />
       </div>

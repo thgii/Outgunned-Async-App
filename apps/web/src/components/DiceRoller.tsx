@@ -15,7 +15,6 @@ type DiceRollerProps = {
   modifier?: number;
   defaultDifficulty?: Difficulty;
   canSpendAdrenaline?: boolean;
-  hasFreeReroll?: boolean;
   className?: string;
 };
 
@@ -25,7 +24,6 @@ export default function DiceRoller({
   modifier = 0,
   defaultDifficulty = "basic",
   canSpendAdrenaline = true,
-  hasFreeReroll = false,
   className = "",
 }: DiceRollerProps) {
   const [difficulty, setDifficulty] = useState<Difficulty>(defaultDifficulty);
@@ -130,7 +128,7 @@ export default function DiceRoller({
         <Button
           color="sky"
           onClick={doRerollFree}
-          disabled={!current || !hasFreeReroll}
+          disabled={!current}
           title="Free Re-roll (feat-based, allowed even with 0 success; never lose 1)"
         >
           Free Re-roll
