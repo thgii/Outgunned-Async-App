@@ -97,6 +97,22 @@ const [specialAttrs, setSpecialAttrs] = useState<AttrKey[]>([]);
 
   const [age, setAge] = useState<"Young"|"Adult"|"Old">((initial?.age as any) ?? "Adult");
 
+  // Portrait (data URL) for character image
+const [portraitDataUrl, setPortraitDataUrl] = useState<string | null>(null);
+
+// Local handler to load image -> data URL
+function onPortraitChange(e: React.ChangeEvent<HTMLInputElement>) {
+  const f = e.target.files?.[0];
+  if (!f) {
+    setPortraitDataUrl(null);
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => setPortraitDataUrl(String(reader.result || ""));
+  reader.readAsDataURL(f);
+}
+
+
   const [selectedFeats, setSelectedFeats] = useState<string[]>([]);
 useEffect(() => {
   if (age === "Young") {
@@ -528,7 +544,16 @@ const preTropeDTO = useMemo(() => {
         catchphrase: catchphrase.trim(),
         gearChosen: mergedGearChosen,
       });
-
+    
+      // If a portrait was selected, store it in storage and mirror under resources.storage
+      if (portraitDataUrl) {
+        (dto as any).storage = { ...((dto as any).storage ?? {}), portrait: portraitDataUrl };
+        (dto as any).resources = {
+          ...((dto as any).resources ?? {}),
+          storage: { ...(((dto as any).resources?.storage) ?? {}), portrait: portraitDataUrl },
+        };
+      }
+      
     const created = await api("/characters", { method: "POST", json: dto });
     onComplete?.(created);
   } catch (err: any) {
@@ -544,7 +569,29 @@ const preTropeDTO = useMemo(() => {
 
       {step === "identity" && (
         <Card title="Identity">
-          <Text label="Name *" value={name} onChange={setName} />
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="md:col-span-2">
+              <Text label="Name *" value={name} onChange={setName} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 mb-1">Portrait</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={onPortraitChange}
+                className="block w-full text-sm"
+              />
+              {portraitDataUrl && (
+                <div className="mt-2">
+                  <img
+                    src={portraitDataUrl}
+                    alt="Portrait preview"
+                    className="h-32 w-32 rounded-md object-cover border"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
         </Card>
       )}
 
@@ -613,7 +660,7 @@ const preTropeDTO = useMemo(() => {
   <>
 
     <Select
-      label="Choose Trope Attribute (Note: Select a different attribute than your Role grants*"
+      label="Choose Trope Attribute (Note: Select a different attribute than what your Role grants) *"
       value={tropeAttribute ?? ""}
       onChange={(v) => setTropeAttribute((v || undefined) as AttrKey)}
       options={["", ...tropeAttrOptions]}
