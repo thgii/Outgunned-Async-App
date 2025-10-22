@@ -42,20 +42,20 @@ export default function DirectorsDiceRoller() {
       <section aria-label="Inputs" className="space-y-3">
         <SectionHeading>Inputs</SectionHeading>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <Field label="Attribute (0–5)">
+          <Field label="Attribute (1–3)">
             <NumberInput
               value={attribute}
-              min={0}
-              max={5}
+              min={1}
+              max={3}
               onChange={(v) => setAttribute(v)}
             />
           </Field>
 
-          <Field label="Skill (0–5)">
+          <Field label="Skill (1–3)">
             <NumberInput
               value={skill}
-              min={0}
-              max={5}
+              min={1}
+              max={3}
               onChange={(v) => setSkill(v)}
             />
           </Field>
