@@ -1,6 +1,8 @@
 import { useState } from "react";
 import DirectorsToolkit_AttributesAndSkills from "../components/DirectorsToolkit_AttributesAndSkills";
 import DirectorsToolkit_Gear from "../components/DirectorsToolkit_Gear";
+import DirectorsToolkit_Feats from "../components/DirectorsToolkit_Feats";
+
 
 export default function DirectorsToolkit() {
   const [tab, setTab] = useState<"attributes" | "gear" | "resources" | "feats">("attributes");
@@ -79,14 +81,7 @@ export default function DirectorsToolkit() {
           </div>
         )}
 
-        {tab === "feats" && (
-          <div className="w-full max-w-4xl mx-auto rounded-2xl border border-gray-300 shadow bg-white p-6">
-            <h2 className="text-xl font-semibold mb-2 text-gray-900">Feats</h2>
-            <p className="text-gray-700">
-              Future list of feat categories and quick references.
-            </p>
-          </div>
-        )}
+       {tab === "feats" && <DirectorsToolkit_Feats />}
       </div>
     </div>
   );
