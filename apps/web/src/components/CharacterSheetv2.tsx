@@ -456,7 +456,7 @@ function onPortraitFile(e: React.ChangeEvent<HTMLInputElement>) {
                   />
                 ) : (
                   <span className="text-xs text-zinc-500 px-2 text-center">No portrait</span>
-                  )}
+                )}
                 </div>
               <input type="file" accept="image/*" onChange={onPortraitFile} className="text-sm" />
               {portrait && (
