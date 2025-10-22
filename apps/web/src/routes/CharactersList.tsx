@@ -53,7 +53,7 @@ export default function CharactersList() {
             className="mt-3 px-3 py-2 rounded bg-black text-white hover:opacity-90"
             onClick={() => navigate("/characters/new")}
           >
-            Create your first character
+            Create your first hero.
           </button>
         </div>
       ) : (
