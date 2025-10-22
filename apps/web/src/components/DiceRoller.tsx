@@ -79,7 +79,7 @@ export default function DiceRoller({
     >
       <header className="flex items-center justify-between">
         <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-          Dice Roller
+          Results
         </h3>
         <div className="text-sm text-gray-800 dark:text-gray-300">
           Pool: <b>{pool}</b>{" "}
