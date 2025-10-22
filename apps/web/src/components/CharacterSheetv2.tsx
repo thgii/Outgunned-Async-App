@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { FEAT_DESC } from "../data/wizard";
+import CharacterDicePanel from "./CharacterDicePanel";
+
 
 /** Types aligned to your DTO (kept permissive for safety) */
 type Meter = { current?: number; max?: number };
@@ -293,6 +295,24 @@ export default function CharacterSheetV2({
     });
   };
 
+  // ---------------- Spend Adrenaline Helper ----------------
+async function spendAdrenaline(amount = 1) {
+  // read current from local (mirror adrenaline/luck)
+  const current = Number(
+    (local.resources?.adrenaline ?? local.adrenaline ?? local.resources?.luck ?? local.luck ?? 0)
+  );
+  const next = Math.max(0, current - amount);
+
+  // keep adrenaline and luck in sync (your sheet treats them as one pool)
+  update({
+    adrenaline: next,
+    luck: next,
+    resources: { ...(local.resources ?? {}), adrenaline: next, luck: next },
+  });
+
+  // If you persist to an API, do it here:
+  // await api.characters.update(local.id!, { resources: { ...local.resources, adrenaline: next, luck: next } });
+}
 
   const spotlight = Math.max(0, Math.min(3, local.spotlight ?? 0));
   const setSpotlight = (n: number) => {
@@ -595,6 +615,12 @@ function onPortraitFile(e: React.ChangeEvent<HTMLInputElement>) {
 
         {/* Right: Grit + Feats */}
         <div className="space-y-6">
+            <CharacterDicePanel
+              dto={local}
+              onSpendAdrenaline={(n) => spendAdrenaline(n)}
+              onPaidRerollSpend={(n) => spendAdrenaline(n)}
+            />
+          
           <Card>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">

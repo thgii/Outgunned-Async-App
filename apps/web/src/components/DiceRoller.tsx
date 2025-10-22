@@ -16,6 +16,7 @@ type DiceRollerProps = {
   defaultDifficulty?: Difficulty;
   canSpendAdrenaline?: boolean;
   className?: string;
+  onPaidReroll?: () => void;
 };
 
 export default function DiceRoller({
@@ -25,6 +26,7 @@ export default function DiceRoller({
   defaultDifficulty = "basic",
   canSpendAdrenaline = true,
   className = "",
+  onPaidReroll,
 }: DiceRollerProps) {
   const [difficulty, setDifficulty] = useState<Difficulty>(defaultDifficulty);
   const { pool, clamped } = useMemo(
@@ -50,6 +52,8 @@ export default function DiceRoller({
 
   function doRerollPaid() {
     if (!current) return;
+    if (!canSpendAdrenaline) return; // guard
+    onPaidReroll?.(); // tell parent to decrement resource
     const next = applyReroll(current, { free: false });
     setCurrent(next);
     setHistory((h) => [...h, next]);
@@ -140,7 +144,7 @@ export default function DiceRoller({
           disabled={!current || !canSpendAdrenaline}
           title="Re-roll (requires ≥1 success; if not better, lose 1 success)"
         >
-          Re-roll (spend 1)
+          Re-roll (Spend 1 Adrenaline)
         </Button>
 
         <Button
