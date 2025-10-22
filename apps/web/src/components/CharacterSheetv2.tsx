@@ -570,7 +570,7 @@ function onPortraitFile(e: React.ChangeEvent<HTMLInputElement>) {
       </Card>
 
 
-      {/* Middle: Left (Attributes+Skills) & Right (Grit + Feats) */}
+      {/* Middle: Left (Attributes+Skills) & Right (Dice → Grit → Feats) */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Left: Combined Attributes + Skills */}
         <Card>
@@ -613,20 +613,21 @@ function onPortraitFile(e: React.ChangeEvent<HTMLInputElement>) {
           </div>
         </Card>
 
-        {/* Right: Grit + Feats */}
+        {/* Right: stack Dice Roller above Grit above Feats */}
+        <div className="space-y-6">
           <Card>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <SectionTitle>Dice Roller</SectionTitle>
               </div>
-            </div>  
-              <div className="mt-4">
-                <CharacterDicePanel
-                  dto={local}
-                  onSpendAdrenaline={(n) => spendAdrenaline(n)}
-                  onPaidRerollSpend={(n) => spendAdrenaline(n)}
-                />
-              </div>
+            </div>
+            <div className="mt-4">
+              <CharacterDicePanel
+                dto={local}
+                onSpendAdrenaline={(n) => spendAdrenaline(n)}
+                onPaidRerollSpend={(n) => spendAdrenaline(n)}
+              />
+            </div>
           </Card>
 
           <Card>
