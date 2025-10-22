@@ -8,7 +8,7 @@ import React from "react";
 export default function RulesReference() {
   return (
     <section className="w-full">
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-zinc-900">
+      <div className="rounded-2xl border border-gray-200 bg-white/95 p-6 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-zinc-900/90">
         <header className="mb-4">
           <h2 className="text-xl font-semibold tracking-tight">
             🎬 Director’s Toolkit: <span className="whitespace-nowrap">Core Cinematic Rolls &amp; Resources</span>
