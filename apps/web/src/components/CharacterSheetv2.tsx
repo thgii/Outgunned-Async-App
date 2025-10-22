@@ -337,6 +337,32 @@ export default function CharacterSheetV2({
   const resStorage = local.resources?.storage;
   const effectiveStorage = topStorage ?? resStorage ?? {};
 
+  // Character portrait (data URL)
+const portrait =
+  (effectiveStorage as any)?.portrait ??
+  (local.storage as any)?.portrait ??
+  (local.resources?.storage as any)?.portrait ??
+  null;
+
+// Helper to update portrait in both top-level storage and resources.storage
+function setPortrait(nextDataUrl: string | null) {
+  const nextStorage = { ...(effectiveStorage || {}), portrait: nextDataUrl ?? undefined };
+  update({
+    storage: nextStorage,
+    resources: { ...(local.resources ?? {}), storage: nextStorage },
+  });
+}
+
+// File input handler for portrait replacement
+function onPortraitFile(e: React.ChangeEvent<HTMLInputElement>) {
+  const f = e.target.files?.[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = () => setPortrait(String(reader.result || ""));
+  reader.readAsDataURL(f);
+}
+
+
   const asStringArrayLocal = asStringArray;
 
   const gearNamesFromTop = asStringArrayLocal(local.gear);
@@ -415,9 +441,38 @@ export default function CharacterSheetV2({
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4">
       {/* Header */}
-      <Card className="p-5">
-        <SectionTitle>Character</SectionTitle>
-        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+        <Card className="p-5">
+          <SectionTitle>Character</SectionTitle>
+
+          <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-4">
+            {/* Portrait column */}
+            <div className="flex flex-col items-start gap-2">
+              <div className="h-40 w-40 rounded-xl border bg-zinc-100 overflow-hidden flex items-center justify-center">
+                {portrait ? (
+                  <img
+                    src={portrait}
+                    alt={`${local.name || "Character"} portrait`}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="text-xs text-zinc-500 px-2 text-center">No portrait</span>
+                  )}
+                </div>
+              <input type="file" accept="image/*" onChange={onPortraitFile} className="text-sm" />
+              {portrait && (
+                <button
+                  type="button"
+                  onClick={() => setPortrait(null)}
+                  className="text-xs text-red-600 hover:underline"
+                >
+                  Remove portrait
+                </button>
+              )}
+            </div>
+
+            {/* Identity fields */}
+            <div className="md:col-span-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+
           <Labeled label="Name">
             <Input value={local.name || ""} onChange={setHeader("name")} placeholder="Name" />
           </Labeled>
