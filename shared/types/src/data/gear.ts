@@ -224,7 +224,7 @@ export const GEAR: GearItem[] = [
 
   // Cyberware (Action Flicks)
   { id: "cyber-arm", name: "Cyber-arm", kind: "device", cost: 2, tags: ["cyber"], note: "Help to break/crack/smash. A/L: +2 to Force or Fight roll.", source: AF() },
-  { id: "artificial-gills", name: "Artificial Gills", kind: "device", cost: 1, tags: ["bio"], note: "Breathe underwater; filter toxic gases.", source: AF() },
+  { id: "artificial-gills", name: "Artificial Gills", kind: "device", cost: 1, tags: ["bio","cyber"], note: "Breathe underwater; filter toxic gases.", source: AF() },
   { id: "skill-chip", name: "Skill Chip", kind: "device", cost: 2, tags: ["cyber"], note: "Gain 1 Skill Point to assign freely.", source: AF() },
   { id: "anti-jamming-chip", name: "Anti-Jamming Chip", kind: "device", cost: 3, tags: ["cyber"], note: "Your cyberware cannot be deactivated by the Enemy.", source: AF() },
   { id: "hacking-chip", name: "Hacking Chip", kind: "device", cost: 2, tags: ["cyber"], note: "Connect to tech without a computer. A/L: Deactivate a security system or Enemy Cyberware.", source: AF() },

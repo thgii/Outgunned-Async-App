@@ -1230,6 +1230,10 @@
         "Elegant Clothes",
         "Muzzle-loading Pistol or Bow"
       ],
+      "gear_grants": [
+        { "mode": "give", "items": ["rapier", "elegant-clothes"] },
+        { "mode": "choose", "of": { "type": "ids", "ids": ["muzzle-loading-pistol", "bow"] }, "count": 1 }
+      ],
       "jobs": [],
       "catchphrases": [],
       "flaws": [],
@@ -1290,6 +1294,9 @@
       "gear": [
         "One Toy Weapon of choice or One $1 item of choice"
       ],
+      "gear_grants": [
+        { "mode": "choose", "of": { "type": "ids", "ids": ["cash-1", "airsoft-rifle", "slingshot", "firecrackers"] }, "count": 1 }
+      ],
       "jobs": [],
       "catchphrases": [],
       "flaws": [],
@@ -1347,6 +1354,9 @@
       ],
       "gear": [
         "One $1 item of choice or Ride with Speed 1"
+      ],
+      "gear_grants": [
+        { "mode": "choose", "of": { "type": "ids", "ids": ["cash-1", "ride-generic-speed-1"] }, "count": 1 }
       ],
       "jobs": [],
       "catchphrases": [],
@@ -1407,6 +1417,10 @@
       "gear": [
         "Memento",
         "Silver Blade or Stake or Revolver equipped with Silver or Radiant Bullets"
+      ],
+      "gear_grants": [
+        { "mode": "give", "items": ["memento"] },
+        { "mode": "choose", "of": { "type": "ids", "ids": ["silver-blade", "stake", "revlover"] }, "count": 1 }
       ],
       "jobs": [],
       "catchphrases": [],
@@ -1469,6 +1483,11 @@
         "Pistol",
         "Phone or Radio",
         "$1 Cyberware"
+      ],
+      "gear_grants": [
+        { "mode": "give", "items": ["pistol"] },
+        { "mode": "choose", "of": { "type": "ids", "ids": ["telephone", "radio"] }, "count": 1 },
+        { "mode": "credit", "amount": 1, "of": { "type": "tags", "anyOf": ["cyber"] }, "label": "$1 Cyberware" }
       ],
       "jobs": [],
       "catchphrases": [],
