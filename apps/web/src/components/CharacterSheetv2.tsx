@@ -96,6 +96,17 @@ type CharacterDTO = {
 const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <h2 className="text-lg font-semibold tracking-wide text-zinc-800">{children}</h2>
 );
+/** Simple hover tooltip (no external UI lib) */
+const InfoTooltip: React.FC<{ text: string; className?: string }> = ({ text, className }) => (
+  <span className={["relative inline-flex items-center group", className].filter(Boolean).join(" ")} title={text}>
+    <svg aria-hidden="true" className="h-4 w-4 text-zinc-400 group-hover:text-zinc-600" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2ZM11 10h2v7h-2v-7Zm0-3h2v2h-2V7Z" />
+    </svg>
+    <span className="pointer-events-none absolute left-5 top-1/2 z-10 hidden -translate-y-1/2 whitespace-pre-line rounded-md bg-black/90 px-2 py-1 text-xs text-white shadow-lg group-hover:block">
+      {text}
+    </span>
+  </span>
+);
 const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className }) => (
   <div className={`rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm ${className || ""}`}>{children}</div>
 );
@@ -586,7 +597,10 @@ function onPortraitFile(e: React.ChangeEvent<HTMLInputElement>) {
         <div className="space-y-6">
           <Card>
             <div className="flex items-center justify-between">
-              <SectionTitle>Grit</SectionTitle>
+              <div className="flex items-center gap-2">
+                <SectionTitle>Grit</SectionTitle>
+                <InfoTooltip text={"Your stamina/plot armor. Check boxes when you take hits.\nBAD! → suffer a Condition.\nHOT! → gain 2 Adrenaline.\nIf you fill all boxes, you’re Broken and must take a spin on the Death Roulette. Recover Grit by resting."} />
+              </div>
               <span className="text-sm text-zinc-500">{gritCurrent} / 12</span>
             </div>
             <div className="mt-3">
@@ -604,7 +618,12 @@ function onPortraitFile(e: React.ChangeEvent<HTMLInputElement>) {
           </Card>
 
           <Card>
-            <SectionTitle>Feats</SectionTitle>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <SectionTitle>Feats</SectionTitle>
+                <InfoTooltip text={"Special moves and advantages from your Role/Trope. Some are always on; others trigger or spend Adrenaline/Spotlight. Read each feat’s text."} />
+              </div>
+            </div>
             <div className="mt-3 space-y-2">
               {(feats.length ? feats : [{ name: "—" }]).map((f, i) => (
                 <div key={`${(f as any).name}-${i}`} className="rounded-lg border border-zinc-200 p-3">
@@ -622,7 +641,10 @@ function onPortraitFile(e: React.ChangeEvent<HTMLInputElement>) {
       {/* Adrenaline + Spotlight */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <Card>
-          <SectionTitle>Adrenaline/Luck</SectionTitle>
+          <div className="flex items-center">
+            <SectionTitle>Adrenaline/Luck</SectionTitle>
+            <InfoTooltip className="ml-2" text={"Push your luck/resource. Spend pips to boost rolls (+1 each) or fuel powerful Feats. Spend 6 to TAKE THE SPOTLIGHT."} />
+          </div>
           <div className="mt-3">
             <BoxRow count={6} value={adrenaline} onChange={setAdrenaline} />
             <p className="mt-3 text-xs text-zinc-700">
@@ -631,7 +653,10 @@ function onPortraitFile(e: React.ChangeEvent<HTMLInputElement>) {
           </div>
         </Card>
         <Card>
-          <SectionTitle>Spotlight</SectionTitle>
+          <div className="flex items-center">
+            <SectionTitle>Spotlight</SectionTitle>
+            <InfoTooltip className="ml-2" text={"Your cinematic moment. Spend 1 to seize a short scene beat: make things awesome, steal the camera, or shift momentum (as agreed with the Director)."} />
+          </div>
           <div className="mt-3">
             <BoxRow count={3} value={spotlight} onChange={setSpotlight} />
           </div>
@@ -641,7 +666,10 @@ function onPortraitFile(e: React.ChangeEvent<HTMLInputElement>) {
       {/* You Look + Death Roulette */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <Card>
-          <SectionTitle>You Look</SectionTitle>
+          <div className="flex items-center">
+            <SectionTitle>You Look</SectionTitle>
+            <InfoTooltip className="ml-2" text={"Temporary Conditions that show how you look right now. Each imposes −1 to the linked Attribute (e.g., Hurt → Brawn). >3 Conditions = Broken and −1 to ALL."} />
+          </div>
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
             {(
               [
@@ -682,7 +710,10 @@ function onPortraitFile(e: React.ChangeEvent<HTMLInputElement>) {
 
         <Card>
           <div className="flex items-center justify-between">
-            <SectionTitle>Death Roulette</SectionTitle>
+            <div className="flex items-center gap-2">
+              <SectionTitle>Death Roulette</SectionTitle>
+              <InfoTooltip className="ml-2" text={"Six-chamber fate. Lethal hits add bullets to the roulette. When you’d die, roll 1d6: hit a loaded chamber and you’re dead; miss and you survive (but usually add another bullet)."} />
+            </div>
             <span className="text-sm text-zinc-500">{deathValue} / 6</span>
           </div>
           <div className="mt-3">
