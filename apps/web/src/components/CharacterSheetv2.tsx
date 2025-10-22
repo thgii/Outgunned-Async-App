@@ -441,65 +441,103 @@ function onPortraitFile(e: React.ChangeEvent<HTMLInputElement>) {
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4">
       {/* Header */}
-        <Card className="p-5">
-          <SectionTitle>Character</SectionTitle>
+      <Card className="p-5">
+        <SectionTitle>Character</SectionTitle>
 
-          <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-4">
-            {/* Portrait column */}
-            <div className="flex flex-col items-start gap-2">
-              <div className="h-40 w-40 rounded-xl border bg-zinc-100 overflow-hidden flex items-center justify-center">
-                {portrait ? (
-                  <img
-                    src={portrait}
-                    alt={`${local.name || "Character"} portrait`}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <span className="text-xs text-zinc-500 px-2 text-center">No portrait</span>
-                )}
-                </div>
-              <input type="file" accept="image/*" onChange={onPortraitFile} className="text-sm" />
-              {portrait && (
-                <button
-                  type="button"
-                  onClick={() => setPortrait(null)}
-                  className="text-xs text-red-600 hover:underline"
-                >
-                  Remove portrait
-                </button>
+        <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-4">
+          {/* Portrait column */}
+          <div className="flex flex-col items-start gap-2">
+            <div className="h-40 w-40 rounded-xl border bg-zinc-100 overflow-hidden flex items-center justify-center">
+              {portrait ? (
+                <img
+                  src={portrait}
+                  alt={`${local.name || "Character"} portrait`}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <span className="text-xs text-zinc-500 px-2 text-center">No portrait</span>
               )}
             </div>
 
-            {/* Identity fields */}
-            <div className="md:col-span-3 grid grid-cols-1 gap-3 md:grid-cols-3">
-
-          <Labeled label="Name">
-            <Input value={local.name || ""} onChange={setHeader("name")} placeholder="Name" />
-          </Labeled>
-          <Labeled label="Role">
-            <Input value={local.role || ""} onChange={setHeader("role")} placeholder="Role" />
-          </Labeled>
-          <Labeled label="Trope">
-            <Input value={local.trope || ""} onChange={setHeader("trope")} placeholder="Trope" />
-          </Labeled>
-          <Labeled label="Job">
-            <Input
-              value={local.jobOrBackground || ""}
-              onChange={setHeader("jobOrBackground")}
-              placeholder="Job/Background"
+            <input
+              type="file"
+              accept="image/*"
+              onChange={onPortraitFile}
+              className="text-sm"
             />
-          </Labeled>
-          <Labeled label="Age">
-            <Input value={local.age || ""} onChange={setHeader("age")} placeholder="Young / Adult / Old" />
-          </Labeled>
-          <Labeled label="Flaw">
-            <Input value={local.flaw || ""} onChange={setHeader("flaw")} placeholder="Flaw" />
-          </Labeled>
-          <Labeled label="Catchphrase" className="md:col-span-3">
-            <Input value={local.catchphrase || ""} onChange={setHeader("catchphrase")} placeholder={`"I’ve had worse!"`} />
-          </Labeled>
+
+            {portrait && (
+              <button
+                type="button"
+                onClick={() => setPortrait(null)}
+                className="text-xs text-red-600 hover:underline"
+              >
+                Remove portrait
+              </button>
+            )}
+          </div>
+
+          {/* Identity fields */}
+          <div className="md:col-span-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+            <Labeled label="Name">
+              <Input
+                value={local.name || ""}
+                onChange={setHeader("name")}
+                placeholder="Name"
+              />
+            </Labeled>
+
+            <Labeled label="Role">
+              <Input
+                value={local.role || ""}
+                onChange={setHeader("role")}
+                placeholder="Role"
+              />
+            </Labeled>
+
+            <Labeled label="Trope">
+              <Input
+                value={local.trope || ""}
+                onChange={setHeader("trope")}
+                placeholder="Trope"
+              />
+            </Labeled>
+
+            <Labeled label="Job">
+              <Input
+                value={local.jobOrBackground || ""}
+                onChange={setHeader("jobOrBackground")}
+                placeholder="Job/Background"
+              />
+            </Labeled>
+
+            <Labeled label="Age">
+              <Input
+                value={local.age || ""}
+                onChange={setHeader("age")}
+                placeholder="Young / Adult / Old"
+              />
+            </Labeled>
+
+            <Labeled label="Flaw">
+              <Input
+                value={local.flaw || ""}
+                onChange={setHeader("flaw")}
+                placeholder="Flaw"
+              />
+            </Labeled>
+
+            <Labeled label="Catchphrase" className="md:col-span-3">
+              <Input
+                value={local.catchphrase || ""}
+                onChange={setHeader("catchphrase")}
+                placeholder={`"I’ve had worse!"`}
+              />
+            </Labeled>
+          </div>
         </div>
       </Card>
+
 
       {/* Middle: Left (Attributes+Skills) & Right (Grit + Feats) */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
