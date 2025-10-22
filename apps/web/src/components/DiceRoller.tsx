@@ -1,7 +1,5 @@
-// apps/web/src/components/DiceRoller.tsx
 import { useMemo, useState } from "react";
 import {
-  PoolOptions,
   performRoll,
   applyReroll,
   goAllIn,
@@ -11,18 +9,12 @@ import {
   RollResult,
 } from "../lib/dice";
 
-// Minimal tailwind-y UI. Replace with your design system as you like.
 type DiceRollerProps = {
-  // Provide the character's current values:
-  attribute: number; // e.g., Nerves, Brawn, Smooth, Focus, Crime (choose one per roll)
-  skill: number;     // chosen skill level for this roll
-  // Modifiers: sum(+help, +gear, +adrenalineSpent, -conditions, -hindrances)
+  attribute: number;
+  skill: number;
   modifier?: number;
-  // Difficulty selector default
   defaultDifficulty?: Difficulty;
-  // Adrenaline availability for the “Reroll (spend 1)” button — you’ll actually consume it in the caller.
   canSpendAdrenaline?: boolean;
-  // Show Free Re-roll button (granted by feats)
   hasFreeReroll?: boolean;
   className?: string;
 };
@@ -60,7 +52,6 @@ export default function DiceRoller({
 
   function doRerollPaid() {
     if (!current) return;
-    // NOTE: Spending Adrenaline should be handled by the parent (decrement the resource).
     const next = applyReroll(current, { free: false });
     setCurrent(next);
     setHistory((h) => [...h, next]);
@@ -73,7 +64,7 @@ export default function DiceRoller({
     setHistory((h) => [...h, next]);
   }
 
-    function doReset() {
+  function doReset() {
     setCurrent(null);
     setHistory([]);
   }
@@ -81,30 +72,45 @@ export default function DiceRoller({
   const passed = current ? passesDifficulty(current, { difficulty }) : null;
 
   return (
-    <div className={`rounded-xl border p-4 space-y-3 ${className}`}>
+    <div
+      className={`rounded-xl border border-gray-300 bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700 p-5 space-y-4 shadow-sm ${className}`}
+    >
       <header className="flex items-center justify-between">
-        <div className="font-semibold">Dice Roller</div>
-        <div className="text-sm opacity-80">
-          Pool: <b>{pool}</b> {clamped && <span className="ml-1 text-xs">(clamped 2–9)</span>}
+        <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+          Dice Roller
+        </h3>
+        <div className="text-sm text-gray-800 dark:text-gray-300">
+          Pool: <b>{pool}</b>{" "}
+          {clamped && <span className="ml-1 text-xs">(clamped 2–9)</span>}
         </div>
       </header>
 
-      <div className="grid gap-2 sm:grid-cols-3">
+      {/* Attribute / Skill / Modifier */}
+      <div className="grid gap-3 sm:grid-cols-3">
         <Labeled label="Attribute">
-          <span className="inline-block rounded px-2 py-1 bg-gray-100">{attribute}</span>
+          <span className="inline-block rounded px-2 py-1 border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 font-semibold">
+            {attribute}
+          </span>
         </Labeled>
         <Labeled label="Skill">
-          <span className="inline-block rounded px-2 py-1 bg-gray-100">{skill}</span>
+          <span className="inline-block rounded px-2 py-1 border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 font-semibold">
+            {skill}
+          </span>
         </Labeled>
         <Labeled label="Modifier (net)">
-          <span className="inline-block rounded px-2 py-1 bg-gray-100">{modifier >= 0 ? `+${modifier}` : modifier}</span>
+          <span className="inline-block rounded px-2 py-1 border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 font-semibold">
+            {modifier >= 0 ? `+${modifier}` : modifier}
+          </span>
         </Labeled>
       </div>
 
+      {/* Difficulty dropdown */}
       <div className="flex items-center gap-3">
-        <label className="text-sm">Difficulty</label>
+        <label className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+          Difficulty
+        </label>
         <select
-          className="border rounded px-2 py-1 text-sm"
+          className="border border-gray-400 bg-white text-gray-900 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600"
           value={difficulty}
           onChange={(e) => setDifficulty(e.target.value as Difficulty)}
         >
@@ -115,67 +121,73 @@ export default function DiceRoller({
         </select>
       </div>
 
+      {/* Buttons */}
       <div className="flex flex-wrap gap-2">
-        <button className="px-3 py-1 rounded bg-black text-white text-sm" onClick={doRoll}>
+        <Button color="indigo" onClick={doRoll}>
           Roll {pool} d6
-        </button>
+        </Button>
 
-        <button
-          className="px-3 py-1 rounded bg-blue-600 text-white text-sm disabled:opacity-50"
+        <Button
+          color="sky"
           onClick={doRerollFree}
           disabled={!current || !hasFreeReroll}
           title="Free Re-roll (feat-based, allowed even with 0 success; never lose 1)"
         >
           Free Re-roll
-        </button>
+        </Button>
 
-        <button
-          className="px-3 py-1 rounded bg-amber-600 text-white text-sm disabled:opacity-50"
+        <Button
+          color="amber"
           onClick={doRerollPaid}
           disabled={!current || !canSpendAdrenaline}
           title="Re-roll (requires ≥1 success; if not better, lose 1 success)"
         >
           Re-roll (spend 1)
-        </button>
+        </Button>
 
-        <button
-          className="px-3 py-1 rounded bg-red-600 text-white text-sm disabled:opacity-50"
+        <Button
+          color="rose"
           onClick={doAllIn}
           disabled={!current}
           title="All In: if not better, lose ALL previous successes"
         >
           Go All-In
-        </button>
-                <button
-          className="px-3 py-1 rounded bg-gray-200 text-gray-900 text-sm disabled:opacity-50"
+        </Button>
+
+        <Button
+          color="gray"
           onClick={doReset}
           disabled={!current && history.length === 0}
           title="Clear this roller for a brand new roll"
         >
           Reset
-        </button>
-
+        </Button>
       </div>
 
+      {/* Results */}
       {current && (
-        <div className="grid sm:grid-cols-2 gap-3">
-          <div className="rounded border p-3">
-            <div className="text-sm font-semibold mb-1">Latest Roll</div>
-            <div className="text-sm">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div className="rounded-lg border border-gray-300 bg-gray-50 dark:bg-gray-800 dark:border-gray-600 p-3 shadow-inner">
+            <div className="text-sm font-semibold mb-2 text-gray-900 dark:text-gray-100">
+              Latest Roll
+            </div>
+            <div className="text-sm text-gray-800 dark:text-gray-200">
               Faces:{" "}
-              <span className="font-mono">
+              <span className="font-mono font-semibold text-gray-900 dark:text-gray-100">
                 {current.breakdown.faces.join(" ")}
               </span>
             </div>
-            <div className="text-sm mt-1">
+            <div className="text-sm mt-1 text-gray-800 dark:text-gray-200">
               Sets:&nbsp;
               {current.breakdown.sets.length
                 ? current.breakdown.sets
-                    .map((s, i) => `${s} (${current.breakdown.tierPerSet[i]})`)
+                    .map(
+                      (s, i) => `${s} (${current.breakdown.tierPerSet[i]})`
+                    )
                     .join(", ")
                 : "—"}
             </div>
-            <div className="text-sm mt-1">
+            <div className="text-sm mt-1 text-gray-800 dark:text-gray-200">
               Successes:&nbsp;
               <b>
                 {[
@@ -191,19 +203,30 @@ export default function DiceRoller({
             </div>
             <div className="text-sm mt-1">
               Pass {difficulty.toUpperCase()}?{" "}
-              <b className={passed ? "text-green-600" : "text-red-600"}>
-                {passed ? "Yes" : "No"}
+              <b
+                className={
+                  passed
+                    ? "text-green-700 dark:text-green-400"
+                    : "text-red-600 dark:text-red-400"
+                }
+              >
+                {passed ? "YES" : "NO"}
               </b>
             </div>
             <Flags flags={current.flags} />
           </div>
 
-          <div className="rounded border p-3">
-            <div className="text-sm font-semibold mb-2">History</div>
-            <ol className="text-sm space-y-1">
+          <div className="rounded-lg border border-gray-300 bg-gray-50 dark:bg-gray-800 dark:border-gray-600 p-3 shadow-inner">
+            <div className="text-sm font-semibold mb-2 text-gray-900 dark:text-gray-100">
+              History
+            </div>
+            <ol className="text-sm text-gray-800 dark:text-gray-200 space-y-1">
               {history.map((h, i) => (
-                <li key={i} className="flex items-center justify-between">
-                  <span className="font-mono">{h.breakdown.faces.join(" ")}</span>
+                <li
+                  key={i}
+                  className="flex items-center justify-between font-mono"
+                >
+                  <span>{h.breakdown.faces.join(" ")}</span>
                   <span>
                     {h.jackpot
                       ? "Jackpot"
@@ -227,12 +250,49 @@ export default function DiceRoller({
   );
 }
 
-function Labeled({ label, children }: { label: string; children: React.ReactNode }) {
+/* ---------- UI helpers ---------- */
+
+function Labeled({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="space-y-1">
-      <div className="text-xs uppercase opacity-70">{label}</div>
+      <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+        {label}
+      </div>
       {children}
     </div>
+  );
+}
+
+function Button({
+  color,
+  children,
+  ...rest
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  color: "indigo" | "sky" | "amber" | "rose" | "gray";
+}) {
+  const colorClasses: Record<string, string> = {
+    indigo:
+      "bg-indigo-600 hover:bg-indigo-700 text-white disabled:bg-indigo-300",
+    sky: "bg-sky-500 hover:bg-sky-600 text-white disabled:bg-sky-300",
+    amber: "bg-amber-500 hover:bg-amber-600 text-white disabled:bg-amber-300",
+    rose: "bg-rose-500 hover:bg-rose-600 text-white disabled:bg-rose-300",
+    gray:
+      "bg-gray-200 hover:bg-gray-300 text-gray-900 disabled:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100",
+  };
+
+  return (
+    <button
+      className={`px-3 py-1 rounded text-sm font-semibold transition-colors border border-transparent ${colorClasses[color]} disabled:cursor-not-allowed`}
+      {...rest}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -243,7 +303,7 @@ function Flags({ flags }: { flags: RollResult["flags"] }) {
   if (flags.allInBust) items.push("All-In bust (lost all)");
   if (!items.length) return null;
   return (
-    <div className="text-xs mt-2 opacity-80">
+    <div className="text-sm mt-2 text-gray-700 dark:text-gray-300">
       {items.map((s, i) => (
         <span key={i} className="inline-block mr-2">
           • {s}
