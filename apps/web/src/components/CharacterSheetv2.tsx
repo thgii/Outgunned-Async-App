@@ -645,11 +645,11 @@ function onPortraitFile(e: React.ChangeEvent<HTMLInputElement>) {
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
             {(
               [
-                ["Hurt", "Hurt"],
-                ["Nervous", "Nervous"],
-                ["Like a Fool", "LikeAFool"],
-                ["Distracted", "Distracted"],
-                ["Scared", "Scared"],
+                ["Hurt: -1 Brawn", "Hurt"],
+                ["Nervous: -1 Nerves", "Nervous"],
+                ["Like a Fool: -1 Smooth", "LikeAFool"],
+                ["Distracted: -1 Focus", "Distracted"],
+                ["Scared: -1 Crime", "Scared"],
                 ["Tired", "Tired"],
               ] as const
             ).map(([label, key]) => (
@@ -675,7 +675,7 @@ function onPortraitFile(e: React.ChangeEvent<HTMLInputElement>) {
                   })
                 }
               />
-              <span className="text-[15px] font-medium text-zinc-800">Broken</span>
+              <span className="text-[15px] font-medium text-zinc-800">Broken: -1 All Rolls</span>
             </label>
           </div>
         </Card>
