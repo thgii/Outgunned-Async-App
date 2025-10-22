@@ -102,7 +102,7 @@ const InfoTooltip: React.FC<{ text: string; className?: string }> = ({ text, cla
     <svg aria-hidden="true" className="h-4 w-4 text-zinc-400 group-hover:text-zinc-600" viewBox="0 0 24 24" fill="currentColor">
       <path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2ZM11 10h2v7h-2v-7Zm0-3h2v2h-2V7Z" />
     </svg>
-    <span className="pointer-events-none absolute left-5 top-1/2 z-10 hidden -translate-y-1/2 whitespace-pre-line rounded-md bg-black/90 px-2 py-1 text-xs text-white shadow-lg group-hover:block">
+    <span className="pointer-events-none absolute left-5 top-1/2 z-10 hidden -translate-y-1/2 whitespace-pre-line rounded-md bg-black/90 px-3 py-2 text-xs text-white shadow-lg group-hover:block w-64">
       {text}
     </span>
   </span>
