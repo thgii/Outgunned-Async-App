@@ -104,7 +104,7 @@ export default function Header() {
                 onClick={onNav}
               >
                 <span className="inline-flex items-center gap-2">
-                  <Clapperboard className="h-5 w-5" /> Characters
+                  <Clapperboard className="h-5 w-5" /> Heroes
                 </span>
               </NavLink>
 

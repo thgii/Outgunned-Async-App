@@ -28,19 +28,19 @@ export default function CharactersList() {
       .then(setCharacters)
       .catch((e) => {
         console.error(e);
-        setErr("Failed to load characters.");
+        setErr("Failed to load heroes.");
       });
   }, []);
 
   return (
     <div className="max-w-5xl mx-auto p-6">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-3xl font-bold">All Characters</h1>
+        <h1 className="text-3xl font-bold">All Heroes</h1>
         <button
           onClick={() => navigate("/characters/new")}
           className="px-3 py-2 rounded bg-black text-white hover:opacity-90"
         >
-          Create Character
+          Create Hero
         </button>
       </div>
 
