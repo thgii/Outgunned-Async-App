@@ -176,6 +176,20 @@ export default function RulesReference() {
           </ol>
         </section>
 
+        {/* Dangerous Rolls */}
+        <section className="mt-8">
+          <h3 className="mb-2 text-lg font-semibold">💀 Dangerous Rolls</h3>
+          <p className="text-sm leading-relaxed">
+            If you fail a dangerous roll, you don’t face the usual consequences for a failure. Instead, you lose a set amount of Grit depending on the difficulty of the failed roll.
+          </p>
+          <ul className="mt-2 list-disc pl-5 text-sm leading-relaxed">
+            <li>BASIC: You lose 1 Grit</li>
+            <li>CRITICAL: You lose 3 Grit</li>
+            <li>EXTREME: You lose 9 Grit</li>
+            <li>IMPOSSIBLE: You lose All Grit</li>
+          </ul>
+        </section>
+
         <footer className="mt-8 border-t border-gray-200 pt-3 text-xs text-gray-500 dark:border-gray-800 dark:text-gray-400">
           Sources: Outgunned Corebook &amp; Adventure Genre Book — compiled for table reference.
         </footer>
