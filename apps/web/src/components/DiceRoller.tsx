@@ -73,6 +73,11 @@ export default function DiceRoller({
     setHistory((h) => [...h, next]);
   }
 
+    function doReset() {
+    setCurrent(null);
+    setHistory([]);
+  }
+
   const passed = current ? passesDifficulty(current, { difficulty }) : null;
 
   return (
@@ -141,6 +146,15 @@ export default function DiceRoller({
         >
           Go All-In
         </button>
+                <button
+          className="px-3 py-1 rounded bg-gray-200 text-gray-900 text-sm disabled:opacity-50"
+          onClick={doReset}
+          disabled={!current && history.length === 0}
+          title="Clear this roller for a brand new roll"
+        >
+          Reset
+        </button>
+
       </div>
 
       {current && (

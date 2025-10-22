@@ -2,6 +2,7 @@ import { useState } from "react";
 import DirectorsToolkit_AttributesAndSkills from "../components/DirectorsToolkit_AttributesAndSkills";
 import DirectorsToolkit_Gear from "../components/DirectorsToolkit_Gear";
 import DirectorsToolkit_Feats from "../components/DirectorsToolkit_Feats";
+import DirectorsDiceRoller from "../components/DirectorsToolkit_DiceRoller";
 
 
 export default function DirectorsToolkit() {
@@ -57,6 +58,17 @@ export default function DirectorsToolkit() {
         </button>
 
         <button
+          onClick={() => setTab("diceroller")}
+          className={`px-4 py-2 rounded-full border font-medium ${
+            tab === "diceroller"
+              ? "bg-blue-600 text-white border-blue-700"
+              : "bg-white text-gray-800 border-gray-300 hover:bg-gray-50"
+          }`}
+        >
+          Dice Roller
+        </button>
+
+        <button
           onClick={() => setTab("resources")}
           className={`px-4 py-2 rounded-full border font-medium ${
             tab === "resources"
@@ -66,7 +78,7 @@ export default function DirectorsToolkit() {
         >
           Resources
         </button>
-        
+
       </div>
 
       {/* Content panes */}
@@ -85,6 +97,9 @@ export default function DirectorsToolkit() {
         )}
 
        {tab === "feats" && <DirectorsToolkit_Feats />}
+
+       {tab === "diceroller" && <DirectorsToolkit_DiceRoller />}
+       
       </div>
     </div>
   );
