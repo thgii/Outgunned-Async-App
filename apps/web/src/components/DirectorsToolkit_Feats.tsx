@@ -53,7 +53,7 @@ export default function DirectorsToolkit_Feats() {
           </div>
         </div>
         <p className="mt-2 text-sm text-gray-600">
-          Showing <b>{filtered.length}</b> of <b>{feats.length}</b> feats from your JSON.
+          Showing <b>{filtered.length}</b> of <b>{feats.length}</b> feats.
         </p>
       </div>
 

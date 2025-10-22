@@ -44,16 +44,7 @@ export default function DirectorsToolkit() {
         >
           Gear
         </button>
-        <button
-          onClick={() => setTab("resources")}
-          className={`px-4 py-2 rounded-full border font-medium ${
-            tab === "resources"
-              ? "bg-blue-600 text-white border-blue-700"
-              : "bg-white text-gray-800 border-gray-300 hover:bg-gray-50"
-          }`}
-        >
-          Resources
-        </button>
+
         <button
           onClick={() => setTab("feats")}
           className={`px-4 py-2 rounded-full border font-medium ${
@@ -64,6 +55,18 @@ export default function DirectorsToolkit() {
         >
           Feats
         </button>
+
+        <button
+          onClick={() => setTab("resources")}
+          className={`px-4 py-2 rounded-full border font-medium ${
+            tab === "resources"
+              ? "bg-blue-600 text-white border-blue-700"
+              : "bg-white text-gray-800 border-gray-300 hover:bg-gray-50"
+          }`}
+        >
+          Resources
+        </button>
+        
       </div>
 
       {/* Content panes */}
