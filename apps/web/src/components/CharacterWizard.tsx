@@ -611,12 +611,9 @@ const preTropeDTO = useMemo(() => {
 {/* Trope Attribute (only when the trope exposes options AND role is not Special) */}
 {tropeNeedsAttr && (
   <>
-    <div className="text-xs text-muted-foreground mb-1">
-      Choose an attribute granted by your Trope.
-    </div>
 
     <Select
-      label="Choose Trope Attribute *"
+      label="Choose Trope Attribute (Note: Select a different attribute than your Role grants*"
       value={tropeAttribute ?? ""}
       onChange={(v) => setTropeAttribute((v || undefined) as AttrKey)}
       options={["", ...tropeAttrOptions]}
