@@ -614,13 +614,21 @@ function onPortraitFile(e: React.ChangeEvent<HTMLInputElement>) {
         </Card>
 
         {/* Right: Grit + Feats */}
-        <div className="space-y-6">
-            <CharacterDicePanel
-              dto={local}
-              onSpendAdrenaline={(n) => spendAdrenaline(n)}
-              onPaidRerollSpend={(n) => spendAdrenaline(n)}
-            />
-          
+          <Card>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <SectionTitle>Dice Roller</SectionTitle>
+              </div>
+            </div>  
+              <div className="mt-4">
+                <CharacterDicePanel
+                  dto={local}
+                  onSpendAdrenaline={(n) => spendAdrenaline(n)}
+                  onPaidRerollSpend={(n) => spendAdrenaline(n)}
+                />
+              </div>
+          </Card>
+
           <Card>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">

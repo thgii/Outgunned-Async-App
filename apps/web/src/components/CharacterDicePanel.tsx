@@ -2,8 +2,6 @@ import { useMemo, useState } from "react";
 import type { CharacterDTO, AttrKey, SkillKey } from "@action-thread/types";
 import DiceRoller from "./DiceRoller";
 import { conditionPenaltyForAttribute } from "../lib/conditions";
-import { SectionTitle } from "./SectionTitle"; // 🟢 same helper you use in Grit
-import { InfoTooltip } from "./InfoTooltip"; // 🟢 tooltip for explanation
 
 type Props = {
   dto: CharacterDTO;
@@ -43,18 +41,6 @@ export default function CharacterDicePanel({
     () => condPenalty + preRollAdrenaline + Number(adHoc || 0),
     [condPenalty, preRollAdrenaline, adHoc]
   );
-
-    // Local fallback Card (same style as CharacterSheetV2)
-    const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({
-    children,
-    className,
-    }) => (
-    <div
-        className={`rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm ${className || ""}`}
-    >
-        {children}
-    </div>
-    );
 
   const canSpendAdrenaline =
     Number(dto.resources?.adrenaline ?? dto.resources?.luck ?? 0) > 0;
