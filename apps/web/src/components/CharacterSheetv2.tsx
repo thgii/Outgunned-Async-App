@@ -337,6 +337,75 @@ export default function CharacterSheetV2({
   const resStorage = local.resources?.storage;
   const effectiveStorage = topStorage ?? resStorage ?? {};
 
+  // ---------- UI raw text (so Enter/newlines aren't eaten while typing) ----------
+const gunsAndGearInitial = useMemo(
+  () => {
+    const gearNamesFromTop = (local.gear ?? []).map((g: any) => (typeof g === "string" ? g : g?.name)).filter(Boolean);
+    const gearNamesFromStorage = ((effectiveStorage?.gunsAndGear ?? []) as any[])
+      .map((x) => (typeof x === "string" ? x : x?.name))
+      .filter(Boolean);
+    const set = new Set<string>([...gearNamesFromTop, ...gearNamesFromStorage]);
+    return Array.from(set).join("\n");
+  },
+  [local.gear, effectiveStorage?.gunsAndGear]
+);
+
+const [gunsAndGearRaw, setGunsAndGearRaw] = useState(gunsAndGearInitial);
+useEffect(() => setGunsAndGearRaw(gunsAndGearInitial), [gunsAndGearInitial]);
+
+const offPersonInitial = useMemo(
+  () => ((effectiveStorage?.bag ?? []) as string[]).join("\n"),
+  [effectiveStorage?.bag]
+);
+const [offPersonRaw, setOffPersonRaw] = useState(offPersonInitial);
+useEffect(() => setOffPersonRaw(offPersonInitial), [offPersonInitial]);
+
+const backpackInitial = useMemo(
+  () => ((effectiveStorage?.backpack ?? []) as string[]).join("\n"),
+  [effectiveStorage?.backpack]
+);
+const [backpackRaw, setBackpackRaw] = useState(backpackInitial);
+useEffect(() => setBackpackRaw(backpackInitial), [backpackInitial]);
+
+// Committers (run onBlur)
+const commitGunsAndGear = () => {
+  const lines = gunsAndGearRaw
+    .split(/\r?\n/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const nextStorage = { ...(effectiveStorage || {}), gunsAndGear: lines.map((name) => ({ name })) };
+  update({
+    gear: lines,
+    storage: nextStorage,
+    resources: { ...(local.resources ?? {}), storage: nextStorage },
+  });
+};
+
+const commitOffPerson = () => {
+  const lines = offPersonRaw
+    .split(/\r?\n/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const nextStorage = { ...(effectiveStorage || {}), bag: lines };
+  update({
+    storage: nextStorage,
+    resources: { ...(local.resources ?? {}), storage: nextStorage },
+  });
+};
+
+const commitBackpack = () => {
+  const lines = backpackRaw
+    .split(/\r?\n/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const nextStorage = { ...(effectiveStorage || {}), backpack: lines };
+  update({
+    storage: nextStorage,
+    resources: { ...(local.resources ?? {}), storage: nextStorage },
+  });
+};
+
+
   // Character portrait (data URL)
 const portrait =
   (effectiveStorage as any)?.portrait ??
@@ -371,38 +440,6 @@ function onPortraitFile(e: React.ChangeEvent<HTMLInputElement>) {
     const set = new Set<string>([...gearNamesFromTop, ...gearNamesFromStorage]);
     return Array.from(set);
   }, [local.gear, effectiveStorage.gunsAndGear]);
-
-  const gunsAndGearText = mergedGearNames.join("\n");
-
-  const setGunsAndGearText = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const lines = e.target.value.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
-    const nextStorage = { ...(effectiveStorage || {}), gunsAndGear: lines.map((name) => ({ name })) };
-    update({
-      gear: lines,
-      storage: nextStorage,
-      resources: { ...(local.resources ?? {}), storage: nextStorage },
-    });
-  };
-
-  const offPersonText = ((effectiveStorage?.bag ?? []) as string[]).join("\n");
-  const setOffPersonText = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const lines = e.target.value.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
-    const nextStorage = { ...(effectiveStorage || {}), bag: lines };
-    update({
-      storage: nextStorage,
-      resources: { ...(local.resources ?? {}), storage: nextStorage },
-    });
-  };
-
-  const backpackText = ((effectiveStorage?.backpack ?? []) as string[]).join("\n");
-  const setBackpackText = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const lines = e.target.value.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
-    const nextStorage = { ...(effectiveStorage || {}), backpack: lines };
-    update({
-      storage: nextStorage,
-      resources: { ...(local.resources ?? {}), storage: nextStorage },
-    });
-  };
 
   /** ---------- Money & Ride ---------- */
   const cash = Number.isFinite(local.cash) ? Number(local.cash) : 0;
@@ -696,15 +733,30 @@ function onPortraitFile(e: React.ChangeEvent<HTMLInputElement>) {
         <SectionTitle>Storage & Resources</SectionTitle>
         <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
           <Labeled label="Guns & Gear (one per line)">
-            <TextArea value={gunsAndGearText} onChange={setGunsAndGearText} placeholder="Pistol&#10;Rope&#10;Compass" />
+            <TextArea
+              value={gunsAndGearRaw}
+              onChange={(e) => setGunsAndGearRaw(e.target.value)}
+              onBlur={commitGunsAndGear}
+              placeholder="Pistol&#10;Rope&#10;Compass"
+            />
           </Labeled>
 
           <Labeled label="Off-Person Storage (one per line)">
-            <TextArea value={offPersonText} onChange={setOffPersonText} placeholder="Locker key&#10;Spare ammo" />
+            <TextArea
+              value={offPersonRaw}
+              onChange={(e) => setOffPersonRaw(e.target.value)}
+              onBlur={commitOffPerson}
+              placeholder="Locker key&#10;Spare ammo"
+            />
           </Labeled>
 
           <Labeled label="Backpack (one per line)">
-            <TextArea value={backpackText} onChange={setBackpackText} placeholder="Rations&#10;Canteen&#10;Flashlight" />
+            <TextArea
+              value={backpackRaw}
+              onChange={(e) => setBackpackRaw(e.target.value)}
+              onBlur={commitBackpack}
+              placeholder="Rations&#10;Canteen&#10;Flashlight"
+            />
           </Labeled>
 
           <div className="grid grid-cols-1 gap-4">
