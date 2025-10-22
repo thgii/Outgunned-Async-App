@@ -21,44 +21,44 @@ export default function RulesReference() {
         {/* Roll Success Rates */}
         <section className="mt-6">
           <h3 className="mb-2 text-lg font-semibold">🎲 Roll Success Rates</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[560px] border-collapse text-sm">
-              <thead>
-                <tr className="text-left">
-                  <th className="border-b border-gray-200 pb-2 pr-3 dark:border-gray-800">Result</th>
-                  <th className="border-b border-gray-200 pb-2 pr-3 dark:border-gray-800">Set Rolled</th>
-                  <th className="border-b border-gray-200 pb-2 dark:border-gray-800">Description</th>
-                </tr>
-              </thead>
-              <tbody className="align-top">
-                <tr>
-                  <td className="py-2 pr-3 font-medium">Basic Success</td>
-                  <td className="py-2 pr-3">2-of-a-kind</td>
-                  <td className="py-2">Standard success.</td>
-                </tr>
-                <tr>
-                  <td className="py-2 pr-3 font-medium">Critical Success</td>
-                  <td className="py-2 pr-3">3-of-a-kind</td>
-                  <td className="py-2">Strong success; can fuel bigger effects.</td>
-                </tr>
-                <tr>
-                  <td className="py-2 pr-3 font-medium">Extreme Success</td>
-                  <td className="py-2 pr-3">4-of-a-kind</td>
-                  <td className="py-2">Legendary outcome, major advantage.</td>
-                </tr>
-                <tr>
-                  <td className="py-2 pr-3 font-medium">Impossible Success</td>
-                  <td className="py-2 pr-3">5-of-a-kind</td>
-                  <td className="py-2">Breathtaking result.</td>
-                </tr>
-                <tr>
-                  <td className="py-2 pr-3 font-medium">Jackpot!</td>
-                  <td className="py-2 pr-3">6+-of-a-kind</td>
-                  <td className="py-2">Scene-stealing brilliance.</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+            <div className="overflow-x-auto rounded-lg ring-1 ring-gray-200 dark:ring-gray-800">
+              <table className="w-full min-w-[560px] text-sm">
+                <thead className="bg-gray-50 text-gray-700 dark:bg-zinc-800 dark:text-gray-200">
+                  <tr className="text-left">
+                    <th className="px-3 py-2">Result</th>
+                    <th className="px-3 py-2">Set Rolled</th>
+                    <th className="px-3 py-2">Description</th>
+                  </tr>
+                </thead>
+                <tbody className="align-top divide-y divide-gray-200 dark:divide-zinc-800">
+                  <tr className="bg-white dark:bg-zinc-900">
+                    <td className="px-3 py-2 font-medium">Basic Success</td>
+                    <td className="px-3 py-2">2-of-a-kind</td>
+                    <td className="px-3 py-2">Standard success.</td>
+                  </tr>
+                  <tr className="bg-gray-50 dark:bg-zinc-950/50">
+                    <td className="px-3 py-2 font-medium">Critical Success</td>
+                    <td className="px-3 py-2">3-of-a-kind</td>
+                    <td className="px-3 py-2">Strong success; can fuel bigger effects.</td>
+                  </tr>
+                  <tr className="bg-white dark:bg-zinc-900">
+                    <td className="px-3 py-2 font-medium">Extreme Success</td>
+                    <td className="px-3 py-2">4-of-a-kind</td>
+                    <td className="px-3 py-2">Legendary outcome, major advantage.</td>
+                  </tr>
+                  <tr className="bg-gray-50 dark:bg-zinc-950/50">
+                    <td className="px-3 py-2 font-medium">Impossible Success</td>
+                    <td className="px-3 py-2">5-of-a-kind</td>
+                    <td className="px-3 py-2">Breathtaking result.</td>
+                  </tr>
+                  <tr className="bg-white dark:bg-zinc-900">
+                    <td className="px-3 py-2 font-medium">Jackpot!</td>
+                    <td className="px-3 py-2">6+-of-a-kind</td>
+                    <td className="px-3 py-2">Scene-stealing brilliance.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
           <div className="mt-3 rounded-lg bg-gray-50 p-3 text-sm leading-relaxed dark:bg-zinc-800/50">
             <p className="mb-1">
