@@ -6,7 +6,7 @@ import DirectorsDiceRoller from "../components/DirectorsToolkit_DiceRoller";
 
 
 export default function DirectorsToolkit() {
-  const [tab, setTab] = useState<"attributes" | "gear" | "resources" | "feats">("attributes");
+  const [tab, setTab] = useState<"attributes" | "gear" | "resources" | "feats" | "diceroller">("attributes");
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-8 text-gray-900 bg-gray-100 min-h-screen">
@@ -98,8 +98,8 @@ export default function DirectorsToolkit() {
 
        {tab === "feats" && <DirectorsToolkit_Feats />}
 
-       {tab === "diceroller" && <DirectorsToolkit_DiceRoller />}
-       
+       {tab === "diceroller" && <DirectorsDiceRoller />}
+
       </div>
     </div>
   );
