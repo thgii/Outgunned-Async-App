@@ -53,81 +53,7 @@ export default function CharacterDicePanel({
     });
   }
 
-  return (
-      {/* Controls */}
- import { useMemo, useState } from "react";
-import DiceRoller from "./DiceRoller";
-import { conditionPenaltyForAttribute } from "../lib/conditions";
-
-type AttrKey = "brawn" | "nerves" | "smooth" | "focus" | "crime";
-type SkillKey =
-  | "endure" | "fight" | "force" | "stunt"
-  | "cool" | "drive" | "shoot" | "survival"
-  | "flirt" | "leadership" | "speech" | "style"
-  | "detect" | "fix" | "heal" | "know"
-  | "awareness" | "dexterity" | "stealth" | "streetwise";
-
-type CharacterDTO = {
-  attributes?: Partial<Record<AttrKey, number>>;
-  skills?: Partial<Record<SkillKey, number>>;
-  youLookSelected?: string[];
-  isBroken?: boolean;
-  adrenaline?: number;
-  luck?: number;
-  resources?: { adrenaline?: number; luck?: number };
-};
-
-type Props = {
-  dto: CharacterDTO;
-  onSpendAdrenaline?: (amount: number) => void;
-  onPaidRerollSpend?: (amount: number) => void;
-  className?: string;
-};
-
-const ATTR_LABEL: Record<AttrKey, string> = {
-  brawn: "Brawn",
-  nerves: "Nerves",
-  smooth: "Smooth",
-  focus: "Focus",
-  crime: "Crime",
-};
-
-export default function CharacterDicePanel({
-  dto,
-  onSpendAdrenaline,
-  onPaidRerollSpend,
-  className = "",
-}: Props) {
-  const [attr, setAttr] = useState<AttrKey>("nerves");
-  const [skill, setSkill] = useState<SkillKey>("shoot");
-  const [adHoc, setAdHoc] = useState<number>(0);
-  const [spendAdrenalineNow, setSpendAdrenalineNow] = useState<boolean>(false);
-
-  const attrVal = Number(dto.attributes?.[attr] ?? 0);
-  const skillVal = Number(dto.skills?.[skill] ?? 0);
-
-  const condPenalty = useMemo(
-    () => conditionPenaltyForAttribute(attr, { youLookSelected: dto.youLookSelected, isBroken: dto.isBroken }),
-    [attr, dto.youLookSelected, dto.isBroken]
-  );
-
-  const preRollAdrenaline = spendAdrenalineNow ? 1 : 0;
-  const modifier = useMemo(
-    () => condPenalty + preRollAdrenaline + Number(adHoc || 0),
-    [condPenalty, preRollAdrenaline, adHoc]
-  );
-
-  const canSpendAdrenaline =
-    Number(dto.resources?.adrenaline ?? dto.adrenaline ?? dto.resources?.luck ?? dto.luck ?? 0) > 0;
-
-  function handleToggleSpend() {
-    setSpendAdrenalineNow((prev) => {
-      const next = !prev;
-      if (next && canSpendAdrenaline) onSpendAdrenaline?.(1);
-      return next;
-    });
-  }
-
+  {/* Controls */}
   return (
     <div className={`space-y-4 ${className}`}>
       {/* Controls */}
@@ -214,29 +140,6 @@ export default function CharacterDicePanel({
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <div className="text-sm font-semibold text-zinc-800 dark:text-gray-100 mb-1">
-        {label}
-      </div>
-      {children}
-    </label>
-  );
-}
-
-function capitalize(s: string) {
-  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
-}
-
-/* ---------- helpers ---------- */
-
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
   return (
     <label className="block">
       <div className="text-sm font-semibold text-zinc-800 dark:text-gray-100 mb-1">
