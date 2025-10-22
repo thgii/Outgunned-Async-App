@@ -344,4 +344,5 @@ export const GEAR: GearItem[] = [
 
   // ===== Utility: Credit token (not in your sheet, but needed for flexible grants) =====
   { id: "cash-1", name: "1$ Credit- Exchange for Gear", kind: "cash", cost: 1, tags: ["currency"], note: "Generic buying power unit for flexible grants.", source: OG(99) },
+  { id: "cyber-cash-1", name: "1$ Credit- Exchange for Cyber Gear", kind: "cash", cost: 1, tags: ["currency"], note: "Generic buying power unit for flexible grants.", source: AF() },
 ];

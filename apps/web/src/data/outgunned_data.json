@@ -1486,8 +1486,8 @@
       ],
       "gear_grants": [
         { "mode": "give", "items": ["pistol"] },
-        { "mode": "choose", "of": { "type": "ids", "ids": ["telephone", "radio"] }, "count": 1 },
-        { "mode": "credit", "amount": 1, "of": { "type": "tags", "anyOf": ["cyber"] }, "label": "$1 Cyberware" }
+        { "mode": "give", "items": ["cyber-cash-1"] },
+        { "mode": "choose", "of": { "type": "ids", "ids": ["telephone", "radio"] }, "count": 1 }
       ],
       "jobs": [],
       "catchphrases": [],
@@ -1558,6 +1558,9 @@
       "gear": [
         "3 pieces of Gear of your choice"
       ],
+      "gear_grants": [
+        { "mode": "choose", "of": { "type": "custom", "label": "Any gear from catalog" }, "count": 3 }
+      ],
       "jobs": [],
       "catchphrases": [],
       "flaws": [],
@@ -1621,6 +1624,10 @@
         "Knife",
         "Rope"
       ],
+      "gear_grants": [
+        { "mode": "choose", "of": { "type": "ids", "ids": ["pistol", "revolver"] }, "count": 1 },
+        { "mode": "give", "items": ["knife", "oga-rope"] }
+      ],
       "jobs": [],
       "catchphrases": [],
       "flaws": [],
@@ -1682,6 +1689,10 @@
         "Weapon of Choice",
         "One $1 item of choice"
       ],
+      "gear_grants": [
+        { "mode": "choose", "of": { "type": "kind", "kind": "weapon" }, "count": 1 },
+        { "mode": "credit", "amount": 1, "label": "$1 item of your choice" }
+      ],
       "jobs": [],
       "catchphrases": [],
       "flaws": [],
@@ -1742,6 +1753,11 @@
         "One $1 item of choice",
         "Hunting rifle or Hunting bow",
         "Knife"
+      ],
+      "gear_grants": [
+        { "mode": "credit", "amount": 1, "label": "$1 item of your choice" },
+        { "mode": "choose", "of": { "type": "ids", "ids": ["oga-hunting-rifle", "oga-hunting-bow"] }, "count": 1 },
+        { "mode": "give", "items": ["knife"] }
       ],
       "jobs": [],
       "catchphrases": [],
@@ -1805,6 +1821,10 @@
         "Old Ride",
         "Compass"
       ],
+      "gear_grants": [
+        { "mode": "choose", "of": { "type": "ids", "ids": ["pistol", "revolver"] }, "count": 1 },
+        { "mode": "give", "items": ["oga-old-ride", "oga-compass"] }
+      ],
       "jobs": [],
       "catchphrases": [],
       "flaws": [],
@@ -1866,6 +1886,10 @@
         "One $1 item of choice",
         "One $2 item of choice"
       ],
+      "gear_grants": [
+        { "mode": "credit", "amount": 1, "label": "$1 item of your choice" },
+        { "mode": "credit", "amount": 2, "label": "$2 item of your choice" }
+      ],
       "jobs": [],
       "catchphrases": [],
       "flaws": [],
@@ -1926,6 +1950,9 @@
         "Elegant Clothes",
         "Precious item of choice (e.g. piece of jewelry or golden lighter)"
       ],
+      "gear_grants": [
+        { "mode": "give", "items": ["elegant-clothes", "precious-item"] }
+      ],
       "jobs": [],
       "catchphrases": [],
       "flaws": [],
@@ -1984,6 +2011,9 @@
       ],
       "gear": [
         "Diary and pencil"
+      ],
+      "gear_grants": [
+        { "mode": "give", "items": ["notebook-and-pencil"] }
       ],
       "jobs": [],
       "catchphrases": [],
@@ -2044,6 +2074,11 @@
         "Old Rifle or Dynamite",
         "Tool-bag",
         "Knife or Lighter"
+      ],
+      "gear_grants": [
+        { "mode": "choose", "of": { "type": "ids", "ids": ["oga-old-rifle", "oga-dynamite"] }, "count": 1 },
+        { "mode": "give", "items": ["oga-tool-bag"] },
+        { "mode": "choose", "of": { "type": "ids", "ids": ["knife", "oga-lighter"] }, "count": 1 }
       ],
       "jobs": [],
       "catchphrases": [],
@@ -2107,6 +2142,10 @@
         "Rope",
         "Lockpicking Set"
       ],
+      "gear_grants": [
+        { "mode": "choose", "of": { "type": "ids", "ids": ["pistol", "revolver"] }, "count": 1 },
+        { "mode": "give", "items": ["oga-rope", "oga-lockpicking-set"] }
+      ],
       "jobs": [],
       "catchphrases": [],
       "flaws": [],
@@ -2168,6 +2207,10 @@
         "Knife",
         "Lighter",
         "One $1 item of choice"
+      ],
+      "gear_grants": [
+        { "mode": "give", "items": ["knife", "oga-lighter"] },
+        { "mode": "credit", "amount": 1, "label": "$1 item of your choice" }
       ],
       "jobs": [],
       "catchphrases": [],
@@ -2241,6 +2284,12 @@
         "Compass",
         "Item of choice"
       ],
+      "gear_grants": [
+        { "mode": "choose", "of": { "type": "ids", "ids": ["pistol", "revolver"] }, "count": 1 },
+        { "mode": "choose", "of": { "type": "ids", "ids": ["pistol", "revolver"] }, "count": 1 },
+        { "mode": "give", "items": ["oga-compass"] },
+        { "mode": "choose", "of": { "type": "custom", "label": "Item of your choice" }, "count": 1 }
+      ],
       "jobs": [],
       "catchphrases": [],
       "flaws": [],
@@ -2305,6 +2354,9 @@
       "gear": [
         "Star Sword or Double Star Sword"
       ],
+      "gear_grants": [
+        { "mode": "choose", "of": { "type": "ids", "ids": ["star-sword", "double-star-sword"] }, "count": 1 }
+      ],
       "jobs": [],
       "catchphrases": [],
       "flaws": [],
@@ -2347,6 +2399,9 @@
       ],
       "gear": [
         "Pistol"
+      ],
+      "gear_grants": [
+        { "mode": "give", "items": ["pistol"] }
       ],
       "jobs": [],
       "catchphrases": [],
@@ -2392,6 +2447,9 @@
         "Revolver",
         "Knife",
         "Horse"
+      ],
+      "gear_grants": [
+        { "mode": "give", "items": ["revolver", "knife", "horse"] }
       ],
       "jobs": [],
       "catchphrases": [],
@@ -2441,6 +2499,10 @@
         "Elegant Clothes",
         "One $1 item of choice"
       ],
+      "gear_grants": [
+        { "mode": "give", "items": ["elegant-clothes"] },
+        { "mode": "credit", "amount": 1, "label": "$1 item of your choice" }
+      ],
       "jobs": [],
       "catchphrases": [],
       "flaws": [],
@@ -2487,6 +2549,10 @@
       "gear": [
         "2 Weapons of choice or Weapon of choice and Shield"
       ],
+      "gear_grants": [
+        { "mode": "choose", "of": { "type": "kind", "kind": "weapon" }, "count": 2 },
+        { "mode": "choose", "of": { "type": "ids", "ids": ["ms-shield"] }, "count": 1 }
+      ],
       "jobs": [],
       "catchphrases": [],
       "flaws": [],
@@ -2529,6 +2595,9 @@
       ],
       "gear": [
         "1 item of choice"
+      ],
+      "gear_grants": [
+        { "mode": "choose", "of": { "type": "custom", "label": "Any one item" }, "count": 1 }
       ],
       "jobs": [],
       "catchphrases": [],
@@ -2573,6 +2642,7 @@
       "gear": [
         "Nothing"
       ],
+      "gear_grants": [],
       "jobs": [],
       "catchphrases": [],
       "flaws": [],
@@ -2625,6 +2695,9 @@
       ],
       "gear": [
         "2 pieces of Gear of your choice"
+      ],
+      "gear_grants": [
+        { "mode": "choose", "of": { "type": "custom", "label": "Any gear from catalog" }, "count": 2 }
       ],
       "jobs": [],
       "catchphrases": [],
