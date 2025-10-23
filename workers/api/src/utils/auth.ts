@@ -35,3 +35,37 @@ export async function getGameMembership(DB: D1Database, userId: string, gameId: 
     [userId, gameId]
   );
 }
+
+// Campaign-level membership (campaign-wide admin/visibility)
+export async function getCampaignMembership(
+  DB: D1Database,
+  userId: string,
+  campaignId: string
+) {
+  // Prefer explicit campaignId on memberships, but fall back via games if needed
+  return one<{ userId: string; role: "director" | "hero" }>(
+    DB,
+    `
+      SELECT m.userId, m.role
+      FROM memberships m
+      WHERE m.userId = ? AND m.campaignId = ?
+      LIMIT 1
+    `,
+    [userId, campaignId]
+  );
+}
+
+// Convenience: resolve game -> campaign and then check campaign membership
+export async function getCampaignMembershipByGame(
+  DB: D1Database,
+  userId: string,
+  gameId: string
+) {
+  const game = await one<{ campaignId: string }>(
+    DB,
+    "SELECT campaignId FROM games WHERE id = ?",
+    [gameId]
+  );
+  if (!game?.campaignId) return null;
+  return getCampaignMembership(DB, userId, game.campaignId);
+}

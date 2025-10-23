@@ -11,6 +11,7 @@ import Login from "./Login";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/store";
 import GameAdmin from "./GameAdmin";
+import CampaignAdmin from "./CampaignAdmin";
 
 function RequireAuth({ children }: { children: JSX.Element }) {
   const token = useAuth((s) => s.token);
@@ -37,6 +38,7 @@ export const Router = () => (
           <Route path="/directors-toolkit" element={<RequireAuth><DirectorsToolkit /></RequireAuth>} />
           <Route path="/characters/new" element={<RequireAuth><CharacterCreator /></RequireAuth>} />
           <Route path="/game/:id/admin" element={<RequireAuth><GameAdmin></GameAdmin></RequireAuth>} />
+          <Route path="/campaign/:id/admin" element={<RequireAuth><CampaignAdmin /></RequireAuth>} />
         </Routes>
       </div>
     </main>

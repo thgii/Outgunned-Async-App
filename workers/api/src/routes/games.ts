@@ -11,7 +11,7 @@ games.get("/:id", async (c) => {
 });
 
 // --- Director Admin: Change a user's role within a game ---
-import { getGameMembership } from "../utils/auth";
+import { getCampaignMembershipByGame } from "../utils/auth";
 
 games.post("/:gameId/members/:userId/role", async (c) => {
   const { gameId, userId } = c.req.param();
@@ -26,14 +26,19 @@ games.post("/:gameId/members/:userId/role", async (c) => {
   const currentUser = c.get("user");
 
   // Verify the current user is a director in this game
-  const membership = await getGameMembership(c.env.DB, currentUser.id, gameId);
-  if (!membership || membership.role !== "director") {
+  const membership = await getCampaignMembershipByGame(c.env.DB, currentUser.id, gameId);
+    if (!membership || membership.role !== "director") {
     return c.json({ error: "Forbidden" }, 403);
   }
 
   // Update the target user's role
   await c.env.DB
-    .prepare("UPDATE memberships SET role = ? WHERE userId = ? AND gameId = ?")
+    .prepare(`
+      UPDATE memberships
+      SET role = ?
+        campaignId = COALESCE(campaignId, (SELECT campaignId FROM games WHERE id = ?))
+      WHERE userId = ? AND gameId = ?
+      `)
     .bind(role, userId, gameId)
     .run();
 
@@ -46,8 +51,8 @@ games.get("/:gameId/members", async (c) => {
   const currentUser = c.get("user");
 
   // Verify the caller is a director for this game
-  const { getGameMembership } = await import("../utils/auth");
-  const mem = await getGameMembership(c.env.DB, currentUser.id, gameId);
+  const { getCampaignMembershipByGame } = await import("../utils/auth");
+  const mem = await getCampaignMembershipByGame(c.env.DB, currentUser.id, gameId);
   if (!mem || mem.role !== "director") {
     return c.json({ error: "Forbidden" }, 403);
   }
