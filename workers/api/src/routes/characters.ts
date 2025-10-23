@@ -188,12 +188,20 @@ characters.post("/", async (c) => {
   const id = crypto.randomUUID();
   const createdAt = new Date().toISOString();
 
-  // Auth & meta (secure defaults)
-  const currentUser = c.get("user"); // set by requireUser middleware
-  const campaignId = body.campaignId ?? null;  // allow null; don't silently force a campaign
-  const ownerId = currentUser.id;              // always the logged-in user; ignore body.ownerId
-  const tropeAttribute = body.tropeAttribute ?? null;
+// --- Auth guard ---
+const currentUser = c.get("user");
+if (!currentUser || !currentUser.id) {
+  return c.json({ error: "unauthorized" }, 401);
+}
 
+// --- Meta (default to null campaign) ---
+const campaignId =
+  typeof body?.campaignId === "string" && body.campaignId.trim()
+    ? body.campaignId.trim()
+    : null;
+
+const ownerId = currentUser.id;              // always the logged-in user
+const tropeAttribute = body?.tropeAttribute ?? null;
 
   // Split canonical DTO into your DB columns
   const name = dto.name.trim();
@@ -245,36 +253,40 @@ characters.post("/", async (c) => {
 
   if (!name) return c.json({ error: "name is required" }, 400);
 
-  await c.env.DB
-    .prepare(
-      `INSERT INTO characters
-        (id, campaignId, ownerId, name, role, trope, age, job, catchphrase, flaw, tropeAttribute,
-         feats, attributes, skills, resources, gear, conditions, notes, revision, createdAt)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
-    )
-    .bind(
-      id,
-      campaignId,
-      ownerId,
-      name,
-      role,
-      trope,
-      age,
-      job,
-      catchphrase,
-      flaw,
-      tropeAttribute,
-      feats,
-      attributes,
-      skills,
-      resources,
-      gear,
-      conditions,
-      notes,
-      1,
-      createdAt
-    )
-    .run();
+  try {
+    await c.env.DB
+      .prepare(
+        `INSERT INTO characters
+          (id, campaignId, ownerId, name, role, trope, age, job, catchphrase, flaw, tropeAttribute,
+          feats, attributes, skills, resources, gear, conditions, notes, revision, createdAt)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+      )
+      .bind(
+        id,
+        campaignId,
+        ownerId,
+        name,
+        role,
+        trope,
+        age,
+        job,
+        catchphrase,
+        flaw,
+        tropeAttribute,
+        feats,
+        attributes,
+        skills,
+        resources,
+        gear,
+        conditions,
+        notes,
+        1,
+        createdAt
+      )
+      .run();
+  } catch (e: any) {
+    return c.json({ error: "insert_failed", message: e?.message || String(e) }, 500);
+  }
 
   const row = (await one(
     c.env.DB,
