@@ -9,6 +9,27 @@ campaigns.get("/:id/games", async (c) => {
   return c.json(rows);
 });
 
+// GET /campaigns/:id  -> return a single campaign (with description if present)
+campaigns.get("/:id", async (c) => {
+  const id = c.req.param("id");
+
+  // Optional: require the caller to be a member of this campaign
+  const { getCampaignMembership } = await import("../utils/auth");
+  const currentUser = c.get("user");
+  const mem = await getCampaignMembership(c.env.DB, currentUser.id, id);
+  if (!mem) return c.json({ error: "Forbidden" }, 403);
+
+  const row = await one(c.env.DB, `
+    SELECT id, title, system, ownerId, heatEnabled, createdAt, description
+    FROM campaigns
+    WHERE id = ?
+  `, [id]);
+
+  if (!row) return c.notFound();
+  return c.json(row);
+});
+
+
 // === List campaigns for the current user =========================
 // GET /campaigns
 campaigns.get("/", async (c) => {
