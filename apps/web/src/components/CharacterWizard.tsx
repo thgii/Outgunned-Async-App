@@ -574,7 +574,7 @@ const preTropeDTO = useMemo(() => {
               <Text label="Name *" value={name} onChange={setName} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-700 mb-1">Portrait</label>
+              <label className="block text-sm font-medium text-zinc-700 mb-1 text-white">Portrait</label>
               <input
                 type="file"
                 accept="image/*"
@@ -1135,7 +1135,7 @@ className={`border rounded px-3 py-2 text-sm cursor-pointer transition-colors ${
       {/* Nav */}
       <div className="flex gap-2 pt-2">
         {step!=="identity" && <button className="border rounded px-3 py-2" onClick={back}>Back</button>}
-        {step!=="review" && <button className="rounded px-3 py-2 bg-black text-white disabled:opacity-40" onClick={next} disabled={!canContinue}>Next</button>}
+        {step!=="review" && <button className="rounded px-3 py-2 bg-white text-black disabled:opacity-40" onClick={next} disabled={!canContinue}>Next</button>}
         {step==="review" && <button className="rounded px-3 py-2 bg-emerald-600 text-white" onClick={save}>Save Hero</button>}
       </div>
     </div>
