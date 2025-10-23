@@ -47,7 +47,7 @@ export default function Header() {
             className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}
           >
             <span className="inline-flex items-center gap-2">
-              <Users className="h-4 w-4" /> Characters
+              <Users className="h-4 w-4" /> Heroes
             </span>
           </NavLink>
 
