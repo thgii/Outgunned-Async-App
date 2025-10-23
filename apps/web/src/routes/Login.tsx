@@ -58,7 +58,7 @@ export default function Login() {
           disabled={busy}
           type="submit"
         >
-          {busy ? "Signing in…" : "Dev Sign In"}
+          {busy ? "Signing in…" : "Sign In"}
         </button>
       </form>
     </div>
