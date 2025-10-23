@@ -55,7 +55,7 @@ export default function Campaigns() {
   }, [rows, q, showOnlyActive]);
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6">
+    <div className="max-w-5xl mx-auto px-4 py-6 text-black">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">Campaigns</h1>
         <div className="flex items-center gap-2">
@@ -63,7 +63,7 @@ export default function Campaigns() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search by title or system..."
-            className="rounded border border-slate-300 bg-white/90 px-3 py-2 text-sm w-64"
+            className="rounded border border-slate-300 bg-white px-3 py-2 text-sm w-64 text-black placeholder-slate-500"
           />
           <label className="inline-flex items-center gap-2 text-sm">
             <input type="checkbox" checked={showOnlyActive} onChange={(e) => setShowOnlyActive(e.target.checked)} />
@@ -72,14 +72,14 @@ export default function Campaigns() {
         </div>
       </div>
 
-      {loading && <div className="p-4 bg-white/70 rounded shadow">Loading…</div>}
+      {loading && <div className="p-4 bg-white rounded shadow text-black">Loading…</div>}
       {error && <div className="p-4 bg-red-50 text-red-800 rounded border border-red-200">{error}</div>}
 
       {!loading && !error && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filtered.map((c) => (
             <Link key={c.id} to={`/campaign/${c.id}`} className="block group">
-              <div className="rounded-2xl bg-white/80 group-hover:bg-white shadow p-4 transition-colors border border-slate-200">
+              <div className="rounded-2xl bg-white group-hover:bg-slate-50 shadow p-4 transition-colors border border-slate-200 text-black">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2">
                     <Clapperboard className="h-5 w-5" />
@@ -89,9 +89,9 @@ export default function Campaigns() {
                     <span className="text-[10px] uppercase tracking-wide rounded px-2 py-1 bg-amber-100 text-amber-800 border border-amber-200">Heat</span>
                   ) : null}
                 </div>
-                <div className="mt-1 text-xs opacity-70">{c.system}</div>
+                <div className="mt-1 text-xs text-slate-600">{c.system}</div>
 
-                <div className="mt-3 grid grid-cols-3 gap-2 text-sm">
+                <div className="mt-3 grid grid-cols-3 gap-2 text-sm text-slate-800">
                   <div className="inline-flex items-center gap-1"><Gamepad2 className="h-4 w-4" />{c.gameCount ?? 0} games</div>
                   <div className="inline-flex items-center gap-1"><Users className="h-4 w-4" />{c.memberCount ?? 0} members</div>
                   <div className="inline-flex items-center gap-1"><Activity className="h-4 w-4" />{formatWhen(c.lastActivityAt || c.createdAt)}</div>
@@ -101,7 +101,7 @@ export default function Campaigns() {
           ))}
 
           {filtered.length === 0 && (
-            <div className="col-span-full p-6 rounded-2xl border border-slate-200 bg-white/70 text-center">
+            <div className="col-span-full p-6 rounded-2xl border border-slate-200 bg-white text-center text-slate-800">
               <div className="text-sm">No campaigns{q ? " match your search" : showOnlyActive ? " with activity yet" : " yet"}.</div>
             </div>
           )}
