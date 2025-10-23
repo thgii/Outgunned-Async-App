@@ -48,52 +48,69 @@ campaigns.get("/", async (c) => {
 // POST /campaigns
 // Body: { title: string, description?: string, system?: string, heroIds?: string[] }
 campaigns.post("/", async (c) => {
-  const currentUser = c.get("user");
-  const body = await c.req.json().catch(() => ({}));
+  try {
+    const currentUser = c.get("user");
+    if (!currentUser?.id) return c.json({ error: "unauthorized" }, 401);
 
-  const title = String(body?.title ?? "").trim();
-  const description = typeof body?.description === "string" ? body.description.trim() : "";
-  const system = String(body?.system ?? "Outgunned").trim();
-  const heroIds: string[] = Array.isArray(body?.heroIds) ? body.heroIds : [];
+    const body = await c.req.json().catch(() => ({}));
+    const title = String(body?.title ?? "").trim();
+    const description = typeof body?.description === "string" ? body.description.trim() : "";
+    const system = String(body?.system ?? "Outgunned").trim();
+    const heroIds: string[] = Array.isArray(body?.heroIds) ? body.heroIds : [];
 
-  if (!title) return c.json({ error: "Title is required" }, 400);
+    if (!title) return c.json({ error: "Title is required" }, 400);
 
-  const id = crypto.randomUUID();
-  const createdAt = new Date().toISOString();
-
-  // Create the campaign
-  await c.env.DB.prepare(`
-    INSERT INTO campaigns (id, title, system, ownerId, heatEnabled, createdAt, description)
-    VALUES (?, ?, ?, ?, 0, ?, ?)
-  `).bind(id, title, system, currentUser.id, createdAt, description).run();
-
-  // Creator becomes director
-  await c.env.DB.prepare(`
-    INSERT INTO memberships (userId, campaignId, role)
-    VALUES (?, ?, 'director')
-  `).bind(currentUser.id, id).run();
-
-  // For each selected hero: add the hero's owner as a hero-level member of this campaign (if not already a member)
-  for (const heroId of heroIds) {
-    const hero = await one<{ id: string; ownerId: string }>(
-      c.env.DB,
-      "SELECT id, ownerId FROM characters WHERE id = ?",
-      [heroId]
-    );
-    if (!hero?.ownerId) continue;
+    // Create campaign
+    const newCampaignId = crypto.randomUUID();
+    const createdAt = new Date().toISOString();
 
     await c.env.DB.prepare(`
+      INSERT INTO campaigns (id, title, system, ownerId, heatEnabled, createdAt, description)
+      VALUES (?, ?, ?, ?, 0, ?, ?)
+    `).bind(newCampaignId, title, system, currentUser.id, createdAt, description).run();
+
+    // Creator becomes director
+    await c.env.DB.prepare(`
       INSERT INTO memberships (userId, campaignId, role)
-      SELECT ?, ?, 'hero'
-      WHERE NOT EXISTS (
-        SELECT 1 FROM memberships WHERE userId = ? AND campaignId = ?
-      )
-    `).bind(hero.ownerId, id, hero.ownerId, id).run();
+      VALUES (?, ?, 'director')
+    `).bind(currentUser.id, newCampaignId).run();
 
-    // If you later add characters.campaignId, you could attach here. For now, no-op.
+    // For each selected hero: add the hero owner's membership & update character.campaignId
+    const updatedHeroes: string[] = [];
+    for (const heroId of heroIds) {
+      // 1) Lookup hero owner
+      const hero = await one<{ id: string; ownerId: string }>(
+        c.env.DB,
+        "SELECT id, ownerId FROM characters WHERE id = ?",
+        [heroId]
+      );
+      if (!hero?.ownerId) continue;
+
+      // 2) Ensure campaign membership for the hero's owner
+      await c.env.DB.prepare(`
+        INSERT INTO memberships (userId, campaignId, role)
+        SELECT ?, ?, 'hero'
+        WHERE NOT EXISTS (
+          SELECT 1 FROM memberships WHERE userId = ? AND campaignId = ?
+        )
+      `).bind(hero.ownerId, newCampaignId, hero.ownerId, newCampaignId).run();
+
+      // 3) Update character's campaignId
+      // NOTE: bind order is (campaignId, characterId)
+      await c.env.DB.prepare(`
+        UPDATE characters SET campaignId = ?
+        WHERE id = ?
+      `).bind(newCampaignId, heroId).run();
+
+      updatedHeroes.push(heroId);
+    }
+
+    // Return the new campaign id + debug info (optional)
+    return c.json({ id: newCampaignId, updatedHeroes }, 201);
+  } catch (e: any) {
+    // Surface the DB error so the wizard shows a meaningful message
+    return c.json({ error: "create_campaign_failed", message: e?.message || String(e) }, 500);
   }
-
-  return c.json({ id });
 });
 
 // --- Campaign Admin (Director-only) ---
