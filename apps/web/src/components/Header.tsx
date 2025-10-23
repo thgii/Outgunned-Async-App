@@ -53,12 +53,15 @@ export default function Header() {
     <header className="fixed top-0 left-0 right-0 z-50 bg-slate-900/70 backdrop-blur-md border-b border-slate-800/60">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
         {/* Brand */}
-        <div className="flex items-center gap-3">
+        <NavLink
+          to="/"
+          className="flex items-center gap-3 hover:opacity-90 transition"
+        >
           <Film className="h-6 w-6 shrink-0" style={{ color: `rgb(var(--accent))` }} />
           <span className="text-xl font-bold tracking-wider drop-shadow-sm accent-text">
             Action Thread
           </span>
-        </div>
+        </NavLink>
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-2">
