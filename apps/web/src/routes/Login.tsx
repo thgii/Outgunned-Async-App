@@ -42,6 +42,7 @@ export default function Login() {
             autoFocus
           />
         </div>
+        {/*
         <div>
           <label className="block text-sm mb-1">Email (optional)</label>
           <input
@@ -51,6 +52,7 @@ export default function Login() {
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
+        */}
         <button
           className="rounded bg-black text-white px-4 py-2 disabled:opacity-50"
           disabled={busy}
