@@ -70,17 +70,17 @@ export default function CampaignWizard({ onSubmit }: Props) {
       )}
 
       <div>
-        <label className="block text-sm font-medium mb-1">Name of campaign</label>
+        <label className="block text-sm font-medium mb-1 text-black">Name of campaign</label>
         <input
           className="w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g., Night Run to Kowloon"
+          placeholder="e.g., Crimison Velocity"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Description</label>
+        <label className="block text-sm font-medium mb-1 text-black">Description</label>
         <textarea
           className="w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm min-h-28"
           value={description}
@@ -91,7 +91,7 @@ export default function CampaignWizard({ onSubmit }: Props) {
 
       <div>
         <div className="flex items-center justify-between mb-2">
-          <label className="block text-sm font-medium">Select heroes to add</label>
+          <label className="block text-sm font-medium text-black">Select heroes to add</label>
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -126,8 +126,8 @@ export default function CampaignWizard({ onSubmit }: Props) {
                           }
                         />
                       </td>
-                      <td className="px-3 py-2">{h.name || "Untitled Hero"}</td>
-                      <td className="px-3 py-2 opacity-80">{h.ownerName || h.ownerId || "—"}</td>
+                      <td className="px-3 py-2 text-black">{h.name || "Untitled Hero"}</td>
+                      <td className="px-3 py-2 opacity-80 text-black">{h.ownerName || h.ownerId || "—"}</td>
                     </tr>
                   );
                 })}
