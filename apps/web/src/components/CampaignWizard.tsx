@@ -82,7 +82,7 @@ export default function CampaignWizard({ onSubmit }: Props) {
       <div>
         <label className="block text-sm font-medium mb-1 text-black">Description</label>
         <textarea
-          className="w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm min-h-28"
+          className="w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm min-h-28 text-black"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="What’s this campaign about?"
