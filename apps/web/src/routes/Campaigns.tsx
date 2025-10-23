@@ -68,6 +68,12 @@ export default function Campaigns() {
             <input type="checkbox" checked={showOnlyActive} onChange={(e) => setShowOnlyActive(e.target.checked)} />
             Only active (has games)
           </label>
+          <button
+            onClick={() => navigate("/campaigns/new")}
+            className="px-3 py-2 rounded bg-black text-white hover:opacity-90"
+          >
+            Create Campaign
+          </button>
         </div>
       </div>
 
