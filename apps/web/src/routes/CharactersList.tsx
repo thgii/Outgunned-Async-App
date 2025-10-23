@@ -38,7 +38,7 @@ export default function CharactersList() {
         <h1 className="text-3xl font-bold">All Heroes</h1>
         <button
           onClick={() => navigate("/characters/new")}
-          className="px-3 py-2 rounded bg-black text-white hover:opacity-90"
+          className="px-3 py-2 rounded bg-white text-black hover:opacity-90"
         >
           Create Hero
         </button>

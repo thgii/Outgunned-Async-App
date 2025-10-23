@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { Clapperboard, Users, Gamepad2, Activity } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export type CampaignRow = {
   id: string;
@@ -21,6 +22,7 @@ export default function Campaigns() {
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [showOnlyActive, setShowOnlyActive] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     let alive = true;
@@ -70,7 +72,7 @@ export default function Campaigns() {
           </label>
           <button
             onClick={() => navigate("/campaigns/new")}
-            className="px-3 py-2 rounded bg-black text-white hover:opacity-90"
+            className="px-3 py-2 rounded bg-white text-black hover:opacity-90"
           >
             Create Campaign
           </button>
