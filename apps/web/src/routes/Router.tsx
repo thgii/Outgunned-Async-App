@@ -13,6 +13,7 @@ import { useAuth } from "../lib/store";
 import GameAdmin from "./GameAdmin";
 import CampaignAdmin from "./CampaignAdmin";
 import Campaigns from "./Campaigns";
+import CampaignCreate from "./CampaignCreate";
 
 
 function RequireAuth({ children }: { children: JSX.Element }) {
@@ -42,6 +43,7 @@ export const Router = () => (
           <Route path="/game/:id/admin" element={<RequireAuth><GameAdmin></GameAdmin></RequireAuth>} />
           <Route path="/campaign/:id/admin" element={<RequireAuth><CampaignAdmin /></RequireAuth>} />
           <Route path="/campaigns" element={<RequireAuth><Campaigns /></RequireAuth>} />
+          <Route path="/campaigns/new" element={<RequireAuth><CampaignCreate /></RequireAuth>} />
         </Routes>
       </div>
     </main>

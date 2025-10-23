@@ -115,10 +115,25 @@ function pickTopLevelResourceOverrides(body: any) {
 // 🔎 quick ping
 characters.get("/__ping", (c) => c.text("OK: characters router mounted"));
 
-// LIST (optional ?campaignId=...)
+// LIST (optional ?campaignId=..., or ?all=1 for full heroes list with owners)
 characters.get("/", async (c) => {
   const campaignId = c.req.query("campaignId");
+  const all = c.req.query("all") === "1";
 
+  // Wizard/admin use: return a minimal, fast list of ALL heroes + their owners
+  if (all) {
+    const rs = await c.env.DB.prepare(`
+      SELECT ch.id, ch.name, ch.ownerId, u.name AS ownerName
+      FROM characters ch
+      LEFT JOIN users u ON u.id = ch.ownerId
+      ORDER BY ch.createdAt DESC
+    `).all<any>();
+
+    // No parseJsonFields here: this is a minimal projection for selection lists
+    return c.json(rs.results || []);
+  }
+
+  // Existing behavior (optionally filtered by campaignId)
   const rows = (campaignId
     ? await q(
         c.env.DB,

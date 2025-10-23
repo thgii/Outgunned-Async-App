@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { q } from "../utils/db";
+import { q, one } from "../utils/db";
 
 export const campaigns = new Hono<{ Bindings: { DB: D1Database } }>();
 
@@ -42,6 +42,58 @@ campaigns.get("/", async (c) => {
   `).bind(currentUser.id).all<any>();
 
   return c.json(rs.results || []);
+});
+
+// === Create a new campaign and seed memberships ==================
+// POST /campaigns
+// Body: { title: string, description?: string, system?: string, heroIds?: string[] }
+campaigns.post("/", async (c) => {
+  const currentUser = c.get("user");
+  const body = await c.req.json().catch(() => ({}));
+
+  const title = String(body?.title ?? "").trim();
+  const description = typeof body?.description === "string" ? body.description.trim() : "";
+  const system = String(body?.system ?? "Outgunned").trim();
+  const heroIds: string[] = Array.isArray(body?.heroIds) ? body.heroIds : [];
+
+  if (!title) return c.json({ error: "Title is required" }, 400);
+
+  const id = crypto.randomUUID();
+  const createdAt = new Date().toISOString();
+
+  // Create the campaign
+  await c.env.DB.prepare(`
+    INSERT INTO campaigns (id, title, system, ownerId, heatEnabled, createdAt, description)
+    VALUES (?, ?, ?, ?, 0, ?, ?)
+  `).bind(id, title, system, currentUser.id, createdAt, description).run();
+
+  // Creator becomes director
+  await c.env.DB.prepare(`
+    INSERT INTO memberships (userId, campaignId, role)
+    VALUES (?, ?, 'director')
+  `).bind(currentUser.id, id).run();
+
+  // For each selected hero: add the hero's owner as a hero-level member of this campaign (if not already a member)
+  for (const heroId of heroIds) {
+    const hero = await one<{ id: string; ownerId: string }>(
+      c.env.DB,
+      "SELECT id, ownerId FROM characters WHERE id = ?",
+      [heroId]
+    );
+    if (!hero?.ownerId) continue;
+
+    await c.env.DB.prepare(`
+      INSERT INTO memberships (userId, campaignId, role)
+      SELECT ?, ?, 'hero'
+      WHERE NOT EXISTS (
+        SELECT 1 FROM memberships WHERE userId = ? AND campaignId = ?
+      )
+    `).bind(hero.ownerId, id, hero.ownerId, id).run();
+
+    // If you later add characters.campaignId, you could attach here. For now, no-op.
+  }
+
+  return c.json({ id });
 });
 
 // --- Campaign Admin (Director-only) ---
