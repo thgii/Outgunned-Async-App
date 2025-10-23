@@ -10,7 +10,7 @@ import Header from "../components/Header";
 import Login from "./Login";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/store";
-import {GameAdmin} from "./GameAdmin";
+import GameAdmin from "./GameAdmin";
 
 function RequireAuth({ children }: { children: JSX.Element }) {
   const token = useAuth((s) => s.token);
