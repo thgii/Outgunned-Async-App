@@ -9,6 +9,41 @@ campaigns.get("/:id/games", async (c) => {
   return c.json(rows);
 });
 
+// === List campaigns for the current user =========================
+// GET /campaigns
+campaigns.get("/", async (c) => {
+  const currentUser = c.get("user");
+  // campaigns the user is a member of (campaign-level membership),
+  // with counts and last activity
+  const rs = await c.env.DB.prepare(`
+    SELECT
+      c.id,
+      c.title,
+      c.system,
+      c.ownerId,
+      c.heatEnabled,
+      c.createdAt,
+      -- games in this campaign
+      (SELECT COUNT(*) FROM games g WHERE g.campaignId = c.id) AS gameCount,
+      -- members in this campaign
+      (SELECT COUNT(*) FROM memberships m WHERE m.campaignId = c.id) AS memberCount,
+      -- latest message across any game in this campaign
+      (
+        SELECT MAX(m.createdAt)
+        FROM messages m
+        JOIN games g ON g.id = m.gameId
+        WHERE g.campaignId = c.id
+      ) AS lastActivityAt
+    FROM campaigns c
+    JOIN memberships ms ON ms.campaignId = c.id
+    WHERE ms.userId = ?
+    GROUP BY c.id
+    ORDER BY COALESCE(lastActivityAt, c.createdAt) DESC
+  `).bind(currentUser.id).all<any>();
+
+  return c.json(rs.results || []);
+});
+
 // --- Campaign Admin (Director-only) ---
 import { getCampaignMembership } from "../utils/auth";
 

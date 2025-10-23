@@ -75,6 +75,15 @@ export default function Header() {
           </NavLink>
 
           <NavLink
+            to="/campaigns"
+            className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}
+          >
+            <span className="inline-flex items-center gap-2">
+              <Clapperboard className="h-4 w-4" /> Campaigns
+            </span>
+          </NavLink>
+
+          <NavLink
             to="/directors-toolkit"
             className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}
           >
@@ -151,6 +160,16 @@ export default function Header() {
                 <span className="inline-flex items-center gap-2">
                   <Users className="h-5 w-5" /> Heroes
                 </span>
+              </NavLink>
+
+              <NavLink
+                to="/campaigns"
+                className={({ isActive }) =>
+                  `px-4 py-3 rounded-lg transition-colors text-base font-medium ${isActive ? "text-white bg-white/10" : "text-gray-300 hover:text-white hover:bg-white/5"}`
+                }
+                onClick={onNav}
+              >
+                Campaigns
               </NavLink>
 
               <NavLink
