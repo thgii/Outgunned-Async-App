@@ -9,7 +9,6 @@ export type CampaignRow = {
   title: string;
   system: string;
   ownerId: string;
-  heatEnabled?: number;
   createdAt: string;
   gameCount?: number;
   memberCount?: number;
@@ -55,7 +54,7 @@ export default function Campaigns() {
   }, [rows, q, showOnlyActive]);
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6 text-black">
+    <div className="max-w-5xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">Campaigns</h1>
         <div className="flex items-center gap-2">
@@ -85,15 +84,12 @@ export default function Campaigns() {
                     <Clapperboard className="h-5 w-5" />
                     <h2 className="text-lg font-semibold leading-tight">{c.title}</h2>
                   </div>
-                  {c.heatEnabled ? (
-                    <span className="text-[10px] uppercase tracking-wide rounded px-2 py-1 bg-amber-100 text-amber-800 border border-amber-200">Heat</span>
-                  ) : null}
-                </div>
+                                  </div>
                 <div className="mt-1 text-xs text-slate-600">{c.system}</div>
 
                 <div className="mt-3 grid grid-cols-3 gap-2 text-sm text-slate-800">
-                  <div className="inline-flex items-center gap-1"><Gamepad2 className="h-4 w-4" />{c.gameCount ?? 0} Acts</div>
-                  <div className="inline-flex items-center gap-1"><Users className="h-4 w-4" />{c.memberCount ?? 0} Members</div>
+                  <div className="inline-flex items-center gap-1"><Gamepad2 className="h-4 w-4" />{c.gameCount ?? 0} games</div>
+                  <div className="inline-flex items-center gap-1"><Users className="h-4 w-4" />{c.memberCount ?? 0} members</div>
                   <div className="inline-flex items-center gap-1"><Activity className="h-4 w-4" />{formatWhen(c.lastActivityAt || c.createdAt)}</div>
                 </div>
               </div>
