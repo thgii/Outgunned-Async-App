@@ -7,33 +7,45 @@ function id() { return crypto.randomUUID(); }
 function nowISO() { return new Date().toISOString(); }
 
 auth.post("/login-dev", async (c) => {
-  const { name, email } = await c.req.json<{ name?: string; email?: string }>().catch(() => ({}));
+  const body = await c.req.json<{ name?: string; email?: string }>().catch(() => ({} as any));
 
-  // If email provided, try to find by email; otherwise create an anonymous user
-  let user =
-    email
-      ? await one<any>(c.env.DB, "SELECT id, name, email FROM users WHERE email = ? LIMIT 1", [email])
-      : null;
+  // Normalize the display name once; use it for both SELECT and INSERT
+  const displayName = (body?.name ?? "").trim() || "Player";
+  const email = body?.email ?? null;
+
+  // Try to find by normalized name
+  let user = await one<any>(
+    c.env.DB,
+    "SELECT id, name, email FROM users WHERE name = ? LIMIT 1",
+    [displayName]
+  );
 
   if (!user) {
-    const userId = id();
-    const displayName = name?.trim() || "Player";
+    // Create the user; if someone raced us or the name already exists, ignore the insert
+    const userId = crypto.randomUUID();
     await c.env.DB
-      .prepare("INSERT INTO users (id, name, email, createdAt) VALUES (?, ?, ?, ?)")
-      .bind(userId, displayName, email || null, nowISO())
+      .prepare("INSERT OR IGNORE INTO users (id, name, email, createdAt) VALUES (?, ?, ?, ?)")
+      .bind(userId, displayName, email, new Date().toISOString())
       .run();
-    user = await one<any>(c.env.DB, "SELECT id, name, email FROM users WHERE id = ?", [userId]);
+
+    // Re-select (will succeed whether we inserted or the row already existed)
+    user = await one<any>(
+      c.env.DB,
+      "SELECT id, name, email FROM users WHERE name = ? LIMIT 1",
+      [displayName]
+    );
   }
 
   // Issue session token
   const token = crypto.randomUUID().replace(/-/g, "");
   await c.env.DB
     .prepare("INSERT INTO sessions (token, userId, createdAt) VALUES (?, ?, ?)")
-    .bind(token, user.id, nowISO())
+    .bind(token, user.id, new Date().toISOString())
     .run();
 
   return c.json({ token, user });
 });
+
 
 auth.post("/logout", async (c) => {
   const { token } = await c.req.json<{ token?: string }>().catch(() => ({}));
