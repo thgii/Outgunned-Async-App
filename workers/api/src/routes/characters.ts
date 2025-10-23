@@ -194,13 +194,16 @@ if (!currentUser || !currentUser.id) {
   return c.json({ error: "unauthorized" }, 401);
 }
 
-// --- Meta (default to null campaign) ---
+// --- Meta ---
+// Hard-coded or loaded from config
+const UNASSIGNED_CAMPAIGN_ID = "unassigned-campaign"; // or your stored UUID
+
 const campaignId =
   typeof body?.campaignId === "string" && body.campaignId.trim()
     ? body.campaignId.trim()
-    : null;
+    : UNASSIGNED_CAMPAIGN_ID;
 
-const ownerId = currentUser.id;              // always the logged-in user
+const ownerId = currentUser.id;
 const tropeAttribute = body?.tropeAttribute ?? null;
 
   // Split canonical DTO into your DB columns
