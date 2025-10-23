@@ -6,8 +6,17 @@ import Character from "./Character";
 import CharacterCreator from "./CharacterCreator";
 import CharactersList from "./CharactersList";
 import DirectorsToolkit from "./DirectorsToolkit";
-
 import Header from "../components/Header";
+import Login from "./Login";
+import { Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "../lib/store";
+
+function RequireAuth({ children }: { children: JSX.Element }) {
+  const token = useAuth((s) => s.token);
+  const loc = useLocation();
+  if (!token) return <Navigate to="/login" replace state={{ from: loc }} />;
+  return children;
+}
 
 export const Router = () => (
   <BrowserRouter>
@@ -18,13 +27,14 @@ export const Router = () => (
     <main className="pt-16 pb-10">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <Routes>
+          <Route path="/login" element={<Login />} />
           <Route path="/" element={<Home />} />
-          <Route path="/campaign/:id" element={<Campaign />} />
-          <Route path="/game/:id" element={<Game />} />
-          <Route path="/character/:id" element={<Character />} />
-          <Route path="/characters/new" element={<CharacterCreator />} />
-          <Route path="/characters" element={<CharactersList />} />
-          <Route path="/directors-toolkit" element={<DirectorsToolkit />} />
+          <Route path="/game/:id" element={<RequireAuth><Game /></RequireAuth>} />
+          <Route path="/campaign/:id" element={<RequireAuth><Campaign /></RequireAuth>} />
+          <Route path="/character/:id" element={<RequireAuth><Character /></RequireAuth>} />
+          <Route path="/characters" element={<RequireAuth><CharactersList /></RequireAuth>} />
+          <Route path="/directors-toolkit" element={<RequireAuth><DirectorsToolkit /></RequireAuth>} />
+          <Route path="/characters/new" element={<RequireAuth><CharacterCreator /></RequireAuth>} />
         </Routes>
       </div>
     </main>

@@ -14,6 +14,10 @@ const API_BASE = (() => {
   }
 })();
 
+function getAuthToken() {
+  try { return localStorage.getItem("auth:token"); } catch { return null; }
+}
+
 function buildUrl(path: string) {
   const p = path.startsWith("/") ? path : `/${path}`;
   return API_BASE ? `${API_BASE}${p}` : p;
@@ -33,6 +37,11 @@ export async function api(path: string, init: ApiInit = {}) {
   const headers: Record<string, string> = {
     ...(init.headers as Record<string, string> | undefined),
   };
+
+    // 🔐 Add Bearer token if available
+  const auth = getAuthToken();
+  if (auth) headers["authorization"] = `Bearer ${auth}`;
+
   if (hasJson) {
     // don't clobber an explicit content-type if caller set one
     if (!headers["Content-Type"]) headers["Content-Type"] = "application/json";

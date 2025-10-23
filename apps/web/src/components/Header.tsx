@@ -9,6 +9,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import { useAuth } from "../lib/store";
 
 const linkBase =
   "px-3 py-2 rounded-lg transition-colors text-sm font-medium hover:text-white";
@@ -25,6 +26,25 @@ const mobileInactive = "text-gray-300";
 
 export default function Header() {
   const [open, setOpen] = useState(false);
+
+  const user = useAuth((s) => s.user);
+  const token = useAuth((s) => s.token);
+  const clearAuth = useAuth((s) => s.clearAuth);
+
+  async function onLogout() {
+    const t = token;
+    clearAuth();
+    try {
+      if (t) {
+        await fetch("/auth/logout", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ token: t }),
+        });
+      }
+    } catch {}
+  }
+
 
   // Close mobile menu when a link is clicked
   const onNav = () => setOpen(false);
@@ -78,6 +98,28 @@ export default function Header() {
             </span>
           </NavLink>
         </nav>
+
+        {/* Auth controls (desktop & mobile) */}
+        <div className="hidden md:flex items-center gap-3">
+          {user ? (
+            <>
+              <span className="text-sm opacity-80">{user.name}</span>
+              <button
+                onClick={onLogout}
+                className="text-sm px-3 py-1 rounded border border-white/20 hover:bg-white/10"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <a
+              className="text-sm px-3 py-1 rounded border border-white/20 hover:bg-white/10"
+              href="/login"
+            >
+              Login
+            </a>
+          )}
+        </div>
 
         {/* Mobile hamburger */}
         <button
@@ -143,6 +185,25 @@ export default function Header() {
                   <Settings className="h-5 w-5" /> Settings
                 </span>
               </NavLink>
+              {/* Auth controls (mobile) */}
+              <div className="border-t border-slate-800/60 mt-2 pt-2">
+                {user ? (
+                  <button
+                    onClick={() => { onLogout(); onNav(); }}
+                    className="w-full text-left px-4 py-3 rounded-lg transition-colors text-base font-medium hover:text-white text-gray-300"
+                  >
+                    Logout ({user.name})
+                  </button>
+                ) : (
+                  <a
+                    href="/login"
+                    onClick={onNav}
+                    className="w-full text-left px-4 py-3 rounded-lg transition-colors text-base font-medium hover:text-white text-gray-300"
+                  >
+                    Login
+                  </a>
+                )}
+              </div>
             </div>
           </div>
         </div>
