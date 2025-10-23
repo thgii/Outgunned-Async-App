@@ -36,6 +36,7 @@ export const Router = () => (
           <Route path="/characters" element={<RequireAuth><CharactersList /></RequireAuth>} />
           <Route path="/directors-toolkit" element={<RequireAuth><DirectorsToolkit /></RequireAuth>} />
           <Route path="/characters/new" element={<RequireAuth><CharacterCreator /></RequireAuth>} />
+          <Route path="/game/:id/admin" element={<RequireAuth><GameAdmin></GameAdmin></RequireAuth>} />
         </Routes>
       </div>
     </main>

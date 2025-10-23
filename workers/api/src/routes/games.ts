@@ -39,3 +39,27 @@ games.post("/:gameId/members/:userId/role", async (c) => {
 
   return c.json({ ok: true });
 });
+
+// --- List members in a game (Director-only) ---
+games.get("/:gameId/members", async (c) => {
+  const { gameId } = c.req.param();
+  const currentUser = c.get("user");
+
+  // Verify the caller is a director for this game
+  const { getGameMembership } = await import("../utils/auth");
+  const mem = await getGameMembership(c.env.DB, currentUser.id, gameId);
+  if (!mem || mem.role !== "director") {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  // Return all members with user profile info
+  const rs = await c.env.DB.prepare(`
+    SELECT m.userId, m.role, u.name, u.email
+    FROM memberships m
+    JOIN users u ON u.id = m.userId
+    WHERE m.gameId = ?
+    ORDER BY u.name COLLATE NOCASE
+  `).bind(gameId).all<any>();
+
+  return c.json(rs.results || []);
+});
