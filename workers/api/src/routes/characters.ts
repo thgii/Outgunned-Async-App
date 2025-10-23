@@ -188,10 +188,12 @@ characters.post("/", async (c) => {
   const id = crypto.randomUUID();
   const createdAt = new Date().toISOString();
 
-  // Pass-through meta (not in schema)
-  const campaignId = body.campaignId ?? "demo-camp";
-  const ownerId = body.ownerId ?? "demo-user";
+  // Auth & meta (secure defaults)
+  const currentUser = c.get("user"); // set by requireUser middleware
+  const campaignId = body.campaignId ?? null;  // allow null; don't silently force a campaign
+  const ownerId = currentUser.id;              // always the logged-in user; ignore body.ownerId
   const tropeAttribute = body.tropeAttribute ?? null;
+
 
   // Split canonical DTO into your DB columns
   const name = dto.name.trim();
