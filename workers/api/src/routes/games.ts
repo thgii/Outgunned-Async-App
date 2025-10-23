@@ -9,3 +9,33 @@ games.get("/:id", async (c) => {
   if (!row) return c.notFound();
   return c.json(row);
 });
+
+// --- Director Admin: Change a user's role within a game ---
+import { getGameMembership } from "../utils/auth";
+
+games.post("/:gameId/members/:userId/role", async (c) => {
+  const { gameId, userId } = c.req.param();
+  const { role } = await c.req.json<{ role: "director" | "hero" }>().catch(() => ({}));
+
+  // Validate input
+  if (role !== "director" && role !== "hero") {
+    return c.json({ error: "Invalid role" }, 400);
+  }
+
+  // Require authenticated user
+  const currentUser = c.get("user");
+
+  // Verify the current user is a director in this game
+  const membership = await getGameMembership(c.env.DB, currentUser.id, gameId);
+  if (!membership || membership.role !== "director") {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  // Update the target user's role
+  await c.env.DB
+    .prepare("UPDATE memberships SET role = ? WHERE userId = ? AND gameId = ?")
+    .bind(role, userId, gameId)
+    .run();
+
+  return c.json({ ok: true });
+});
