@@ -127,7 +127,7 @@ export default function Campaign() {
       <h1 className="text-2xl font-bold mb-4">{campaign?.title ?? `Campaign ${id}`}</h1>
       {/* Current heroes in this campaign */}
       <div className="mb-4 rounded border border-slate-200 bg-white p-4">
-        <h2 className="font-semibold mb-2">Current Heroes</h2>
+        <h2 className="font-semibold mb-2 text-black">Current Heroes</h2>
         {heroesInCampaign.length === 0 ? (
           <div className="text-sm text-slate-600">No heroes in this campaign yet.</div>
         ) : (
@@ -136,7 +136,7 @@ export default function Campaign() {
               <li key={h.id} className="py-2 flex items-center justify-between">
                 <div>
                   <div className="font-medium">{h.name || "Untitled Hero"}</div>
-                  <div className="text-xs text-slate-600">{h.ownerName || h.ownerId || "Unknown owner"}</div>
+                  <div className="text-xs text-slate-600 text-black">{h.ownerName || h.ownerId || "Unknown owner"}</div>
                 </div>
                 <button
                   onClick={() => onRemoveHero(h.id)}
