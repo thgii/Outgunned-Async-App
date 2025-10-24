@@ -134,30 +134,32 @@ export default function Campaign() {
   if (error) return <div className="max-w-4xl mx-auto p-6 text-red-600">Error: {error}</div>;
 
   return (
-    <div className="flex items-center justify-between mb-4">
-      <h1 className="text-2xl font-bold text-black">
-        {campaign?.title ?? `Campaign ${id}`}
-      </h1>
-      <button
-        className="rounded bg-red-600 px-3 py-2 text-white hover:bg-red-700"
-        onClick={async () => {
-          if (!id) return;
-          const sure = confirm(
-            "Delete this campaign and all its Acts? This will also delete chat/messages within those Acts. Characters will be reassigned to the Unassigned campaign. This cannot be undone."
-          );
-          if (!sure) return;
+    <div className="max-w-4xl mx-auto p-6">
+      {/* Title + Delete button in one line */}
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-bold text-black">
+          {campaign?.title ?? `Campaign ${id}`}
+        </h1>
+        <button
+          className="rounded bg-red-600 px-3 py-2 text-white hover:bg-red-700"
+          onClick={async () => {
+            if (!id) return;
+            const sure = confirm(
+              "Delete this campaign and all its Acts? This will also delete chat/messages within those Acts. Characters will be reassigned to the Unassigned campaign. This cannot be undone."
+            );
+            if (!sure) return;
 
-          try {
-            await api(`/campaigns/${id}`, { method: "DELETE" });
-            navigate("/campaigns");
-          } catch (e: any) {
-            alert(e?.message || "Failed to delete campaign");
-          }
-        }}
-      >
-        Delete Campaign
-      </button>
-    </div>
+            try {
+              await api(`/campaigns/${id}`, { method: "DELETE" });
+              navigate("/campaigns");
+            } catch (e: any) {
+              alert(e?.message || "Failed to delete campaign");
+            }
+          }}
+        >
+          Delete Campaign
+        </button>
+      </div>
 
       {/* Current heroes in this campaign */}
       <div className="mb-4 rounded border border-slate-200 bg-white p-4">
