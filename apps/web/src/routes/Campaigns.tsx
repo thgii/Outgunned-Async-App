@@ -96,7 +96,7 @@ export default function Campaigns() {
                 <div className="mt-1 text-xs text-slate-600">{c.system}</div>
 
                 <div className="mt-3 grid grid-cols-3 gap-2 text-sm text-slate-800">
-                  <div className="inline-flex items-center gap-1"><Gamepad2 className="h-4 w-4" />{c.gameCount ?? 0} Acts</div>
+                  <div className="inline-flex items-center gap-1"><Gamepad2 className="h-4 w-4" />{c.gameCount ?? 0} Act(s)</div>
                   <div className="inline-flex items-center gap-1"><Users className="h-4 w-4" />{c.memberCount ?? 0} members</div>
                   <div className="inline-flex items-center gap-1"><Activity className="h-4 w-4" />{formatWhen(c.lastActivityAt || c.createdAt)}</div>
                 </div>
