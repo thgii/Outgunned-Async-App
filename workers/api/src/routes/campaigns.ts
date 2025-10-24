@@ -369,3 +369,93 @@ campaigns.post("/:campaignId/heroes/:heroId/remove", async (c) => {
     return c.json({ error: "remove_hero_failed", message: e?.message || String(e) }, 500);
   }
 });
+
+// DELETE /campaigns/:campaignId
+// Deletes the campaign, all games (acts) under it, related chat/messages,
+// removes campaign memberships, and reassigns characters to "unassigned-campaign".
+campaigns.delete("/:campaignId", async (c) => {
+  const { campaignId } = c.req.param();
+  const user = c.get("user");
+  if (!user?.id) return c.json({ error: "unauthorized" }, 401);
+
+  try {
+    // Ensure current user is Director for this campaign
+    const { getCampaignMembership } = await import("../utils/auth");
+    const mem = await getCampaignMembership(c.env.DB, user.id, campaignId);
+    if (!mem || mem.role !== "director") {
+      return c.json({ error: "forbidden" }, 403);
+    }
+
+    // Start transaction
+    await c.env.DB.prepare("BEGIN").run();
+
+    // 1️⃣ Ensure an "unassigned" campaign exists
+    const UNASSIGNED_ID = "unassigned-campaign";
+    const unassignedTitle = "Unassigned";
+    await c.env.DB
+      .prepare(
+        `INSERT INTO campaigns (id, title)
+         SELECT ?, ?
+         WHERE NOT EXISTS (SELECT 1 FROM campaigns WHERE id = ?)`
+      )
+      .bind(UNASSIGNED_ID, unassignedTitle, UNASSIGNED_ID)
+      .run();
+
+    // 2️⃣ Gather all game (Act) IDs under this campaign
+    const gamesRes: any = await c.env.DB
+      .prepare(`SELECT id FROM games WHERE campaignId = ?`)
+      .bind(campaignId)
+      .all();
+    const gameIds = (gamesRes.results || []).map((r: any) => r.id);
+
+    // Helper for IN clause
+    const mkIn = (xs: string[]) =>
+      xs.length ? `(${xs.map(() => "?").join(",")})` : "(NULL)";
+
+    // 3️⃣ Delete all chat/messages for those games
+    if (gameIds.length) {
+      await c.env.DB
+        .prepare(`DELETE FROM messages WHERE gameId IN ${mkIn(gameIds)}`)
+        .bind(...gameIds)
+        .run();
+
+      // Optional: if you have rolls, threads, or other per-game tables, delete them here as well.
+    }
+
+    // 4️⃣ Delete all games (acts) under this campaign
+    await c.env.DB
+      .prepare(`DELETE FROM games WHERE campaignId = ?`)
+      .bind(campaignId)
+      .run();
+
+    // 5️⃣ Reassign characters to the unassigned campaign
+    await c.env.DB
+      .prepare(`UPDATE characters SET campaignId = ? WHERE campaignId = ?`)
+      .bind(UNASSIGNED_ID, campaignId)
+      .run();
+
+    // 6️⃣ Remove campaign memberships
+    await c.env.DB
+      .prepare(`DELETE FROM memberships WHERE campaignId = ?`)
+      .bind(campaignId)
+      .run();
+
+    // 7️⃣ Delete the campaign itself
+    await c.env.DB
+      .prepare(`DELETE FROM campaigns WHERE id = ?`)
+      .bind(campaignId)
+      .run();
+
+    await c.env.DB.prepare("COMMIT").run();
+
+    return c.json({ ok: true, deletedCampaignId: campaignId });
+  } catch (e: any) {
+    try {
+      await c.env.DB.prepare("ROLLBACK").run();
+    } catch {}
+    return c.json({
+      error: "delete_campaign_failed",
+      message: e?.message || String(e),
+    }, 500);
+  }
+});
