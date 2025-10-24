@@ -108,6 +108,7 @@ export default function Campaign() {
       });
       // Optional: optimistic UI—clear selection
       setSelectedHeroId("");
+      await refreshAll();
     } catch (e: any) {
       alert(e?.message || "Failed to add hero");
     } finally {
