@@ -136,29 +136,26 @@ export default function Campaign() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-4">{campaign?.title ?? `Campaign ${id}`}</h1>
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-semibold text-black">Campaign</h1>
-        <button
-          className="rounded bg-red-600 px-3 py-2 text-white hover:bg-red-700"
-          onClick={async () => {
-            if (!id) return;
-            const sure = confirm(
-              "Delete this campaign and all its Acts? This will also delete chat/messages within those Acts. Characters will be reassigned to the Unassigned campaign. This cannot be undone."
-            );
-            if (!sure) return;
+      <button
+        className="rounded bg-red-600 px-3 py-2 text-white hover:bg-red-700"
+        onClick={async () => {
+          if (!id) return;
+          const sure = confirm(
+            "Delete this campaign and all its Acts? This will also delete chat/messages within those Acts. Characters will be reassigned to the Unassigned campaign. This cannot be undone."
+          );
+          if (!sure) return;
 
-            try {
-              await api(`/campaigns/${id}`, { method: "DELETE" });
-              // Redirect to whatever your campaigns list route is; adjust if needed:
-              navigate("/campaigns");
-            } catch (e: any) {
-              alert(e?.message || "Failed to delete campaign");
-            }
-          }}
-        >
-          Delete Campaign
-        </button>
-      </div>
+          try {
+            await api(`/campaigns/${id}`, { method: "DELETE" });
+            // Redirect to whatever your campaigns list route is; adjust if needed:
+            navigate("/campaigns");
+          } catch (e: any) {
+            alert(e?.message || "Failed to delete campaign");
+          }
+        }}
+      >
+        Delete Campaign
+      </button>
 
       {/* Current heroes in this campaign */}
       <div className="mb-4 rounded border border-slate-200 bg-white p-4">
