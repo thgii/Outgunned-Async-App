@@ -8,8 +8,6 @@ import { useNavigate } from "react-router-dom";
 type Game = { id: string; title?: string; name?: string };
 type CampaignRow = { id: string; title: string };
 type HeroRow = { id: string; name: string; ownerName?: string; ownerId?: string; campaignId?: string };
-type HeroRow = { id: string; name: string; ownerName?: string; ownerId?: string; campaignId?: string };
-
 
 export default function Campaign() {
   const { id } = useParams();
@@ -134,85 +132,86 @@ export default function Campaign() {
   if (error) return <div className="max-w-4xl mx-auto p-6 text-red-600">Error: {error}</div>;
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      {/* Title + Delete button in one line */}
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold text-black">
-          {campaign?.title ?? `Campaign ${id}`}
-        </h1>
-        <button
-          className="rounded bg-red-600 px-3 py-2 text-white hover:bg-red-700"
-          onClick={async () => {
-            if (!id) return;
-            const sure = confirm(
-              "Delete this campaign and all its Acts? This will also delete chat/messages within those Acts. Characters will be reassigned to the Unassigned campaign. This cannot be undone."
-            );
-            if (!sure) return;
+  <div className="max-w-4xl mx-auto p-6">
+    {/* Title + Delete button */}
+    <div className="flex items-center justify-between mb-4">
+      <h1 className="text-2xl font-bold text-black">
+        {campaign?.title ?? `Campaign ${id}`}
+      </h1>
+      <button
+        className="rounded bg-red-600 px-3 py-2 text-white hover:bg-red-700"
+        onClick={async () => {
+          if (!id) return;
+          const sure = confirm(
+            "Delete this campaign and all its Acts? This will also delete chat/messages within those Acts. Characters will be reassigned to the Unassigned campaign. This cannot be undone."
+          );
+          if (!sure) return;
 
-            try {
-              await api(`/campaigns/${id}`, { method: "DELETE" });
-              navigate("/campaigns");
-            } catch (e: any) {
-              alert(e?.message || "Failed to delete campaign");
-            }
-          }}
-        >
-          Delete Campaign
-        </button>
-      </div>
+          try {
+            await api(`/campaigns/${id}`, { method: "DELETE" });
+            navigate("/campaigns");
+          } catch (e: any) {
+            alert(e?.message || "Failed to delete campaign");
+          }
+        }}
+      >
+        Delete Campaign
+      </button>
+    </div>
 
-      {/* Current heroes in this campaign */}
-      <div className="mb-4 rounded border border-slate-200 bg-white p-4">
-        <h2 className="font-semibold mb-2 text-black">Current Heroes</h2>
-        {heroesInCampaign.length === 0 ? (
-          <div className="text-sm text-slate-600">No heroes in this campaign yet.</div>
-        ) : (
-          <ul className="divide-y">
-            {heroesInCampaign.map((h) => (
-              <li key={h.id} className="py-2 flex items-center justify-between">
-                <div>
-                  <div className="font-medium text-black">{h.name || "Untitled Hero"}</div>
-                  <div className="text-xs text-slate-600">{h.ownerName || h.ownerId || "Unknown owner"}</div>
-                </div>
-                <button
-                  onClick={() => onRemoveHero(h.id)}
-                  className="rounded bg-red-600 text-white text-sm px-3 py-1"
-                  title="Remove from campaign"
-                >
-                  Remove
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+    {/* Current heroes in this campaign */}
+    <div className="mb-4 rounded border border-slate-200 bg-white p-4">
+      <h2 className="font-semibold mb-2 text-black">Current Heroes</h2>
+      {heroesInCampaign.length === 0 ? (
+        <div className="text-sm text-slate-600">No heroes in this campaign yet.</div>
+      ) : (
+        <ul className="divide-y">
+          {heroesInCampaign.map((h) => (
+            <li key={h.id} className="py-2 flex items-center justify-between">
+              <div>
+                <div className="font-medium text-black">{h.name || "Untitled Hero"}</div>
+                <div className="text-xs text-slate-600">{h.ownerName || h.ownerId || "Unknown owner"}</div>
+              </div>
+              <button
+                onClick={() => onRemoveHero(h.id)}
+                className="rounded bg-red-600 text-white text-sm px-3 py-1"
+                title="Remove from campaign"
+              >
+                Remove
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
 
-      {/* --- Add Hero Control --- */}
-        <div className="mb-4 flex items-center gap-2">
-          <select
-            className="rounded border border-slate-300 bg-white px-3 py-2 text-sm text-black"
-            value={selectedHeroId}
-            onChange={(e) => setSelectedHeroId(e.target.value)}
-          >
-            <option value="">Select a hero…</option>
-            {allHeroes
-              .filter((h) => !inCampaignIds.has(h.id))        // robust: exclude heroes already in campaign
-              // .filter((h) => h.campaignId !== id)          // optional once (A) is done
-              .map((h) => (
-                <option key={h.id} value={h.id}>
-                  {h.name || "Untitled Hero"} {h.ownerName ? `— ${h.ownerName}` : ""}
-                </option>
-              ))}
-          </select>
-          <button
-            onClick={onAddHero}
-            disabled={!selectedHeroId || adding}
-            className="rounded bg-white px-3 py-2 text-black disabled:opacity-60"
-          >
-            {adding ? "Adding…" : "Add Hero to Campaign"}
-          </button>
-        </div>
-      {games.length === 0 ? (
+    {/* Add Hero Control */}
+    <div className="mb-4 flex items-center gap-2">
+      <select
+        className="rounded border border-slate-300 bg-white px-3 py-2 text-sm text-black"
+        value={selectedHeroId}
+        onChange={(e) => setSelectedHeroId(e.target.value)}
+      >
+        <option value="">Select a hero…</option>
+        {allHeroes
+          .filter((h) => !inCampaignIds.has(h.id))
+          .map((h) => (
+            <option key={h.id} value={h.id}>
+              {h.name || "Untitled Hero"} {h.ownerName ? `— ${h.ownerName}` : ""}
+            </option>
+          ))}
+      </select>
+      <button
+        onClick={onAddHero}
+        disabled={!selectedHeroId || adding}
+        className="rounded bg-white px-3 py-2 text-black disabled:opacity-60"
+      >
+        {adding ? "Adding…" : "Add Hero to Campaign"}
+      </button>
+    </div>
+
+    {/* Acts section */}
+    {games.length === 0 ? (
       <div className="rounded border bg-slate-50 p-4 text-black">
         <p className="mb-2">No acts yet.</p>
         <button
@@ -227,8 +226,7 @@ export default function Campaign() {
                 json: { title },
               });
               const newId = res?.id || res?.game?.id || String(res);
-              // Jump directly into the new Act
-              window.location.href = `/game/${newId}`;
+              navigate(`/game/${newId}`);
             } catch (e: any) {
               alert(e?.message || "Failed to create Act");
             }
@@ -237,19 +235,16 @@ export default function Campaign() {
           + Start an Act
         </button>
       </div>
-
-      ) : (
-        <ul className="space-y-2">
-          {games.map((g) => (
-            <li key={g.id} className="p-3 bg-white rounded shadow">
-              {/* tolerate either title or name */}
-              <Link to={`/game/${g.id}`} className="text-blue-600 underline">
-                {g.title ?? g.name ?? "Untitled Game"}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
+    ) : (
+      <ul className="space-y-2">
+        {games.map((g) => (
+          <li key={g.id} className="p-3 bg-white rounded shadow">
+            <Link to={`/game/${g.id}`} className="text-blue-600 underline">
+              {g.title ?? g.name ?? "Untitled Game"}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+);
