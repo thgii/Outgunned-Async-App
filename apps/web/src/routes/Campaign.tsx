@@ -130,6 +130,37 @@ export default function Campaign() {
   if (loading) return <div className="max-w-4xl mx-auto p-6">Loading…</div>;
   if (error) return <div className="max-w-4xl mx-auto p-6 text-red-600">Error: {error}</div>;
 
+  async function reloadGames() {
+    if (!id) return;
+    const gamesRes = await api(`/campaigns/${id}/games`, { method: "GET" });
+    const arr: Game[] = Array.isArray(gamesRes)
+      ? gamesRes
+      : Array.isArray(gamesRes?.results)
+      ? gamesRes.results
+      : [];
+    setGames(arr);
+  }
+
+  async function createAct() {
+    if (!id) return;
+    const title = prompt("Title of this Act?")?.trim();
+    if (!title) return;
+    try {
+      const res = await api(`/campaigns/${id}/games`, {
+        method: "POST",
+        json: { title },
+      });
+      // Option A: stay on Campaign page and refresh the list (per your request)
+      await reloadGames();
+
+      // Option B: if you ever want to jump straight into the new Act:
+      // const newId = res?.id || res?.game?.id || String(res);
+      // navigate(`/game/${newId}`);
+    } catch (e: any) {
+      alert(e?.message || "Failed to create Act");
+    }
+  }
+
   return (
   <div className="max-w-4xl mx-auto p-6">
     {/* Title + Delete button */}
@@ -210,41 +241,30 @@ export default function Campaign() {
     </div>
 
     {/* Acts section */}
-    {games.length === 0 ? (
-      <div className="rounded border bg-slate-50 p-4 text-black">
-        <p className="mb-2">No acts yet.</p>
+    <div className="rounded border bg-slate-50 p-4 text-black">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-semibold">Acts</h2>
         <button
           className="inline-block rounded bg-black px-3 py-2 text-white hover:opacity-90"
-          onClick={async () => {
-            if (!id) return;
-            const title = prompt("Title of this Act?")?.trim();
-            if (!title) return;
-            try {
-              const res = await api(`/campaigns/${id}/games`, {
-                method: "POST",
-                json: { title },
-              });
-              const newId = res?.id || res?.game?.id || String(res);
-              navigate(`/game/${newId}`);
-            } catch (e: any) {
-              alert(e?.message || "Failed to create Act");
-            }
-          }}
+          onClick={createAct}
         >
           + Start an Act
         </button>
       </div>
-    ) : (
-      <ul className="space-y-2">
-        {games.map((g) => (
-          <li key={g.id} className="p-3 bg-white rounded shadow">
-            <Link to={`/game/${g.id}`} className="text-blue-600 underline">
-              {g.title ?? g.name ?? "Untitled Game"}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    )}
-  </div>
+
+      {games.length === 0 ? (
+        <p className="text-sm text-slate-600">No acts yet.</p>
+      ) : (
+        <ul className="space-y-2">
+          {games.map((g) => (
+            <li key={g.id} className="p-3 bg-white rounded shadow">
+              <Link to={`/game/${g.id}`} className="text-blue-600 underline">
+                {g.title ?? g.name ?? "Untitled Game"}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
 );
 }
