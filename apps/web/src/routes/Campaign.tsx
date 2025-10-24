@@ -189,7 +189,7 @@ export default function Campaign() {
         <div className="rounded border bg-slate-50 p-4 text-black">
           <p className="mb-2">No games yet.</p>
           <Link to={`/game/new?campaign=${id}`} className="inline-block rounded bg-black px-3 py-2 text-white">
-            + Create a Game
+            + Start an Act
           </Link>
         </div>
       ) : (
