@@ -20,6 +20,7 @@ export default function Campaign() {
   const [selectedHeroId, setSelectedHeroId] = useState<string>("");
   const [adding, setAdding] = useState(false);
   const [heroesInCampaign, setHeroesInCampaign] = useState<HeroRow[]>([]);
+  const inCampaignIds = new Set(heroesInCampaign.map(h => h.id));
 
 
   useEffect(() => {
@@ -89,6 +90,14 @@ export default function Campaign() {
     return () => { alive = false; };
   }, [id]);
 
+  async function refreshAll() {
+    const [resAll, resIn] = await Promise.all([
+      api("/characters?all=1"),
+      api(`/campaigns/${id}/heroes`)
+    ]);
+    setAllHeroes(Array.isArray(resAll) ? resAll : (resAll?.results ?? []));
+    setHeroesInCampaign(Array.isArray(resIn) ? resIn : (resIn?.results ?? []));
+}
   async function onAddHero() {
     if (!id || !selectedHeroId) return;
     setAdding(true);
@@ -117,7 +126,6 @@ export default function Campaign() {
       alert(e?.message || "Failed to remove hero");
     }
   }
-
 
   if (loading) return <div className="max-w-4xl mx-auto p-6">Loading…</div>;
   if (error) return <div className="max-w-4xl mx-auto p-6 text-red-600">Error: {error}</div>;
@@ -160,14 +168,14 @@ export default function Campaign() {
           >
             <option value="">Select a hero…</option>
             {allHeroes
-              .filter((h) => h.campaignId !== id) // optionally exclude heroes already in this campaign
+              .filter((h) => !inCampaignIds.has(h.id))        // robust: exclude heroes already in campaign
+              // .filter((h) => h.campaignId !== id)          // optional once (A) is done
               .map((h) => (
                 <option key={h.id} value={h.id}>
                   {h.name || "Untitled Hero"} {h.ownerName ? `— ${h.ownerName}` : ""}
                 </option>
               ))}
           </select>
-
           <button
             onClick={onAddHero}
             disabled={!selectedHeroId || adding}

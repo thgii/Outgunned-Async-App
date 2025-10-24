@@ -123,7 +123,7 @@ characters.get("/", async (c) => {
   // Wizard/admin use: return a minimal, fast list of ALL heroes + their owners
   if (all) {
     const rs = await c.env.DB.prepare(`
-      SELECT ch.id, ch.name, ch.ownerId, u.name AS ownerName
+      SELECT ch.id, ch.name, ch.ownerId, ch.campaignId, u.name AS ownerName
       FROM characters ch
       LEFT JOIN users u ON u.id = ch.ownerId
       ORDER BY ch.createdAt DESC
