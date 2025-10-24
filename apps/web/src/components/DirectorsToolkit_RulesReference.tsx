@@ -30,7 +30,7 @@ export default function RulesReference() {
                     <th className="px-3 py-2">Description</th>
                   </tr>
                 </thead>
-                <tbody className="align-top divide-y divide-gray-200 dark:divide-zinc-800">
+                <tbody className="align-top divide-y divide-gray-200 dark:divide-zinc-800 text-black">
                   <tr className="bg-white dark:bg-zinc-900">
                     <td className="px-3 py-2 font-medium">Basic Success</td>
                     <td className="px-3 py-2">2-of-a-kind</td>
