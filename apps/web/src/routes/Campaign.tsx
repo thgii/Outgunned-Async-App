@@ -113,7 +113,7 @@ async function onAddHero() {
           <button
             onClick={onAddHero}
             disabled={!selectedHeroId || adding}
-            className="rounded bg-black px-3 py-2 text-white disabled:opacity-60"
+            className="rounded bg-white px-3 py-2 text-black disabled:opacity-60"
           >
             {adding ? "Adding…" : "Add Hero to Campaign"}
           </button>
