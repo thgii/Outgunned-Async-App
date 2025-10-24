@@ -186,12 +186,31 @@ export default function Campaign() {
           </button>
         </div>
       {games.length === 0 ? (
-        <div className="rounded border bg-slate-50 p-4 text-black">
-          <p className="mb-2">No games yet.</p>
-          <Link to={`/game/new?campaign=${id}`} className="inline-block rounded bg-black px-3 py-2 text-white">
-            + Start an Act
-          </Link>
-        </div>
+      <div className="rounded border bg-slate-50 p-4 text-black">
+        <p className="mb-2">No acts yet.</p>
+        <button
+          className="inline-block rounded bg-black px-3 py-2 text-white hover:opacity-90"
+          onClick={async () => {
+            if (!id) return;
+            const title = prompt("Title of this Act?")?.trim();
+            if (!title) return;
+            try {
+              const res = await api(`/campaigns/${id}/games`, {
+                method: "POST",
+                json: { title },
+              });
+              const newId = res?.id || res?.game?.id || String(res);
+              // Jump directly into the new Act
+              window.location.href = `/game/${newId}`;
+            } catch (e: any) {
+              alert(e?.message || "Failed to create Act");
+            }
+          }}
+        >
+          + Start an Act
+        </button>
+      </div>
+
       ) : (
         <ul className="space-y-2">
           {games.map((g) => (

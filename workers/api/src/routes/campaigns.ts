@@ -9,6 +9,40 @@ campaigns.get("/:id/games", async (c) => {
   return c.json(rows);
 });
 
+// POST /campaigns/:campaignId/games  -> create a new "Act" (game) and return it
+campaigns.post("/:campaignId/games", async (c) => {
+  try {
+    const { campaignId } = c.req.param();
+    const currentUser = c.get("user");
+    if (!currentUser?.id) return c.json({ error: "unauthorized" }, 401);
+
+    // Only Directors can create new Acts for a campaign
+    const { getCampaignMembership } = await import("../utils/auth");
+    const mem = await getCampaignMembership(c.env.DB, currentUser.id, campaignId);
+    if (!mem || mem.role !== "director") {
+      return c.json({ error: "Forbidden" }, 403);
+    }
+
+    const body = await c.req.json().catch(() => ({}));
+    const title = String(body?.title ?? "").trim();
+    if (!title) return c.json({ error: "Title is required" }, 400);
+
+    const id = crypto.randomUUID();
+    const createdAt = new Date().toISOString();
+    const status = "active"; // or "new" if you prefer
+
+    await c.env.DB.prepare(`
+      INSERT INTO games (id, campaignId, title, status, options, createdAt)
+      VALUES (?, ?, ?, ?, NULL, ?)
+    `).bind(id, campaignId, title, status, createdAt).run();
+
+    // Return the new game/act
+    return c.json({ id, campaignId, title, status, createdAt });
+  } catch (e: any) {
+    return c.json({ error: "create_act_failed", message: e?.message || String(e) }, 500);
+  }
+});
+
 // GET /campaigns/:id  -> return a single campaign (with description if present)
 campaigns.get("/:id", async (c) => {
   const id = c.req.param("id");

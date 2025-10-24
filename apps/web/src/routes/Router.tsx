@@ -44,6 +44,9 @@ export const Router = () => (
           <Route path="/campaign/:id/admin" element={<RequireAuth><CampaignAdmin /></RequireAuth>} />
           <Route path="/campaigns" element={<RequireAuth><Campaigns /></RequireAuth>} />
           <Route path="/campaigns/new" element={<RequireAuth><CampaignCreate /></RequireAuth>} />
+          <Route path="/act/:id" element={<RequireAuth><Game /></RequireAuth>} />
+          <Route path="/act/:id/admin" element={<RequireAuth><GameAdmin /></RequireAuth>} />
+
         </Routes>
       </div>
     </main>
