@@ -146,11 +146,12 @@ export default function Campaign() {
     const title = prompt("Title of this Act?")?.trim();
     if (!title) return;
     try {
-      await api(`/campaigns/${id}/games`, {
+      const res = await api(`/campaigns/${id}/games`, {
         method: "POST",
         json: { title },
       });
-      await reloadGames();
+      const newId = res?.id || res?.game?.id || String(res);
+      navigate(`/game/${newId}`); // ✅ redirect to new Act
     } catch (e: any) {
       alert(e?.message || "Failed to create Act");
     }
