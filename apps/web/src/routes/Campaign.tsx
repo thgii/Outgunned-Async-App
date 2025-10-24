@@ -6,6 +6,9 @@ import { api } from "../lib/api";
 type Game = { id: string; title?: string; name?: string };
 type CampaignRow = { id: string; title: string };
 type HeroRow = { id: string; name: string; ownerName?: string; ownerId?: string; campaignId?: string };
+type HeroRow = { id: string; name: string; ownerName?: string; ownerId?: string; campaignId?: string };
+
+
 
 export default function Campaign() {
   const { id } = useParams();
@@ -16,6 +19,8 @@ export default function Campaign() {
   const [allHeroes, setAllHeroes] = useState<HeroRow[]>([]);
   const [selectedHeroId, setSelectedHeroId] = useState<string>("");
   const [adding, setAdding] = useState(false);
+  const [heroesInCampaign, setHeroesInCampaign] = useState<HeroRow[]>([]);
+
 
   useEffect(() => {
     let alive = true;
@@ -70,22 +75,49 @@ export default function Campaign() {
   return () => { alive = false; };
 }, []);
 
-async function onAddHero() {
-  if (!id || !selectedHeroId) return;
-  setAdding(true);
-  try {
-    await api(`/campaigns/${id}/heroes`, {
-      method: "POST",
-      json: { heroId: selectedHeroId }
-    });
-    // Optional: optimistic UI—clear selection
-    setSelectedHeroId("");
-  } catch (e: any) {
-    alert(e?.message || "Failed to add hero");
-  } finally {
-    setAdding(false);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const res = await api(`/campaigns/${id}/heroes`, { method: "GET" });
+        const list: HeroRow[] = Array.isArray(res) ? res : (res?.results ?? []);
+        if (alive) setHeroesInCampaign(list);
+      } catch {
+        /* non-fatal */
+      }
+    })();
+    return () => { alive = false; };
+  }, [id]);
+
+  async function onAddHero() {
+    if (!id || !selectedHeroId) return;
+    setAdding(true);
+    try {
+      await api(`/campaigns/${id}/heroes`, {
+        method: "POST",
+        json: { heroId: selectedHeroId }
+      });
+      // Optional: optimistic UI—clear selection
+      setSelectedHeroId("");
+    } catch (e: any) {
+      alert(e?.message || "Failed to add hero");
+    } finally {
+      setAdding(false);
+    }
   }
-}
+
+  async function onRemoveHero(heroId: string) {
+    if (!id) return;
+    if (!confirm("Remove this hero from the campaign?")) return;
+    try {
+      await api(`/campaigns/${id}/heroes/${heroId}/remove`, { method: "POST" });
+      // refresh list locally
+      setHeroesInCampaign((prev) => prev.filter((h) => h.id !== heroId));
+    } catch (e: any) {
+      alert(e?.message || "Failed to remove hero");
+    }
+  }
+
 
   if (loading) return <div className="max-w-4xl mx-auto p-6">Loading…</div>;
   if (error) return <div className="max-w-4xl mx-auto p-6 text-red-600">Error: {error}</div>;
@@ -93,6 +125,32 @@ async function onAddHero() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-4">{campaign?.title ?? `Campaign ${id}`}</h1>
+      {/* Current heroes in this campaign */}
+      <div className="mb-4 rounded border border-slate-200 bg-white p-4">
+        <h2 className="font-semibold mb-2">Current Heroes</h2>
+        {heroesInCampaign.length === 0 ? (
+          <div className="text-sm text-slate-600">No heroes in this campaign yet.</div>
+        ) : (
+          <ul className="divide-y">
+            {heroesInCampaign.map((h) => (
+              <li key={h.id} className="py-2 flex items-center justify-between">
+                <div>
+                  <div className="font-medium">{h.name || "Untitled Hero"}</div>
+                  <div className="text-xs text-slate-600">{h.ownerName || h.ownerId || "Unknown owner"}</div>
+                </div>
+                <button
+                  onClick={() => onRemoveHero(h.id)}
+                  className="rounded bg-red-600 text-white text-sm px-3 py-1"
+                  title="Remove from campaign"
+                >
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       {/* --- Add Hero Control --- */}
         <div className="mb-4 flex items-center gap-2">
           <select

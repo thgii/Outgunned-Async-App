@@ -65,6 +65,30 @@ campaigns.get("/", async (c) => {
   return c.json(rs.results || []);
 });
 
+/**
+ * GET /campaigns/:campaignId/heroes
+ * Return heroes currently in the campaign (with owner info).
+ * Members-only; directors or heroes can see this list.
+ */
+campaigns.get("/:campaignId/heroes", async (c) => {
+  const { campaignId } = c.req.param();
+  const currentUser = c.get("user");
+  const { getCampaignMembership } = await import("../utils/auth");
+
+  const mem = await getCampaignMembership(c.env.DB, currentUser.id, campaignId);
+  if (!mem) return c.json({ error: "Forbidden" }, 403);
+
+  const rs = await c.env.DB.prepare(`
+    SELECT ch.id, ch.name, ch.ownerId, u.name AS ownerName, ch.campaignId
+    FROM characters ch
+    LEFT JOIN users u ON u.id = ch.ownerId
+    WHERE ch.campaignId = ?
+    ORDER BY ch.createdAt DESC
+  `).bind(campaignId).all<any>();
+
+  return c.json(rs.results || []);
+});
+
 // === Create a new campaign and seed memberships ==================
 // POST /campaigns
 // Body: { title: string, description?: string, system?: string, heroIds?: string[] }
@@ -251,5 +275,63 @@ campaigns.post("/:campaignId/heroes", async (c) => {
     return c.json({ ok: true, heroId, campaignId });
   } catch (e: any) {
     return c.json({ error: "add_hero_failed", message: e?.message || String(e) }, 500);
+  }
+});
+
+/**
+ * POST /campaigns/:campaignId/heroes/:heroId/remove
+ * Director-only. Moves hero to UNASSIGNED campaign and
+ * removes the owner's hero membership if they have no other heroes here
+ * and are not a director.
+ */
+campaigns.post("/:campaignId/heroes/:heroId/remove", async (c) => {
+  try {
+    const { campaignId, heroId } = c.req.param();
+    const currentUser = c.get("user");
+    const { getCampaignMembership } = await import("../utils/auth");
+
+    if (!currentUser?.id) return c.json({ error: "unauthorized" }, 401);
+
+    const mem = await getCampaignMembership(c.env.DB, currentUser.id, campaignId);
+    if (!mem || mem.role !== "director") return c.json({ error: "Forbidden" }, 403);
+
+    // Lookup hero + owner
+    const hero = await one<{ id: string; ownerId: string }>(
+      c.env.DB,
+      "SELECT id, ownerId FROM characters WHERE id = ? AND campaignId = ?",
+      [heroId, campaignId]
+    );
+    if (!hero?.ownerId) return c.json({ error: "hero_not_found_or_not_in_campaign" }, 404);
+
+    // Move hero to UNASSIGNED campaign bucket
+    const UNASSIGNED_CAMPAIGN_ID = "unassigned-campaign"; // keep consistent with your seeding
+    await c.env.DB.prepare(`
+      UPDATE characters SET campaignId = ?
+      WHERE id = ?
+    `).bind(UNASSIGNED_CAMPAIGN_ID, heroId).run();
+
+    // If owner has no other heroes left in this campaign and is not a director,
+    // remove their hero membership for this campaign.
+    const otherCount = await one<{ cnt: number }>(
+      c.env.DB,
+      "SELECT COUNT(*) as cnt FROM characters WHERE ownerId = ? AND campaignId = ?",
+      [hero.ownerId, campaignId]
+    );
+    const isDirector = await one<{ ok: number }>(
+      c.env.DB,
+      "SELECT 1 as ok FROM memberships WHERE userId = ? AND campaignId = ? AND role = 'director' LIMIT 1",
+      [hero.ownerId, campaignId]
+    );
+
+    if ((otherCount?.cnt ?? 0) === 0 && !isDirector?.ok) {
+      await c.env.DB.prepare(`
+        DELETE FROM memberships
+        WHERE userId = ? AND campaignId = ? AND role = 'hero'
+      `).bind(hero.ownerId, campaignId).run();
+    }
+
+    return c.json({ ok: true });
+  } catch (e: any) {
+    return c.json({ error: "remove_hero_failed", message: e?.message || String(e) }, 500);
   }
 });
