@@ -10,7 +10,6 @@ type CampaignRow = { id: string; title: string };
 type HeroRow = { id: string; name: string; ownerName?: string; ownerId?: string; campaignId?: string };
 type HeroRow = { id: string; name: string; ownerName?: string; ownerId?: string; campaignId?: string };
 
-const navigate = useNavigate();
 
 export default function Campaign() {
   const { id } = useParams();
@@ -23,6 +22,7 @@ export default function Campaign() {
   const [adding, setAdding] = useState(false);
   const [heroesInCampaign, setHeroesInCampaign] = useState<HeroRow[]>([]);
   const inCampaignIds = new Set(heroesInCampaign.map(h => h.id));
+  const navigate = useNavigate();
 
 
   useEffect(() => {
