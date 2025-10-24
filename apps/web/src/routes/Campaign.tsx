@@ -146,16 +146,11 @@ export default function Campaign() {
     const title = prompt("Title of this Act?")?.trim();
     if (!title) return;
     try {
-      const res = await api(`/campaigns/${id}/games`, {
+      await api(`/campaigns/${id}/games`, {
         method: "POST",
         json: { title },
       });
-      // Option A: stay on Campaign page and refresh the list (per your request)
       await reloadGames();
-
-      // Option B: if you ever want to jump straight into the new Act:
-      // const newId = res?.id || res?.game?.id || String(res);
-      // navigate(`/game/${newId}`);
     } catch (e: any) {
       alert(e?.message || "Failed to create Act");
     }
@@ -266,5 +261,6 @@ export default function Campaign() {
         </ul>
       )}
     </div>
+  </div>
 );
 }
