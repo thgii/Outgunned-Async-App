@@ -5,6 +5,12 @@ import { api } from "../lib/api";
 
 type Game = { id: string; title?: string; name?: string };
 type CampaignRow = { id: string; title: string };
+type HeroRow = { id: string; name: string; ownerName?: string; ownerId?: string; campaignId?: string };
+
+const [allHeroes, setAllHeroes] = useState<HeroRow[]>([]);
+const [selectedHeroId, setSelectedHeroId] = useState<string>("");
+const [adding, setAdding] = useState(false);
+
 
 export default function Campaign() {
   const { id } = useParams();
@@ -52,6 +58,36 @@ export default function Campaign() {
     };
   }, [id]);
 
+  useEffect(() => {
+  let alive = true;
+  (async () => {
+    try {
+      const res = await api("/characters?all=1", { method: "GET" });
+      const arr: HeroRow[] = Array.isArray(res) ? res : (res?.results ?? []);
+      if (alive) setAllHeroes(arr);
+    } catch {
+      /* non-fatal for page */
+    }
+  })();
+  return () => { alive = false; };
+}, []);
+
+async function onAddHero() {
+  if (!id || !selectedHeroId) return;
+  setAdding(true);
+  try {
+    await api(`/campaigns/${id}/heroes`, {
+      method: "POST",
+      json: { heroId: selectedHeroId }
+    });
+    // Optional: optimistic UI—clear selection
+    setSelectedHeroId("");
+  } catch (e: any) {
+    alert(e?.message || "Failed to add hero");
+  } finally {
+    setAdding(false);
+  }
+}
 
   if (loading) return <div className="max-w-4xl mx-auto p-6">Loading…</div>;
   if (error) return <div className="max-w-4xl mx-auto p-6 text-red-600">Error: {error}</div>;
@@ -59,6 +95,31 @@ export default function Campaign() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-4">{campaign?.title ?? `Campaign ${id}`}</h1>
+      {/* --- Add Hero Control --- */}
+        <div className="mb-4 flex items-center gap-2">
+          <select
+            className="rounded border border-slate-300 bg-white px-3 py-2 text-sm text-black"
+            value={selectedHeroId}
+            onChange={(e) => setSelectedHeroId(e.target.value)}
+          >
+            <option value="">Select a hero…</option>
+            {allHeroes
+              .filter((h) => h.campaignId !== id) // optionally exclude heroes already in this campaign
+              .map((h) => (
+                <option key={h.id} value={h.id}>
+                  {h.name || "Untitled Hero"} {h.ownerName ? `— ${h.ownerName}` : ""}
+                </option>
+              ))}
+          </select>
+
+          <button
+            onClick={onAddHero}
+            disabled={!selectedHeroId || adding}
+            className="rounded bg-black px-3 py-2 text-white disabled:opacity-60"
+          >
+            {adding ? "Adding…" : "Add Hero to Campaign"}
+          </button>
+        </div>
       {games.length === 0 ? (
         <div className="rounded border bg-slate-50 p-4 text-black">
           <p className="mb-2">No games yet.</p>

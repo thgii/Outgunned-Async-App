@@ -202,3 +202,54 @@ campaigns.post("/:campaignId/members/:userId/role", async (c) => {
 
   return c.json({ ok: true });
 });
+
+/**
+ * POST /campaigns/:campaignId/heroes
+ * Body: { heroId: string }
+ * Director-only. Attaches the hero to the campaign and ensures the hero's owner
+ * has a campaign-level membership as role 'hero'.
+ */
+campaigns.post("/:campaignId/heroes", async (c) => {
+  try {
+    const { campaignId } = c.req.param();
+    const currentUser = c.get("user");
+    if (!currentUser?.id) return c.json({ error: "unauthorized" }, 401);
+
+    // Only a director can add heroes to a campaign
+    const { getCampaignMembership } = await import("../utils/auth");
+    const mem = await getCampaignMembership(c.env.DB, currentUser.id, campaignId);
+    if (!mem || mem.role !== "director") {
+      return c.json({ error: "Forbidden" }, 403);
+    }
+
+    const { heroId } = await c.req.json<{ heroId: string }>().catch(() => ({} as any));
+    if (!heroId) return c.json({ error: "heroId required" }, 400);
+
+    // 1) Lookup hero owner
+    const hero = await one<{ id: string; ownerId: string }>(
+      c.env.DB,
+      "SELECT id, ownerId FROM characters WHERE id = ?",
+      [heroId]
+    );
+    if (!hero?.ownerId) return c.json({ error: "hero_not_found" }, 404);
+
+    // 2) Update character's campaignId
+    await c.env.DB.prepare(`
+      UPDATE characters SET campaignId = ?
+      WHERE id = ?
+    `).bind(campaignId, heroId).run();
+
+    // 3) Ensure campaign membership for the hero's owner
+    await c.env.DB.prepare(`
+      INSERT INTO memberships (userId, campaignId, role)
+      SELECT ?, ?, 'hero'
+      WHERE NOT EXISTS (
+        SELECT 1 FROM memberships WHERE userId = ? AND campaignId = ?
+      )
+    `).bind(hero.ownerId, campaignId, hero.ownerId, campaignId).run();
+
+    return c.json({ ok: true, heroId, campaignId });
+  } catch (e: any) {
+    return c.json({ error: "add_hero_failed", message: e?.message || String(e) }, 500);
+  }
+});
