@@ -135,8 +135,8 @@ export default function Campaign() {
             {heroesInCampaign.map((h) => (
               <li key={h.id} className="py-2 flex items-center justify-between">
                 <div>
-                  <div className="font-medium">{h.name || "Untitled Hero"}</div>
-                  <div className="text-xs text-slate-600 text-black">{h.ownerName || h.ownerId || "Unknown owner"}</div>
+                  <div className="font-medium text-black">{h.name || "Untitled Hero"}</div>
+                  <div className="text-xs text-slate-600">{h.ownerName || h.ownerId || "Unknown owner"}</div>
                 </div>
                 <button
                   onClick={() => onRemoveHero(h.id)}
