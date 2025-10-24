@@ -1,8 +1,7 @@
 // apps/web/src/routes/Campaign.tsx
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
-import { useNavigate } from "react-router-dom";
 
 
 type Game = { id: string; title?: string; name?: string };
@@ -135,7 +134,7 @@ export default function Campaign() {
   <div className="max-w-4xl mx-auto p-6">
     {/* Title + Delete button */}
     <div className="flex items-center justify-between mb-4">
-      <h1 className="text-2xl font-bold text-black">
+      <h1 className="text-2xl font-bold text-white">
         {campaign?.title ?? `Campaign ${id}`}
       </h1>
       <button
