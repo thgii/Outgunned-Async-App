@@ -7,17 +7,15 @@ type Game = { id: string; title?: string; name?: string };
 type CampaignRow = { id: string; title: string };
 type HeroRow = { id: string; name: string; ownerName?: string; ownerId?: string; campaignId?: string };
 
-const [allHeroes, setAllHeroes] = useState<HeroRow[]>([]);
-const [selectedHeroId, setSelectedHeroId] = useState<string>("");
-const [adding, setAdding] = useState(false);
-
-
 export default function Campaign() {
   const { id } = useParams();
   const [campaign, setCampaign] = useState<CampaignRow | null>(null);
   const [games, setGames] = useState<Game[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [allHeroes, setAllHeroes] = useState<HeroRow[]>([]);
+  const [selectedHeroId, setSelectedHeroId] = useState<string>("");
+  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
     let alive = true;
