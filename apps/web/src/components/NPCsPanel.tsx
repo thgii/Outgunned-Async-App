@@ -182,7 +182,7 @@ function NpcCard({
       </div>
 
       {isAlly ? (
-        <div className="mt-3 grid grid-cols-5 gap-1 text-xs text-black">
+        <div className="mt-3 grid grid-cols-5 gap-1 text-xs">
           {[
             ['Brawn', npc.brawn],
             ['Nerves', npc.nerves],
@@ -326,7 +326,7 @@ function NpcWizardModal({
           </label>
 
           {side === 'ally' ? (
-            <div className="space-y-2">
+            <div className="space-y-2 text-black" >
               <NumberPicker label="Brawn"  value={brawn}  set={setBrawn}  min={3} max={5} />
               <NumberPicker label="Nerves" value={nerves} set={setNerves} min={3} max={5} />
               <NumberPicker label="Smooth" value={smooth} set={setSmooth} min={3} max={5} />
@@ -335,7 +335,7 @@ function NpcWizardModal({
               <div className="text-xs text-slate-600">Allies start with 3 grit boxes; you can tick them from the list.</div>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2 text-black">
               <label className="block">
                 <div className="text-sm mb-1 text-black">Enemy Type</div>
                 <select className="w-full border rounded px-3 py-2" value={enemyType} onChange={e => setEnemyType(e.target.value as EnemyType)}>
