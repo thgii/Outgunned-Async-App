@@ -247,7 +247,7 @@ export default function Campaign() {
                   )}
                   <div>
                     <Link
-                      to={`/characters/${h.id}`}
+                      to={`/character/${h.id}`}
                       className="font-medium text-black hover:underline"
                       title="Open character"
                     >
