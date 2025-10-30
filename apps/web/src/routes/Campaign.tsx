@@ -97,47 +97,44 @@ export default function Campaign() {
     };
   }, []);
 
-  // Load heroes in campaign (enrich with portrait if missing)
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const res = await api(`/campaigns/${id}/heroes`, { method: "GET" });
-        let list: HeroRow[] = Array.isArray(res) ? res : res?.results ?? [];
+// Load heroes in campaign (enrich with portrait stored in storage.portrait)
+useEffect(() => {
+  let alive = true;
+  (async () => {
+    try {
+      const res = await api(`/campaigns/${id}/heroes`, { method: "GET" });
+      let list: HeroRow[] = Array.isArray(res) ? res : res?.results ?? [];
 
-        // If portraits are missing, fetch per-hero details and merge
-        const needPortrait = list.filter((h) => h.portraitUrl == null);
-        if (needPortrait.length > 0) {
-          const enriched = await Promise.all(
-            needPortrait.map(async (h) => {
-              try {
-                const detail = await api(`/characters/${h.id}`, { method: "GET" });
-                // Try both flat portraitUrl and nested structures, just in case
-                const portrait =
-                  detail?.portraitUrl ??
-                  detail?.youLook?.portraitUrl ??
-                  null;
-                return { ...h, portraitUrl: portrait };
-              } catch {
-                return h;
-              }
-            })
-          );
-          // Merge back into the main list
-          const byId = new Map(list.map((x) => [x.id, x]));
-          for (const e of enriched) byId.set(e.id, e);
-          list = Array.from(byId.values());
-        }
+      // Fetch character details to get portrait data URL from storage
+      const enriched = await Promise.all(
+        list.map(async (h) => {
+          try {
+            const detail = await api(`/characters/${h.id}`, { method: "GET" });
+            // Some endpoints return { character: {...} }
+            const c = detail?.character ?? detail ?? {};
 
-        if (alive) setHeroesInCampaign(list);
-      } catch {
-        /* non-fatal */
-      }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, [id]);
+            // Portrait lives in storage.portrait or resources.storage.portrait
+            const portraitDataUrl =
+              c?.storage?.portrait ??
+              c?.resources?.storage?.portrait ??
+              null;
+
+            return { ...h, portraitUrl: portraitDataUrl ?? h.portraitUrl ?? null };
+          } catch {
+            return h;
+          }
+        })
+      );
+
+      if (alive) setHeroesInCampaign(enriched);
+    } catch {
+      /* non-fatal */
+    }
+  })();
+  return () => {
+    alive = false;
+  };
+}, [id]);
 
   async function refreshAll() {
     const [resAll, resIn] = await Promise.all([
