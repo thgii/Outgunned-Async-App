@@ -1,20 +1,25 @@
 import { Hono } from "hono";
-import { q, one } from "../utils/db";
+import { one } from "../utils/db";
+import { getCampaignMembership } from "../utils/auth"; // move import to top
+import type { D1Database } from "@cloudflare/workers-types";
 
 export const campaigns = new Hono<{ Bindings: { DB: D1Database } }>();
 
+// ✅ Combined route: returns campaign details + membershipRole
 campaigns.get("/:id", async (c) => {
   const { id } = c.req.param();
-  const user = c.get("user"); // your auth middleware sets this
-  const userId = user?.id;
+  const currentUser = c.get("user");
+  const userId = currentUser?.id;
 
+  // Fetch campaign
   const campaign = await c.env.DB.prepare(
-    "SELECT * FROM campaigns WHERE id = ? LIMIT 1"
+    `SELECT id, title, system, ownerId, heatEnabled, createdAt, description
+     FROM campaigns WHERE id = ? LIMIT 1`
   ).bind(id).first();
 
   if (!campaign) return c.json({ error: "not found" }, 404);
 
-  // 🔹 Look up membership for this user
+  // Lookup membership for this user
   let membershipRole: string | null = null;
   if (userId) {
     const membership = await c.env.DB.prepare(
@@ -23,9 +28,31 @@ campaigns.get("/:id", async (c) => {
     membershipRole = membership?.role ?? null;
   }
 
-  // 🔹 Include membership role in the response
+  // Optional: restrict access to members only
+  if (!membershipRole) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  // Return campaign with role info
   return c.json({ ...campaign, membershipRole });
 });
+
+// ✅ New route for listing acts/games
+campaigns.get("/:id/games", async (c) => {
+  const { id } = c.req.param();
+  const currentUser = c.get("user");
+
+  // Require membership
+  const mem = await getCampaignMembership(c.env.DB, currentUser.id, id);
+  if (!mem) return c.json({ error: "Forbidden" }, 403);
+
+  const rs = await c.env.DB.prepare(
+    "SELECT id, title, status, createdAt FROM games WHERE campaignId = ? ORDER BY createdAt ASC"
+  ).bind(id).all<any>();
+
+  return c.json(rs.results || []);
+});
+
 
 
 // POST /campaigns/:campaignId/games  -> create a new "Act" (game) and return it
@@ -36,7 +63,6 @@ campaigns.post("/:campaignId/games", async (c) => {
     if (!currentUser?.id) return c.json({ error: "unauthorized" }, 401);
 
     // Only Directors can create new Acts for a campaign
-    const { getCampaignMembership } = await import("../utils/auth");
     const mem = await getCampaignMembership(c.env.DB, currentUser.id, campaignId);
     if (!mem || mem.role !== "director") {
       return c.json({ error: "Forbidden" }, 403);
@@ -60,26 +86,6 @@ campaigns.post("/:campaignId/games", async (c) => {
   } catch (e: any) {
     return c.json({ error: "create_act_failed", message: e?.message || String(e) }, 500);
   }
-});
-
-// GET /campaigns/:id  -> return a single campaign (with description if present)
-campaigns.get("/:id", async (c) => {
-  const id = c.req.param("id");
-
-  // Optional: require the caller to be a member of this campaign
-  const { getCampaignMembership } = await import("../utils/auth");
-  const currentUser = c.get("user");
-  const mem = await getCampaignMembership(c.env.DB, currentUser.id, id);
-  if (!mem) return c.json({ error: "Forbidden" }, 403);
-
-  const row = await one(c.env.DB, `
-    SELECT id, title, system, ownerId, heatEnabled, createdAt, description
-    FROM campaigns
-    WHERE id = ?
-  `, [id]);
-
-  if (!row) return c.notFound();
-  return c.json(row);
 });
 
 
@@ -126,8 +132,6 @@ campaigns.get("/", async (c) => {
 campaigns.get("/:campaignId/heroes", async (c) => {
   const { campaignId } = c.req.param();
   const currentUser = c.get("user");
-  const { getCampaignMembership } = await import("../utils/auth");
-
   const mem = await getCampaignMembership(c.env.DB, currentUser.id, campaignId);
   if (!mem) return c.json({ error: "Forbidden" }, 403);
 
@@ -211,9 +215,6 @@ campaigns.post("/", async (c) => {
   }
 });
 
-// --- Campaign Admin (Director-only) ---
-import { getCampaignMembership } from "../utils/auth";
-
 /**
  * GET /campaigns/:campaignId/members
  * Return distinct members for a campaign (joined with users)
@@ -293,7 +294,6 @@ campaigns.post("/:campaignId/heroes", async (c) => {
     if (!currentUser?.id) return c.json({ error: "unauthorized" }, 401);
 
     // Only a director can add heroes to a campaign
-    const { getCampaignMembership } = await import("../utils/auth");
     const mem = await getCampaignMembership(c.env.DB, currentUser.id, campaignId);
     if (!mem || mem.role !== "director") {
       return c.json({ error: "Forbidden" }, 403);
@@ -341,8 +341,6 @@ campaigns.post("/:campaignId/heroes/:heroId/remove", async (c) => {
   try {
     const { campaignId, heroId } = c.req.param();
     const currentUser = c.get("user");
-    const { getCampaignMembership } = await import("../utils/auth");
-
     if (!currentUser?.id) return c.json({ error: "unauthorized" }, 401);
 
     const mem = await getCampaignMembership(c.env.DB, currentUser.id, campaignId);
@@ -400,7 +398,6 @@ campaigns.delete("/:campaignId", async (c) => {
   if (!user?.id) return c.json({ error: "unauthorized" }, 401);
 
   try {
-    const { getCampaignMembership } = await import("../utils/auth");
     const mem = await getCampaignMembership(c.env.DB, user.id, campaignId);
     if (!mem || mem.role !== "director") {
       return c.json({ error: "forbidden" }, 403);
