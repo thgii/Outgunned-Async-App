@@ -46,8 +46,9 @@ campaigns.get("/:id/games", async (c) => {
   const mem = await getCampaignMembership(c.env.DB, currentUser.id, id);
   if (!mem) return c.json({ error: "Forbidden" }, 403);
 
+  // include summary so the web app can seed the editor/display
   const rs = await c.env.DB.prepare(
-    "SELECT id, title, status, createdAt FROM games WHERE campaignId = ? ORDER BY createdAt ASC"
+    "SELECT id, title, status, createdAt, summary FROM games WHERE campaignId = ? ORDER BY createdAt ASC"
   ).bind(id).all<any>();
 
   return c.json(rs.results || []);

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { NPCsPanel } from "../components/NPCsPanel";
 
-type Game = { id: string; title?: string; name?: string };
+type Game = { id: string; title?: string; name?: string; summary?: string | null };
 type CampaignRow = { id: string; title: string; membershipRole?: string | null };
 type HeroRow = {
   id: string;
@@ -30,6 +30,11 @@ export default function Campaign() {
 
   const [selectedHeroId, setSelectedHeroId] = useState<string>("");
   const [adding, setAdding] = useState(false);
+  // Act Summary editing state
+  const [gameDrafts, setGameDrafts] = useState<Record<string, string>>({});
+  const [gameSaveState, setGameSaveState] = useState<
+    Record<string, "idle" | "saving" | "saved" | "error">
+  >({});
 
   const [isDirector, setIsDirector] = useState(false);
 
@@ -67,6 +72,12 @@ export default function Campaign() {
         if (alive) {
           setCampaign(campObj);
           setGames(arr);
+          // SEED DRAFTS FROM RETURNED SUMMARIES
+          const seeded: Record<string, string> = {};
+          for (const g of arr) {
+            seeded[g.id] = (g.summary ?? "").trim();
+          }
+          setGameDrafts(seeded);
           setIsDirector(director);
         }
       } catch (e: any) {
@@ -191,6 +202,30 @@ useEffect(() => {
       alert(e?.message || "Failed to remove hero");
     }
   }
+
+  // SAVE / RESET SUMMARY HANDLERS
+  async function saveSummary(gameId: string) {
+  const draft = (gameDrafts[gameId] ?? "").trim();
+  setGameSaveState((s) => ({ ...s, [gameId]: "saving" }));
+  try {
+    await api(`/games/${gameId}`, { method: "PATCH", json: { summary: draft } });
+    // optimistic update
+    setGames((gs) => gs.map((g) => (g.id === gameId ? { ...g, summary: draft } : g)));
+    setGameSaveState((s) => ({ ...s, [gameId]: "saved" }));
+    setTimeout(() => {
+      setGameSaveState((s) => ({ ...s, [gameId]: "idle" }));
+    }, 1200);
+  } catch (e) {
+    console.error(e);
+    setGameSaveState((s) => ({ ...s, [gameId]: "error" }));
+  }
+}
+
+function resetDraft(gameId: string) {
+  const current = games.find((g) => g.id === gameId);
+  setGameDrafts((d) => ({ ...d, [gameId]: (current?.summary ?? "").trim() }));
+  setGameSaveState((s) => ({ ...s, [gameId]: "idle" }));
+}
 
   async function createAct() {
     if (!id) return;
@@ -328,34 +363,118 @@ useEffect(() => {
         <NPCsPanel campaignId={id!} isDirector={isDirector} />
       </div>
 
-      {/* Acts section; button is Director-only */}
-      <div className="rounded border bg-slate-50 p-4 text-black">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-semibold">Acts</h2>
-          {isDirector && (
-            <button
-              className="inline-block rounded bg-black px-3 py-2 text-white hover:opacity-90"
-              onClick={createAct}
-            >
-              + Start an Act
-            </button>
+        {/* Acts section; button is Director-only */}
+        <div className="rounded border bg-slate-50 p-4 text-black">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold">Acts</h2>
+            {isDirector && (
+              <button
+                className="inline-block rounded bg-black px-3 py-2 text-white hover:opacity-90"
+                onClick={createAct}
+              >
+                + Start an Act
+              </button>
+            )}
+          </div>
+
+          {games.length === 0 ? (
+            <p className="text-sm text-slate-600">No acts yet.</p>
+          ) : (
+            <ul className="space-y-3">
+              {games.map((g) => (
+                <li key={g.id} className="p-3 bg-white rounded shadow">
+                  <div className="flex items-center justify-between gap-3">
+                    <Link to={`/game/${g.id}`} className="text-blue-600 underline">
+                      {g.title ?? g.name ?? "Untitled Game"}
+                    </Link>
+
+                    {/* tiny status chip */}
+                    {(() => {
+                      const state = gameSaveState[g.id] ?? "idle";
+                      if (state === "saving")
+                        return (
+                          <span className="text-xs px-2 py-1 rounded bg-slate-200">
+                            Saving…
+                          </span>
+                        );
+                      if (state === "saved")
+                        return (
+                          <span className="text-xs px-2 py-1 rounded bg-emerald-100 text-emerald-700">
+                            Saved
+                          </span>
+                        );
+                      if (state === "error")
+                        return (
+                          <span className="text-xs px-2 py-1 rounded bg-red-100 text-red-700">
+                            Error
+                          </span>
+                        );
+                      return null;
+                    })()}
+                  </div>
+
+                  <div className="mt-2">
+                    {isDirector ? (
+                      <div>
+                        <label className="block text-sm mb-1 text-slate-700">
+                          Act Summary
+                        </label>
+                        <textarea
+                          value={gameDrafts[g.id] ?? ""}
+                          onChange={(e) =>
+                            setGameDrafts((d) => ({ ...d, [g.id]: e.target.value }))
+                          }
+                          rows={3}
+                          placeholder="Add a quick recap of what happened in this act…"
+                          className="w-full rounded border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400"
+                        />
+                        <div className="mt-2 flex items-center gap-2">
+                          {(() => {
+                            const draft = (gameDrafts[g.id] ?? "").trim();
+                            const dirty = (g.summary ?? "").trim() !== draft;
+                            const state = gameSaveState[g.id] ?? "idle";
+                            return (
+                              <>
+                                <button
+                                  disabled={!dirty || state === "saving"}
+                                  onClick={() => saveSummary(g.id)}
+                                  className={`px-3 py-1.5 rounded text-sm font-medium ${
+                                    !dirty || state === "saving"
+                                      ? "bg-slate-200 text-slate-500 cursor-not-allowed"
+                                      : "bg-black text-white hover:opacity-90"
+                                  }`}
+                                >
+                                  Save Summary
+                                </button>
+                                <button
+                                  disabled={!dirty || state === "saving"}
+                                  onClick={() => resetDraft(g.id)}
+                                  className={`px-3 py-1.5 rounded text-sm font-medium ${
+                                    !dirty || state === "saving"
+                                      ? "bg-slate-200 text-slate-500 cursor-not-allowed"
+                                      : "bg-slate-700 text-white hover:bg-slate-800"
+                                  }`}
+                                >
+                                  Reset
+                                </button>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    ) : (
+                      (g.summary?.trim()?.length ?? 0) > 0 && (
+                        <p className="text-sm text-slate-700 whitespace-pre-wrap">
+                          {g.summary}
+                        </p>
+                      )
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
-
-        {games.length === 0 ? (
-          <p className="text-sm text-slate-600">No acts yet.</p>
-        ) : (
-          <ul className="space-y-2">
-            {games.map((g) => (
-              <li key={g.id} className="p-3 bg-white rounded shadow">
-                <Link to={`/game/${g.id}`} className="text-blue-600 underline">
-                  {g.title ?? g.name ?? "Untitled Game"}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
     </div>
   );
 }
