@@ -182,7 +182,7 @@ function NpcCard({
       </div>
 
       {isAlly ? (
-        <div className="mt-3 grid grid-cols-5 gap-1 text-xs">
+        <div className="mt-3 grid grid-cols-5 gap-1 text-xs text-black">
           {[
             ['Brawn', npc.brawn],
             ['Nerves', npc.nerves],
