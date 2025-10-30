@@ -1,6 +1,7 @@
 // apps/web/src/lib/api.ts
 type ApiInit = Omit<RequestInit, "body"> & {
-  json?: any; // convenience: we'll JSON.stringify this and set headers
+  json?: any;           // convenience: we'll JSON.stringify this and set headers
+  body?: BodyInit | null; // allow explicit bodies (e.g., FormData) when needed
 };
 
 const RAW = (import.meta.env.VITE_API_BASE ?? "").trim();
@@ -28,8 +29,7 @@ export async function api(path: string, init: ApiInit = {}) {
 
   // If caller provided `json`, turn it into a string body and set Content-Type
   const hasJson = Object.prototype.hasOwnProperty.call(init, "json");
-  const body =
-    hasJson ? JSON.stringify(init.json) : init.body;
+  const body = hasJson ? JSON.stringify(init.json) : init.body ?? null;
 
   // If the caller forgot to set a method, assume POST when sending a body
   const method = init.method ?? (body ? "POST" : "GET");
@@ -38,15 +38,18 @@ export async function api(path: string, init: ApiInit = {}) {
     ...(init.headers as Record<string, string> | undefined),
   };
 
-    // 🔐 Add Bearer token if available
+  // 🔐 Add Bearer token if available
   const auth = getAuthToken();
   if (auth) headers["authorization"] = `Bearer ${auth}`;
 
+  // Detect FormData so we don't set Content-Type (browser will add boundary)
+  const isFormData =
+    typeof FormData !== "undefined" && body instanceof FormData;
+
   if (hasJson) {
-    // don't clobber an explicit content-type if caller set one
     if (!headers["Content-Type"]) headers["Content-Type"] = "application/json";
-  } else {
-    // still default to JSON for most endpoints unless caller overrides
+  } else if (!isFormData) {
+    // default to JSON only when not sending FormData
     headers["Content-Type"] = headers["Content-Type"] ?? "application/json";
   }
 
@@ -66,4 +69,46 @@ export async function api(path: string, init: ApiInit = {}) {
   // Tolerate non-JSON
   const ct = res.headers.get("content-type") || "";
   return ct.includes("application/json") ? res.json() : res.text();
+}
+
+/* =========================
+   NPC convenience helpers
+   ========================= */
+
+// NOTE: Prefixing with /api here to hit your Workers routes in Pages.
+// If your VITE_API_BASE already points directly at the Worker origin,
+// this will still work because buildUrl handles absolute bases.
+export function listNpcs(campaignId: string) {
+  return api(`/api/campaigns/${campaignId}/supporting-characters`, { method: "GET" });
+}
+
+export function createNpc(campaignId: string, payload: any) {
+  return api(`/api/campaigns/${campaignId}/supporting-characters`, {
+    json: payload,
+    method: "POST",
+  });
+}
+
+export function updateNpc(campaignId: string, id: string, patch: any) {
+  return api(`/api/campaigns/${campaignId}/supporting-characters/${id}`, {
+    json: patch,
+    method: "PATCH",
+  });
+}
+
+export function deleteNpc(campaignId: string, id: string) {
+  return api(`/api/campaigns/${campaignId}/supporting-characters/${id}`, {
+    method: "DELETE",
+  });
+}
+
+/**
+ * Image upload helper.
+ * Expects your backend at POST /api/upload/image to accept multipart/form-data
+ * and return JSON like: { url: "https://..." }.
+ */
+export async function uploadImage(file: File): Promise<{ url: string }> {
+  const form = new FormData();
+  form.append("file", file);
+  return api("/api/upload/image", { body: form, method: "POST" }) as Promise<{ url: string }>;
 }

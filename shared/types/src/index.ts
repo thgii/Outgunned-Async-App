@@ -103,3 +103,4 @@ export type {
 } from "./data/gear";
 export { parseGunCell, parseGunRanges } from "./data/gear";
 
+export * from './npc';

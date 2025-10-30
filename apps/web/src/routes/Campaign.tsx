@@ -2,10 +2,10 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
-
+import { NPCsPanel } from "../components/NPCsPanel";
 
 type Game = { id: string; title?: string; name?: string };
-type CampaignRow = { id: string; title: string };
+type CampaignRow = { id: string; title: string; membershipRole?: string | null }; // ★ allow role
 type HeroRow = { id: string; name: string; ownerName?: string; ownerId?: string; campaignId?: string };
 
 export default function Campaign() {
@@ -18,9 +18,10 @@ export default function Campaign() {
   const [selectedHeroId, setSelectedHeroId] = useState<string>("");
   const [adding, setAdding] = useState(false);
   const [heroesInCampaign, setHeroesInCampaign] = useState<HeroRow[]>([]);
-  const inCampaignIds = new Set(heroesInCampaign.map(h => h.id));
-  const navigate = useNavigate();
+  const inCampaignIds = new Set(heroesInCampaign.map((h) => h.id));
 
+  const [isDirector, setIsDirector] = useState(false); // ★ derive dynamically
+  const navigate = useNavigate();
 
   useEffect(() => {
     let alive = true;
@@ -35,20 +36,39 @@ export default function Campaign() {
           api(`/campaigns/${id}/games`, { method: "GET" }),
         ]);
 
-        // normalize campaign (expecting a single object)
+        // normalize campaign
         const campObj: CampaignRow | null =
-          campRes && typeof campRes === "object" ? { id: campRes.id, title: campRes.title } : null;
+          campRes && typeof campRes === "object"
+            ? {
+                id: campRes.id,
+                title: campRes.title,
+                membershipRole: campRes.membershipRole ?? campRes.role ?? null, // ★ prefer server-provided membership role
+              }
+            : null;
 
-        // normalize games to an array
+        // normalize games
         const arr: Game[] = Array.isArray(gamesRes)
           ? gamesRes
           : Array.isArray(gamesRes?.results)
           ? gamesRes.results
           : [];
 
+        // ★ try to determine director from the campaign payload; if absent, attempt self-membership endpoint
+        let director = !!(campObj?.membershipRole && campObj.membershipRole.toLowerCase() === "director");
+        if (!director) {
+          try {
+            const me = await api(`/campaigns/${id}/memberships/me`, { method: "GET" });
+            const myRole = (me?.role ?? me?.membershipRole ?? "").toLowerCase();
+            director = myRole === "director";
+          } catch {
+            /* non-fatal: endpoint may not exist; default remains false */
+          }
+        }
+
         if (alive) {
           setCampaign(campObj);
           setGames(arr);
+          setIsDirector(director); // ★ set director
         }
       } catch (e: any) {
         if (alive) setError(e?.message ?? "Failed to load campaign/games");
@@ -62,50 +82,51 @@ export default function Campaign() {
   }, [id]);
 
   useEffect(() => {
-  let alive = true;
-  (async () => {
-    try {
-      const res = await api("/characters?all=1", { method: "GET" });
-      const arr: HeroRow[] = Array.isArray(res) ? res : (res?.results ?? []);
-      if (alive) setAllHeroes(arr);
-    } catch {
-      /* non-fatal for page */
-    }
-  })();
-  return () => { alive = false; };
-}, []);
+    let alive = true;
+    (async () => {
+      try {
+        const res = await api("/characters?all=1", { method: "GET" });
+        const arr: HeroRow[] = Array.isArray(res) ? res : res?.results ?? [];
+        if (alive) setAllHeroes(arr);
+      } catch {
+        /* non-fatal for page */
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
         const res = await api(`/campaigns/${id}/heroes`, { method: "GET" });
-        const list: HeroRow[] = Array.isArray(res) ? res : (res?.results ?? []);
+        const list: HeroRow[] = Array.isArray(res) ? res : res?.results ?? [];
         if (alive) setHeroesInCampaign(list);
       } catch {
         /* non-fatal */
       }
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [id]);
 
   async function refreshAll() {
-    const [resAll, resIn] = await Promise.all([
-      api("/characters?all=1"),
-      api(`/campaigns/${id}/heroes`)
-    ]);
-    setAllHeroes(Array.isArray(resAll) ? resAll : (resAll?.results ?? []));
-    setHeroesInCampaign(Array.isArray(resIn) ? resIn : (resIn?.results ?? []));
-}
+    const [resAll, resIn] = await Promise.all([api("/characters?all=1"), api(`/campaigns/${id}/heroes`)]);
+    setAllHeroes(Array.isArray(resAll) ? resAll : resAll?.results ?? []);
+    setHeroesInCampaign(Array.isArray(resIn) ? resIn : resIn?.results ?? []);
+  }
+
   async function onAddHero() {
     if (!id || !selectedHeroId) return;
     setAdding(true);
     try {
       await api(`/campaigns/${id}/heroes`, {
         method: "POST",
-        json: { heroId: selectedHeroId }
+        json: { heroId: selectedHeroId },
       });
-      // Optional: optimistic UI—clear selection
       setSelectedHeroId("");
       await refreshAll();
     } catch (e: any) {
@@ -120,7 +141,6 @@ export default function Campaign() {
     if (!confirm("Remove this hero from the campaign?")) return;
     try {
       await api(`/campaigns/${id}/heroes/${heroId}/remove`, { method: "POST" });
-      // refresh list locally
       setHeroesInCampaign((prev) => prev.filter((h) => h.id !== heroId));
     } catch (e: any) {
       alert(e?.message || "Failed to remove hero");
@@ -151,117 +171,117 @@ export default function Campaign() {
         json: { title },
       });
       const newId = res?.id || res?.game?.id || String(res);
-      navigate(`/game/${newId}`); // ✅ redirect to new Act
+      navigate(`/game/${newId}`);
     } catch (e: any) {
       alert(e?.message || "Failed to create Act");
     }
   }
 
   return (
-  <div className="max-w-4xl mx-auto p-6">
-    {/* Title + Delete button */}
-    <div className="flex items-center justify-between mb-4">
-      <h1 className="text-2xl font-bold text-white">
-        {campaign?.title ?? `Campaign ${id}`}
-      </h1>
-      <button
-        className="rounded bg-red-600 px-3 py-2 text-white hover:bg-red-700"
-        onClick={async () => {
-          if (!id) return;
-          const sure = confirm(
-            "Delete this campaign and all its Acts? This will also delete chat/messages within those Acts. Characters will be reassigned to the Unassigned campaign. This cannot be undone."
-          );
-          if (!sure) return;
-
-          try {
-            await api(`/campaigns/${id}`, { method: "DELETE" });
-            navigate("/campaigns");
-          } catch (e: any) {
-            alert(e?.message || "Failed to delete campaign");
-          }
-        }}
-      >
-        Delete Campaign
-      </button>
-    </div>
-
-    {/* Current heroes in this campaign */}
-    <div className="mb-4 rounded border border-slate-200 bg-white p-4">
-      <h2 className="font-semibold mb-2 text-black">Current Heroes</h2>
-      {heroesInCampaign.length === 0 ? (
-        <div className="text-sm text-slate-600">No heroes in this campaign yet.</div>
-      ) : (
-        <ul className="divide-y">
-          {heroesInCampaign.map((h) => (
-            <li key={h.id} className="py-2 flex items-center justify-between">
-              <div>
-                <div className="font-medium text-black">{h.name || "Untitled Hero"}</div>
-                <div className="text-xs text-slate-600">{h.ownerName || h.ownerId || "Unknown owner"}</div>
-              </div>
-              <button
-                onClick={() => onRemoveHero(h.id)}
-                className="rounded bg-red-600 text-white text-sm px-3 py-1"
-                title="Remove from campaign"
-              >
-                Remove
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-
-    {/* Add Hero Control */}
-    <div className="mb-4 flex items-center gap-2">
-      <select
-        className="rounded border border-slate-300 bg-white px-3 py-2 text-sm text-black"
-        value={selectedHeroId}
-        onChange={(e) => setSelectedHeroId(e.target.value)}
-      >
-        <option value="">Select a hero…</option>
-        {allHeroes
-          .filter((h) => !inCampaignIds.has(h.id))
-          .map((h) => (
-            <option key={h.id} value={h.id}>
-              {h.name || "Untitled Hero"} {h.ownerName ? `— ${h.ownerName}` : ""}
-            </option>
-          ))}
-      </select>
-      <button
-        onClick={onAddHero}
-        disabled={!selectedHeroId || adding}
-        className="rounded bg-white px-3 py-2 text-black disabled:opacity-60"
-      >
-        {adding ? "Adding…" : "Add Hero to Campaign"}
-      </button>
-    </div>
-
-    {/* Acts section */}
-    <div className="rounded border bg-slate-50 p-4 text-black">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="font-semibold">Acts</h2>
+    <div className="max-w-4xl mx-auto p-6">
+      {/* Title + Delete button */}
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-bold text-white">{campaign?.title ?? `Campaign ${id}`}</h1>
         <button
-          className="inline-block rounded bg-black px-3 py-2 text-white hover:opacity-90"
-          onClick={createAct}
+          className="rounded bg-red-600 px-3 py-2 text-white hover:bg-red-700"
+          onClick={async () => {
+            if (!id) return;
+            const sure = confirm(
+              "Delete this campaign and all its Acts? This will also delete chat/messages within those Acts. Characters will be reassigned to the Unassigned campaign. This cannot be undone.",
+            );
+            if (!sure) return;
+
+            try {
+              await api(`/campaigns/${id}`, { method: "DELETE" });
+              navigate("/campaigns");
+            } catch (e: any) {
+              alert(e?.message || "Failed to delete campaign");
+            }
+          }}
         >
-          + Start an Act
+          Delete Campaign
         </button>
       </div>
 
-      {games.length === 0 ? (
-        <p className="text-sm text-slate-600">No acts yet.</p>
-      ) : (
-        <ul className="space-y-2">
-          {games.map((g) => (
-            <li key={g.id} className="p-3 bg-white rounded shadow">
-              <Link to={`/game/${g.id}`} className="text-blue-600 underline">
-                {g.title ?? g.name ?? "Untitled Game"}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
+      {/* Current heroes in this campaign */}
+      <div className="mb-4 rounded border border-slate-200 bg-white p-4">
+        <h2 className="font-semibold mb-2 text-black">Current Heroes</h2>
+        {heroesInCampaign.length === 0 ? (
+          <div className="text-sm text-slate-600">No heroes in this campaign yet.</div>
+        ) : (
+          <ul className="divide-y">
+            {heroesInCampaign.map((h) => (
+              <li key={h.id} className="py-2 flex items-center justify-between">
+                <div>
+                  <div className="font-medium text-black">{h.name || "Untitled Hero"}</div>
+                  <div className="text-xs text-slate-600">{h.ownerName || h.ownerId || "Unknown owner"}</div>
+                </div>
+                <button
+                  onClick={() => onRemoveHero(h.id)}
+                  className="rounded bg-red-600 text-white text-sm px-3 py-1"
+                  title="Remove from campaign"
+                >
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Add Hero Control */}
+      <div className="mb-4 flex items-center gap-2">
+        <select
+          className="rounded border border-slate-300 bg-white px-3 py-2 text-sm text-black"
+          value={selectedHeroId}
+          onChange={(e) => setSelectedHeroId(e.target.value)}
+        >
+          <option value="">Select a hero…</option>
+          {allHeroes
+            .filter((h) => !inCampaignIds.has(h.id))
+            .map((h) => (
+              <option key={h.id} value={h.id}>
+                {h.name || "Untitled Hero"} {h.ownerName ? `— ${h.ownerName}` : ""}
+              </option>
+            ))}
+        </select>
+        <button
+          onClick={onAddHero}
+          disabled={!selectedHeroId || adding}
+          className="rounded bg-white px-3 py-2 text-black disabled:opacity-60"
+        >
+          {adding ? "Adding…" : "Add Hero to Campaign"}
+        </button>
+      </div>
+
+      {/* ★ NEW: Supporting Characters (NPCs) Panel */}
+      <div className="mb-4">
+        <NPCsPanel campaignId={id!} isDirector={isDirector} />
+      </div>
+
+      {/* Acts section */}
+      <div className="rounded border bg-slate-50 p-4 text-black">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-semibold">Acts</h2>
+          <button className="inline-block rounded bg-black px-3 py-2 text-white hover:opacity-90" onClick={createAct}>
+            + Start an Act
+          </button>
+        </div>
+
+        {games.length === 0 ? (
+          <p className="text-sm text-slate-600">No acts yet.</p>
+        ) : (
+          <ul className="space-y-2">
+            {games.map((g) => (
+              <li key={g.id} className="p-3 bg-white rounded shadow">
+                <Link to={`/game/${g.id}`} className="text-blue-600 underline">
+                  {g.title ?? g.name ?? "Untitled Game"}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
 }

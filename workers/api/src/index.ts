@@ -7,7 +7,7 @@ import { characters } from "./routes/characters";
 import { rolls } from "./routes/rolls";
 import { auth } from "./routes/auth";
 import { requireUser } from "./utils/auth";
-
+import { npcs } from './routes/npcs';
 
 type Env = { DB: D1Database };
 
@@ -34,5 +34,6 @@ app.route("/", messages);     // these already use absolute paths like /games/:i
 app.route("/characters", characters);
 app.route("api/characters", characters);
 app.route("/", rolls);        // also uses absolute path /games/:id/rolls
+app.route('/', npcs);
 
 export default app;
