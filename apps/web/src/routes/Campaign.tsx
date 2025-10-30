@@ -53,17 +53,9 @@ export default function Campaign() {
           ? gamesRes.results
           : [];
 
-        // ★ try to determine director from the campaign payload; if absent, attempt self-membership endpoint
-        let director = !!(campObj?.membershipRole && campObj.membershipRole.toLowerCase() === "director");
-        if (!director) {
-          try {
-            const me = await api(`/campaigns/${id}/memberships/me`, { method: "GET" });
-            const myRole = (me?.role ?? me?.membershipRole ?? "").toLowerCase();
-            director = myRole === "director";
-          } catch {
-            /* non-fatal: endpoint may not exist; default remains false */
-          }
-        }
+        // ★ Determine director directly from campaign payload only
+        const director =
+          (campObj?.membershipRole ?? campObj?.role ?? "").toLowerCase() === "director";
 
         if (alive) {
           setCampaign(campObj);

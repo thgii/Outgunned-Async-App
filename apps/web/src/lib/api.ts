@@ -79,25 +79,25 @@ export async function api(path: string, init: ApiInit = {}) {
 // If your VITE_API_BASE already points directly at the Worker origin,
 // this will still work because buildUrl handles absolute bases.
 export function listNpcs(campaignId: string) {
-  return api(`/api/campaigns/${campaignId}/supporting-characters`, { method: "GET" });
+  return api(`/campaigns/${campaignId}/supporting-characters`, { method: "GET" });
 }
 
 export function createNpc(campaignId: string, payload: any) {
-  return api(`/api/campaigns/${campaignId}/supporting-characters`, {
+  return api(`/campaigns/${campaignId}/supporting-characters`, {
     json: payload,
     method: "POST",
   });
 }
 
 export function updateNpc(campaignId: string, id: string, patch: any) {
-  return api(`/api/campaigns/${campaignId}/supporting-characters/${id}`, {
+  return api(`/campaigns/${campaignId}/supporting-characters/${id}`, {
     json: patch,
     method: "PATCH",
   });
 }
 
 export function deleteNpc(campaignId: string, id: string) {
-  return api(`/api/campaigns/${campaignId}/supporting-characters/${id}`, {
+  return api(`/campaigns/${campaignId}/supporting-characters/${id}`, {
     method: "DELETE",
   });
 }
@@ -110,5 +110,5 @@ export function deleteNpc(campaignId: string, id: string) {
 export async function uploadImage(file: File): Promise<{ url: string }> {
   const form = new FormData();
   form.append("file", file);
-  return api("/api/upload/image", { body: form, method: "POST" }) as Promise<{ url: string }>;
+  return api("/upload/image", { body: form, method: "POST" }) as Promise<{ url: string }>;
 }
