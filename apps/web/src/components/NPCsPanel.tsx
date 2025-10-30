@@ -361,7 +361,7 @@ function NpcWizardModal({
               <label className="block">
                 <div className="text-sm mb-1 text-black">Help</div>
                 <textarea
-                  className="w-full border rounded px-3 py-2 text-black"
+                  className="w-full border rounded px-3 py-2"
                   rows={2}
                   value={help}
                   onChange={(e) => setHelp(e.target.value)}
@@ -373,7 +373,7 @@ function NpcWizardModal({
               <label className="block">
                 <div className="text-sm mb-1 text-black">Flaw</div>
                 <textarea
-                  className="w-full border rounded px-3 py-2 text-black"
+                  className="w-full border rounded px-3 py-2"
                   rows={2}
                   value={flaw}
                   onChange={(e) => setFlaw(e.target.value)}
