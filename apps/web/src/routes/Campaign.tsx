@@ -426,7 +426,7 @@ function resetDraft(gameId: string) {
                           }
                           rows={3}
                           placeholder="Add a quick recap of what happened in this act…"
-                          className="w-full rounded border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400"
+                          className="w-full rounded border border-slate-300 px-3 py-2 placeholder:text-slate-400"
                         />
                         <div className="mt-2 flex items-center gap-2">
                           {(() => {
