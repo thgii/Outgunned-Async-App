@@ -255,7 +255,7 @@ function NpcWizardModal({
     label:string; value:number; set:(n:number)=>void; min:number; max:number;
   }) {
     return (
-      <label className="flex items-center justify-between gap-3">
+      <label className="flex items-center justify-between gap-3 text-black">
         <span>{label}</span>
         <input
           type="number"
@@ -326,7 +326,7 @@ function NpcWizardModal({
           </label>
 
           {side === 'ally' ? (
-            <div className="space-y-2 text-black" >
+            <div className="space-y-2" >
               <NumberPicker label="Brawn"  value={brawn}  set={setBrawn}  min={3} max={5} />
               <NumberPicker label="Nerves" value={nerves} set={setNerves} min={3} max={5} />
               <NumberPicker label="Smooth" value={smooth} set={setSmooth} min={3} max={5} />
@@ -335,7 +335,7 @@ function NpcWizardModal({
               <div className="text-xs text-slate-600">Allies start with 3 grit boxes; you can tick them from the list.</div>
             </div>
           ) : (
-            <div className="space-y-2 text-black">
+            <div className="space-y-2">
               <label className="block">
                 <div className="text-sm mb-1 text-black">Enemy Type</div>
                 <select className="w-full border rounded px-3 py-2" value={enemyType} onChange={e => setEnemyType(e.target.value as EnemyType)}>
