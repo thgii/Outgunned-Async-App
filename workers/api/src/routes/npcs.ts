@@ -13,7 +13,12 @@ const EnemyType = z.enum(['goon','bad_guy','boss']);
 const CreateBase = z.object({
   name: z.string().min(1),
   side: Side,
-  portraitUrl: z.string().url().optional().nullable(),
+  // accept http(s) OR data: URLs
+  portraitUrl: z
+    .string()
+    .regex(/^(https?:\/\/|data:)/, 'Must be http(s) or data: URL')
+    .optional()
+    .nullable(),
 });
 
 const CreateAlly = CreateBase.extend({
