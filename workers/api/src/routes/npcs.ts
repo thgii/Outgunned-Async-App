@@ -29,6 +29,8 @@ const CreateAlly = CreateBase.extend({
   focus: z.number().int().min(3).max(5),
   crime: z.number().int().min(3).max(5),
   allyGrit: z.number().int().min(0).max(3).default(0),
+  help: z.string().optional().nullable(),
+  flaw: z.string().optional().nullable(),
 });
 
 const CreateEnemy = CreateBase.extend({
@@ -56,6 +58,8 @@ const UpdateNpc = z.object({
   focus: z.number().int().min(3).max(5).optional(),
   crime: z.number().int().min(3).max(5).optional(),
   allyGrit: z.number().int().min(0).max(3).optional(),
+  help: z.string().optional().nullable(),
+  flaw: z.string().optional().nullable(),
 
   // enemies
   enemyGritMax: z.number().int().min(1).optional(),
@@ -125,10 +129,10 @@ npcs.post('/campaigns/:cid/supporting-characters', async (c) => {
       id, campaignId, name, side, portraitUrl,
       brawn, nerves, smooth, focus, crime, allyGrit,
       enemyType, enemyGritMax, enemyGrit, attackLevel, defenseLevel, weakSpot, weakSpotDiscovered, featPoints,
-      created_at, updated_at
+      created_at, updated_at, help, flaw
     ) VALUES (?,?,?,?,?,
               ?,?,?,?,?,?,
-              ?,?,?,?,?,?,?,?, ?,?)
+              ?,?,?,?,?,?,?,?, ?,?,?,?)
   `).bind(
     id, cid, parsed.name, parsed.side, parsed.portraitUrl ?? null,
     parsed.side === 'ally' ? parsed.brawn : null,
@@ -145,7 +149,9 @@ npcs.post('/campaigns/:cid/supporting-characters', async (c) => {
     parsed.side === 'enemy' ? parsed.weakSpot : null,
     parsed.side === 'enemy' ? (parsed.weakSpotDiscovered ? 1 : 0) : 0,
     featPoints,
-    now, now
+    now, now,
+    parsed.side === 'ally' ? (parsed.help ?? null) : null,   
+    parsed.side === 'ally' ? (parsed.flaw ?? null) : null
   ).run();
 
   const row = await c.env.DB.prepare(`SELECT * FROM npcs WHERE id = ?`).bind(id).first();

@@ -19,6 +19,8 @@ type Npc = {
   focus?: number | null;
   crime?: number | null;
   allyGrit?: number | null;
+  help?: string | null;
+  flaw?: string | null;
 
   // enemies
   enemyType?: EnemyType | null;
@@ -182,20 +184,38 @@ function NpcCard({
       </div>
 
       {isAlly ? (
-        <div className="mt-3 grid grid-cols-5 gap-1 text-xs text-black">
-          {[
-            ['Brawn', npc.brawn],
-            ['Nerves', npc.nerves],
-            ['Smooth', npc.smooth],
-            ['Focus', npc.focus],
-            ['Crime', npc.crime],
-          ].map(([k, v]) => (
-            <div key={k as string} className="flex flex-col items-center p-1 rounded bg-slate-50 border">
-              <div className="font-medium">{k}</div>
-              <div>{v ?? '-'}</div>
+        <>
+          <div className="mt-3 grid grid-cols-5 gap-1 text-xs text-black">
+            {[
+              ['Brawn', npc.brawn],
+              ['Nerves', npc.nerves],
+              ['Smooth', npc.smooth],
+              ['Focus', npc.focus],
+              ['Crime', npc.crime],
+            ].map(([k, v]) => (
+              <div key={k as string} className="flex flex-col items-center p-1 rounded bg-slate-50 border">
+                <div className="font-medium">{k}</div>
+                <div>{v ?? '-'}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Help & Flaw */}
+          <div className="mt-3 space-y-2 text-sm text-black">
+            <div>
+              <div className="font-medium">Help</div>
+              <div className="text-slate-700 whitespace-pre-wrap">
+                {npc.help?.trim() || <span className="text-slate-500">—</span>}
+              </div>
             </div>
-          ))}
-        </div>
+            <div>
+              <div className="font-medium">Flaw</div>
+              <div className="text-slate-700 whitespace-pre-wrap">
+                {npc.flaw?.trim() || <span className="text-slate-500">—</span>}
+              </div>
+            </div>
+          </div>
+        </>
       ) : (
         <div className="mt-3 space-y-1 text-sm">
           <div>Attack: <strong>{npc.attackLevel}</strong></div>
@@ -240,6 +260,8 @@ function NpcWizardModal({
   const [smooth, setSmooth] = useState(3);
   const [focus, setFocus] = useState(3);
   const [crime, setCrime] = useState(3);
+  const [help, setHelp] = useState('');
+  const [flaw, setFlaw] = useState('');
 
   // Enemy fields
   const [enemyType, setEnemyType] = useState<EnemyType>('goon');
@@ -283,6 +305,8 @@ function NpcWizardModal({
           name, side, portraitUrl,
           brawn, nerves, smooth, focus, crime,
           allyGrit: 0,
+          help,
+          flaw,
         });
       } else {
         await createNpc(campaignId, {
@@ -332,6 +356,31 @@ function NpcWizardModal({
               <NumberPicker label="Smooth" value={smooth} set={setSmooth} min={3} max={5} />
               <NumberPicker label="Focus"  value={focus}  set={setFocus}  min={3} max={5} />
               <NumberPicker label="Crime"  value={crime}  set={setCrime}  min={3} max={5} />
+
+              {/* Help */}
+              <label className="block">
+                <div className="text-sm mb-1 text-black">Help</div>
+                <textarea
+                  className="w-full border rounded px-3 py-2 text-black"
+                  rows={2}
+                  value={help}
+                  onChange={(e) => setHelp(e.target.value)}
+                  placeholder="What this ally is good at / how they help"
+                />
+              </label>
+
+              {/* Flaw */}
+              <label className="block">
+                <div className="text-sm mb-1 text-black">Flaw</div>
+                <textarea
+                  className="w-full border rounded px-3 py-2 text-black"
+                  rows={2}
+                  value={flaw}
+                  onChange={(e) => setFlaw(e.target.value)}
+                  placeholder="A notable weakness, quirk, or liability"
+                />
+              </label>
+
               <div className="text-xs text-slate-600">Allies start with 3 grit boxes; you can tick them from the list.</div>
             </div>
           ) : (

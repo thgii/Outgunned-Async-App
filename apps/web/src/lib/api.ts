@@ -24,6 +24,47 @@ function buildUrl(path: string) {
   return API_BASE ? `${API_BASE}${p}` : p;
 }
 
+// ---- NPC payload types ----
+type Level3 = 'Basic' | 'Critical' | 'Extreme';
+type EnemyType = 'goon' | 'bad_guy' | 'boss';
+
+export type CreateAllyPayload = {
+  side: 'ally';
+  name: string;
+  portraitUrl?: string | null;
+  brawn: number;
+  nerves: number;
+  smooth: number;
+  focus: number;
+  crime: number;
+  allyGrit?: number;          // defaulted server-side to 0/whatever
+  help?: string | null;       // <-- NEW
+  flaw?: string | null;       // <-- NEW
+};
+
+export type CreateEnemyPayload = {
+  side: 'enemy';
+  name: string;
+  portraitUrl?: string | null;
+  enemyType: EnemyType;
+  enemyGritMax: number;
+  enemyGrit?: number;         // defaulted server-side to 0
+  attackLevel: Level3;
+  defenseLevel: Level3;
+  weakSpot: string;
+  weakSpotDiscovered?: boolean;
+};
+
+export type CreateNpcPayload = CreateAllyPayload | CreateEnemyPayload;
+
+export type UpdateNpcPatch = Partial<
+  | Omit<CreateAllyPayload, 'side' | 'name'>   // allow updating ally fields (and you can still pass name separately)
+  | Omit<CreateEnemyPayload, 'side' | 'name' | 'enemyType'> // typical updates for enemies
+> & {
+  name?: string;               // allow renaming
+  weakSpotDiscovered?: boolean;
+};
+
 export async function api(path: string, init: ApiInit = {}) {
   const url = buildUrl(path);
 
@@ -82,14 +123,14 @@ export function listNpcs(campaignId: string) {
   return api(`/campaigns/${campaignId}/supporting-characters`, { method: "GET" });
 }
 
-export function createNpc(campaignId: string, payload: any) {
+export function createNpc(campaignId: string, payload: CreateNpcPayload) {
   return api(`/campaigns/${campaignId}/supporting-characters`, {
     json: payload,
     method: "POST",
   });
 }
 
-export function updateNpc(campaignId: string, id: string, patch: any) {
+export function updateNpc(campaignId: string, id: string, patch: UpdateNpcPatch) {
   return api(`/campaigns/${campaignId}/supporting-characters/${id}`, {
     json: patch,
     method: "PATCH",
