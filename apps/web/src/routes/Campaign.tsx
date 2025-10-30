@@ -57,6 +57,9 @@ export default function Campaign() {
         const director =
           (campObj?.membershipRole ?? campObj?.role ?? "").toLowerCase() === "director";
 
+        console.log("📣 Campaign loaded:", campObj);
+        console.log("📣 Derived isDirector:", director);
+        
         if (alive) {
           setCampaign(campObj);
           setGames(arr);
