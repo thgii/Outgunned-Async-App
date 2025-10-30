@@ -12,6 +12,7 @@ type HeroRow = {
   ownerName?: string;
   ownerId?: string;
   campaignId?: string;
+  portraitUrl?: string | null;
 };
 
 export default function Campaign() {
@@ -96,13 +97,38 @@ export default function Campaign() {
     };
   }, []);
 
-  // Load heroes in campaign
+  // Load heroes in campaign (enrich with portrait if missing)
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
         const res = await api(`/campaigns/${id}/heroes`, { method: "GET" });
-        const list: HeroRow[] = Array.isArray(res) ? res : res?.results ?? [];
+        let list: HeroRow[] = Array.isArray(res) ? res : res?.results ?? [];
+
+        // If portraits are missing, fetch per-hero details and merge
+        const needPortrait = list.filter((h) => h.portraitUrl == null);
+        if (needPortrait.length > 0) {
+          const enriched = await Promise.all(
+            needPortrait.map(async (h) => {
+              try {
+                const detail = await api(`/characters/${h.id}`, { method: "GET" });
+                // Try both flat portraitUrl and nested structures, just in case
+                const portrait =
+                  detail?.portraitUrl ??
+                  detail?.youLook?.portraitUrl ??
+                  null;
+                return { ...h, portraitUrl: portrait };
+              } catch {
+                return h;
+              }
+            })
+          );
+          // Merge back into the main list
+          const byId = new Map(list.map((x) => [x.id, x]));
+          for (const e of enriched) byId.set(e.id, e);
+          list = Array.from(byId.values());
+        }
+
         if (alive) setHeroesInCampaign(list);
       } catch {
         /* non-fatal */
