@@ -36,15 +36,15 @@ export default function Header() {
     clearAuth();
     try {
       if (t) {
-        await fetch("/auth/logout", {
+        // Use the shared API helper so it hits the Worker origin in prod
+        const { api } = await import("../lib/api");
+        await api("/auth/logout", {
           method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ token: t }),
+          json: { token: t },
         });
       }
     } catch {}
   }
-
 
   // Close mobile menu when a link is clicked
   const onNav = () => setOpen(false);
