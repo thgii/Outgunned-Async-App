@@ -233,17 +233,29 @@ export default function Campaign() {
           <ul className="divide-y">
             {heroesInCampaign.map((h) => (
               <li key={h.id} className="py-2 flex items-center justify-between">
-                <div>
-                  <Link
-                    to={`/characters/${h.id}`}   // if your route is /character/:id, change this accordingly
-                    className="font-medium text-black hover:underline"
-                    title="Open character"
-                  >
-                    {h.name || "Untitled Hero"}
-                  </Link>
-
-                  <div className="text-xs text-slate-600">
-                    {h.ownerName || h.ownerId || "Unknown owner"}
+                <div className="flex items-center gap-3">
+                  {h.portraitUrl ? (
+                    <img
+                      src={h.portraitUrl}
+                      alt={h.name || "Hero portrait"}
+                      className="w-10 h-10 rounded-full object-cover border border-slate-300"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 text-sm font-semibold">
+                      {h.name?.charAt(0) || "?"}
+                    </div>
+                  )}
+                  <div>
+                    <Link
+                      to={`/characters/${h.id}`}
+                      className="font-medium text-black hover:underline"
+                      title="Open character"
+                    >
+                      {h.name || "Untitled Hero"}
+                    </Link>
+                    <div className="text-xs text-slate-600">
+                      {h.ownerName || h.ownerId || "Unknown owner"}
+                    </div>
                   </div>
                 </div>
                 {isDirector && (
