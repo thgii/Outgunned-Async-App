@@ -3,7 +3,7 @@ import type { D1Database } from '@cloudflare/workers-types';
 import { z } from 'zod';
 
 type Env = { DB: D1Database };
-export const npcs = new Hono<{ Bindings: Env; Variables: { userId: string } }>();
+export const npcs = new Hono<{ Bindings: Env }>();
 
 // ----- helpers -----
 const Level3 = z.enum(['Basic','Critical','Extreme']);
@@ -62,11 +62,10 @@ const UpdateNpc = z.object({
 }).refine(o => Object.keys(o).length > 0, 'Nothing to update');
 
 async function isDirector(DB: D1Database, campaignId: string, userId: string) {
-  // Adjust to your memberships schema; assuming role column = 'director'
-  const q = await DB.prepare(
-    `SELECT 1 FROM memberships WHERE campaignId = ? AND userId = ? AND role = 'director' LIMIT 1`
-  ).bind(campaignId, userId).first();
-  return !!q;
+  const row = await DB.prepare(
+    `SELECT role FROM memberships WHERE campaignId = ? AND userId = ? LIMIT 1`
+  ).bind(campaignId, userId).first<{ role?: string }>();
+  return (row?.role ?? '').toLowerCase() === 'director';
 }
 
 function hideEnemySecrets(row: any, viewerIsDirector: boolean) {
@@ -81,7 +80,10 @@ function hideEnemySecrets(row: any, viewerIsDirector: boolean) {
 // list
 npcs.get('/campaigns/:cid/supporting-characters', async (c) => {
   const { cid } = c.req.param();
-  const userId = c.get('userId') || ''; // set by your auth middleware
+  const user = c.get('user');
+  const userId: string | undefined = user?.id;
+  if (!userId) return c.json({ error: 'unauthorized' }, 401);
+
   const director = await isDirector(c.env.DB, cid, userId);
 
   const { results } = await c.env.DB.prepare(
@@ -95,7 +97,10 @@ npcs.get('/campaigns/:cid/supporting-characters', async (c) => {
 // create
 npcs.post('/campaigns/:cid/supporting-characters', async (c) => {
   const { cid } = c.req.param();
-  const userId = c.get('userId') || '';
+  const user = c.get('user');
+  const userId: string | undefined = user?.id;
+  if (!userId) return c.json({ error: 'unauthorized' }, 401);
+
   if (!(await isDirector(c.env.DB, cid, userId))) return c.body('Forbidden', 403);
 
   const body = await c.req.json();
@@ -145,7 +150,10 @@ npcs.post('/campaigns/:cid/supporting-characters', async (c) => {
 // update
 npcs.patch('/campaigns/:cid/supporting-characters/:id', async (c) => {
   const { cid, id } = c.req.param();
-  const userId = c.get('userId') || '';
+  const user = c.get('user');
+  const userId: string | undefined = user?.id;
+  if (!userId) return c.json({ error: 'unauthorized' }, 401);
+
   if (!(await isDirector(c.env.DB, cid, userId))) return c.body('Forbidden', 403);
 
   const body = await c.req.json();
@@ -167,7 +175,10 @@ npcs.patch('/campaigns/:cid/supporting-characters/:id', async (c) => {
 // delete (hard delete)
 npcs.delete('/campaigns/:cid/supporting-characters/:id', async (c) => {
   const { cid, id } = c.req.param();
-  const userId = c.get('userId') || '';
+  const user = c.get('user');
+  const userId: string | undefined = user?.id;
+  if (!userId) return c.json({ error: 'unauthorized' }, 401);
+
   if (!(await isDirector(c.env.DB, cid, userId))) return c.body('Forbidden', 403);
 
   await c.env.DB.prepare(`DELETE FROM npcs WHERE id = ? AND campaignId = ?`).bind(id, cid).run();
