@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { api } from '../lib/api';
+import { listNpcs, createNpc, updateNpc, deleteNpc, uploadImage } from "../lib/api";
 
 type NpcSide = 'ally' | 'enemy';
 type EnemyType = 'goon' | 'bad_guy' | 'boss';
@@ -47,7 +47,7 @@ export function NPCsPanel({
   async function refresh() {
     setLoading(true);
     try {
-      const data = await api.listNpcs(campaignId);
+      const data = await listNpcs(campaignId);
       setList(data);
       setError(null);
     } catch (e: any) {
@@ -101,19 +101,19 @@ export function NPCsPanel({
             onGritChange={async (v) => {
               // ally or enemy grit
               if (n.side === 'ally') {
-                await api.updateNpc(campaignId, n.id, { allyGrit: v });
+                await updateNpc(campaignId, n.id, { allyGrit: v });
               } else {
-                await api.updateNpc(campaignId, n.id, { enemyGrit: v });
+                await updateNpc(campaignId, n.id, { enemyGrit: v });
               }
               refresh();
             }}
             onToggleDiscovered={async (v) => {
-              await api.updateNpc(campaignId, n.id, { weakSpotDiscovered: v });
+              await updateNpc(campaignId, n.id, { weakSpotDiscovered: v });
               refresh();
             }}
             onDelete={async () => {
               if (!confirm(`Delete ${n.name}?`)) return;
-              await api.deleteNpc(campaignId, n.id);
+              await deleteNpc(campaignId, n.id);
               refresh();
             }}
           />
@@ -274,18 +274,18 @@ function NpcWizardModal({
     try {
       let portraitUrl: string | undefined;
       if (portrait) {
-        const { url } = await api.uploadImage(portrait); // reuse your existing image upload
+        const { url } = await uploadImage(portrait); // reuse your existing image upload
         portraitUrl = url;
       }
 
       if (side === 'ally') {
-        await api.createNpc(campaignId, {
+        await createNpc(campaignId, {
           name, side, portraitUrl,
           brawn, nerves, smooth, focus, crime,
           allyGrit: 0,
         });
       } else {
-        await api.createNpc(campaignId, {
+        await createNpc(campaignId, {
           name, side, portraitUrl,
           enemyType, enemyGritMax, enemyGrit: 0,
           attackLevel, defenseLevel, weakSpot, weakSpotDiscovered: false,
