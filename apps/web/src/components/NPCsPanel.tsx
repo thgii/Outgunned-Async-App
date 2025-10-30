@@ -182,7 +182,7 @@ function NpcCard({
       </div>
 
       {isAlly ? (
-        <div className="mt-3 grid grid-cols-5 gap-1 text-xs">
+        <div className="mt-3 grid grid-cols-5 gap-1 text-xs text-black">
           {[
             ['Brawn', npc.brawn],
             ['Nerves', npc.nerves],
@@ -303,22 +303,22 @@ function NpcWizardModal({
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="w-full max-w-lg bg-white rounded shadow-lg p-4">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold">New Character</h3>
+          <h3 className="text-lg font-semibold text-black">New Character</h3>
           <button onClick={onClose} className="text-slate-600">✕</button>
         </div>
 
         <div className="space-y-3">
           <label className="block">
-            <div className="text-sm mb-1">Portrait</div>
+            <div className="text-sm mb-1 text-black">Portrait</div>
             <input type="file" accept="image/*" onChange={e => setPortrait(e.target.files?.[0] ?? null)} />
           </label>
           <label className="block">
-            <div className="text-sm mb-1">Name</div>
+            <div className="text-sm mb-1 text-black">Name</div>
             <input className="w-full border rounded px-3 py-2" value={name} onChange={e => setName(e.target.value)} />
           </label>
 
           <label className="block">
-            <div className="text-sm mb-1">Side</div>
+            <div className="text-sm mb-1 text-black">Side</div>
             <select className="w-full border rounded px-3 py-2" value={side} onChange={e => setSide(e.target.value as NpcSide)}>
               <option value="ally">Ally</option>
               <option value="enemy">Enemy</option>
@@ -337,7 +337,7 @@ function NpcWizardModal({
           ) : (
             <div className="space-y-2">
               <label className="block">
-                <div className="text-sm mb-1">Enemy Type</div>
+                <div className="text-sm mb-1 text-black">Enemy Type</div>
                 <select className="w-full border rounded px-3 py-2" value={enemyType} onChange={e => setEnemyType(e.target.value as EnemyType)}>
                   <option value="goon">Goon</option>
                   <option value="bad_guy">Bad Guy</option>
@@ -345,20 +345,20 @@ function NpcWizardModal({
                 </select>
               </label>
               <NumberPicker label="Grit Boxes (max)" value={enemyGritMax} set={setEnemyGritMax} min={1} max={999} />
-              <label className="flex items-center justify-between gap-3">
+              <label className="flex items-center justify-between gap-3 text-black">
                 <span>Attack</span>
                 <select className="border rounded px-2 py-1" value={attackLevel} onChange={e => setAttackLevel(e.target.value as Level3)}>
                   <option>Basic</option><option>Critical</option><option>Extreme</option>
                 </select>
               </label>
-              <label className="flex items-center justify-between gap-3">
+              <label className="flex items-center justify-between gap-3 text-black">
                 <span>Defense</span>
                 <select className="border rounded px-2 py-1" value={defenseLevel} onChange={e => setDefenseLevel(e.target.value as Level3)}>
                   <option>Basic</option><option>Critical</option><option>Extreme</option>
                 </select>
               </label>
               <label className="block">
-                <div className="text-sm mb-1">Weak Spot</div>
+                <div className="text-sm mb-1 text-black">Weak Spot</div>
                 <input className="w-full border rounded px-3 py-2" value={weakSpot} onChange={e => setWeakSpot(e.target.value)} />
               </label>
               <div className="text-xs text-slate-600">Feat Points will auto-set by type (1/3/5).</div>
@@ -368,7 +368,7 @@ function NpcWizardModal({
           {error && <div className="text-red-600 text-sm">{error}</div>}
 
           <div className="flex items-center justify-end gap-2 pt-2">
-            <button className="px-3 py-1 rounded border" onClick={onClose} disabled={saving}>Cancel</button>
+            <button className="px-3 py-1 rounded border text-black" onClick={onClose} disabled={saving}>Cancel</button>
             <button className="px-3 py-1 rounded bg-blue-600 text-white" onClick={handleCreate} disabled={saving || !name.trim()}>
               {saving ? 'Creating…' : 'Create'}
             </button>
