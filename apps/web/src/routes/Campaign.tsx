@@ -234,7 +234,14 @@ export default function Campaign() {
             {heroesInCampaign.map((h) => (
               <li key={h.id} className="py-2 flex items-center justify-between">
                 <div>
-                  <div className="font-medium text-black">{h.name || "Untitled Hero"}</div>
+                  <Link
+                    to={`/characters/${h.id}`}   // if your route is /character/:id, change this accordingly
+                    className="font-medium text-black hover:underline"
+                    title="Open character"
+                  >
+                    {h.name || "Untitled Hero"}
+                  </Link>
+
                   <div className="text-xs text-slate-600">
                     {h.ownerName || h.ownerId || "Unknown owner"}
                   </div>
