@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { one } from "../utils/db";
+import type { D1Database } from "@cloudflare/workers-types";
 
 export const auth = new Hono<{ Bindings: { DB: D1Database } }>();
 
