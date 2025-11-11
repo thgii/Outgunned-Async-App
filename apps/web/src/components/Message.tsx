@@ -5,7 +5,7 @@ import { api } from "../lib/api";
 export default function Message({ msg, onEdited }: { msg: any; onEdited: (m:any)=>void }) {
   const [editing, setEditing] = useState(false);
   return (
-    <div className="p-2 border rounded">
+    <div className="p-2 border rounded text-black">
       {!editing ? (
         <>
           <div className="text-sm text-slate-500">{new Date(msg.createdAt).toLocaleString()}</div>
