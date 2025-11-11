@@ -10,7 +10,7 @@ auth.post("/login-dev", async (c) => {
   const body = await c.req.json<{ name?: string; email?: string }>().catch(() => ({} as any));
 
   // Normalize the display name once; use it for both SELECT and INSERT
-  const displayName = (body?.name ?? "").trim() || "Player";
+  const displayName = (body?.name ?? "").trim() || "Hero";
   const email = body?.email ?? null;
 
   // Try to find by normalized name

@@ -1,6 +1,6 @@
 export type ID = string;
 
-export type UserRole = "GM" | "Player";
+export type UserRole = "director" | "hero";
 
 export interface User {
   id: ID;
@@ -96,7 +96,7 @@ export interface Clock {
 
 export * from "./character";
 
-export { GEAR } from "./data/gear";               // or GEAR_WITH_TAGS if you use it
+export { GEAR } from "./data/gear";
 export type {
   GearItem, GearKind, GearSource, GearId,
   GunProfile, ParsedGunCell
@@ -104,3 +104,76 @@ export type {
 export { parseGunCell, parseGunRanges } from "./data/gear";
 
 export * from './npc';
+
+
+// ---------------------------------------------------------------------------
+// ADDITIONS BELOW: Scene State, Notes, and Villains
+// ---------------------------------------------------------------------------
+
+// ---- Scene (Game Options) ----
+export interface Countdown {
+  id: string;
+  label: string;
+  total: number;
+  current: number; // 0..total
+}
+
+export interface ChaseState {
+  need: number;        // total boxes to complete
+  progress: number;    // filled boxes
+  speedHeroes: number; // relative speed marker for heroes
+  speedTarget: number; // relative speed marker for target
+}
+
+export interface GameOptions {
+  heat?: number;               // default 0
+  countdowns?: Countdown[];    // default []
+  chase?: ChaseState;          // optional
+}
+
+// ---- Notes ----
+export type GameNoteVisibility = 'public' | 'director_private' | 'player';
+
+export interface GameNote {
+  id: ID;
+  gameId: ID;
+  heroId?: ID | null;
+  userId?: ID | null;
+  visibility: GameNoteVisibility;
+  title?: string | null;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ---- Villains (per-campaign) ----
+export type Level3 = 'Basic' | 'Critical' | 'Extreme';
+export type EnemyType = 'goon' | 'bad_guy' | 'boss';
+
+export interface Villain {
+  id: ID;
+  campaignId: ID;
+  name: string;
+  type?: EnemyType | null;
+  portraitUrl?: string | null;
+  gritMax?: number | null;
+  grit?: number | null;
+  attackLevel?: Level3 | null;
+  defenseLevel?: Level3 | null;
+  tags?: string | null;                // comma-separated
+  bio?: string | null;
+  data?: Record<string, unknown> | null; // parsed from JSON
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ---- Optional UI helpers
+export const defaultGameOptions = (): GameOptions => ({
+  heat: 0,
+  countdowns: [],
+});
+
+export const makeCountdown = (label = 'Clock', total = 6): Countdown => ({
+  id: (globalThis as any)?.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`,
+  label, total, current: 0,
+});
