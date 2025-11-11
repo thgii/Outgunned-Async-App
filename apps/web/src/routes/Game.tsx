@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import ChatBox from "../components/ChatBox";
-import DiceRoller from "../components/DiceRoller";
+import DirectorsDiceRoller from "../components/DirectorsToolkit_DiceRoller";
 import { SceneBoard } from "../components/SceneBoard";
 import GMControls from "../components/GMControls";
 import { api } from "../lib/api";
@@ -60,7 +60,7 @@ export default function Game() {
       </div>
 
       <div className="space-y-4">
-        <DiceRoller gameId={gameId} />
+        <DirectorsDiceRoller />
 
         <SceneBoard
           gameId={gameId}
