@@ -2,19 +2,37 @@ import { Hono } from "hono";
 import { one, q } from "../utils/db";
 import { z } from "zod";
 import type { GameOptions } from "@action-thread/types";
+import { getCampaignMembershipByGame } from "../utils/auth";
 
 export const games = new Hono<{ Bindings: { DB: D1Database } }>();
 
+// GET /games/:id  -> return game row + membershipRole (campaign-level)
 games.get("/:id", async (c) => {
   const id = c.req.param("id");
-  const row = await one(c.env.DB, "SELECT * FROM games WHERE id = ?", [id]);
+
+  // Load the game (need campaignId to check membership)
+  const row = await one<any>(c.env.DB, "SELECT * FROM games WHERE id = ?", [id]);
   if (!row) return c.notFound();
-  return c.json(row);
+
+  // Resolve the caller's campaign-level role (mirrors campaigns.ts behavior)
+  const currentUser = c.get("user") as { id: string } | undefined;
+  let membershipRole: string | null = null;
+
+  if (currentUser?.id && row.campaignId) {
+    const mem = await c.env.DB
+      .prepare("SELECT role FROM memberships WHERE campaignId = ? AND userId = ? LIMIT 1")
+      .bind(row.campaignId, currentUser.id)
+      .first<{ role: string }>();
+    membershipRole = mem?.role ?? null;
+  }
+
+  // Optional: gate non-members
+  // if (!membershipRole) return c.json({ error: "Forbidden" }, 403);
+
+  return c.json({ ...row, membershipRole });
 });
 
 // --- Director Admin: Change a user's role within a game ---
-import { getCampaignMembershipByGame } from "../utils/auth";
-
 games.post("/:gameId/members/:userId/role", async (c) => {
   const { gameId, userId } = c.req.param();
   const body = await c.req.json<{ role: "director" | "hero" }>().catch(() => null);
@@ -31,7 +49,6 @@ games.post("/:gameId/members/:userId/role", async (c) => {
     return c.json({ error: "Forbidden" }, 403);
   }
 
-  // Ensure membership row exists (optional; safe to update without this if you prefer)
   // Update role and backfill campaignId if missing
   await c.env.DB
     .prepare(`
@@ -49,10 +66,10 @@ games.post("/:gameId/members/:userId/role", async (c) => {
 // --- List members in a game (Director-only) ---
 games.get("/:gameId/members", async (c) => {
   const { gameId } = c.req.param();
-  const currentUser = c.get("user");
+  const currentUser = c.get("user") as { id: string } | undefined;
+  if (!currentUser) return c.json({ error: "Unauthorized" }, 401);
 
-  // Verify the caller is a director for this game
-  const { getCampaignMembershipByGame } = await import("../utils/auth");
+  // Verify the caller is a director for this game's campaign
   const mem = await getCampaignMembershipByGame(c.env.DB, currentUser.id, gameId);
   if (!mem || mem.role !== "director") {
     return c.json({ error: "Forbidden" }, 403);
@@ -67,7 +84,7 @@ games.get("/:gameId/members", async (c) => {
     ORDER BY u.name COLLATE NOCASE
   `).bind(gameId).all<any>();
 
-  return c.json(rs.results || []);
+  return c.json(rs.results ?? []);
 });
 
 const gameUpdateSchema = z.object({
@@ -108,9 +125,38 @@ function parseOptions(raw: any): GameOptions {
 // GET /games/:id/options  (any member can read)
 games.get("/:id/options", async (c) => {
   const id = c.req.param("id");
-  const row = await c.env.DB.prepare("SELECT options FROM games WHERE id = ?").bind(id).first<{ options: string | null }>();
+  const row = await c.env.DB
+    .prepare("SELECT options FROM games WHERE id = ?")
+    .bind(id)
+    .first<{ options: string | null }>();
   if (!row) return c.json({ error: "Not found" }, 404);
   return c.json(parseOptions(row.options));
+});
+
+// GET /games/:id/role  -> { role: "director" | "hero" | null }
+games.get("/:id/role", async (c) => {
+  const id = c.req.param("id");
+  const user = c.get("user") as { id: string } | undefined;
+  if (!user) return c.json({ role: null }); // or return 401 if you prefer
+
+  const row = await c.env.DB
+    .prepare(`
+      SELECT role
+        FROM memberships
+       WHERE userId = ?
+         AND campaignId = (SELECT campaignId FROM games WHERE id = ?)
+       LIMIT 1
+    `)
+    .bind(user.id, id)
+    .first<{ role: string }>();
+
+  const role = row?.role?.toLowerCase?.() === "director"
+    ? "director"
+    : row?.role?.toLowerCase?.() === "hero"
+    ? "hero"
+    : null;
+
+  return c.json({ role });
 });
 
 // PATCH /games/:id/options  (Director only)
@@ -119,7 +165,7 @@ games.patch("/:id/options", async (c) => {
   const user = c.get("user") as { id: string } | undefined;
   if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-  // Check membership role at the CAMPAIGN level (memberships table supports campaignId)
+  // Check membership role at the CAMPAIGN level
   const roleRow = await c.env.DB
     .prepare("SELECT role FROM memberships WHERE userId = ? AND campaignId = (SELECT campaignId FROM games WHERE id = ?) LIMIT 1")
     .bind(user.id, id)
@@ -129,7 +175,10 @@ games.patch("/:id/options", async (c) => {
     return c.json({ error: "Forbidden" }, 403);
   }
 
-  const currentRow = await c.env.DB.prepare("SELECT options FROM games WHERE id = ?").bind(id).first<{ options: string | null }>();
+  const currentRow = await c.env.DB
+    .prepare("SELECT options FROM games WHERE id = ?")
+    .bind(id)
+    .first<{ options: string | null }>();
   if (!currentRow) return c.json({ error: "Not found" }, 404);
 
   const prev = parseOptions(currentRow.options);
@@ -137,13 +186,15 @@ games.patch("/:id/options", async (c) => {
   const patch = OptionsSchema.parse(body);
   const next = { ...prev, ...patch };
 
-  await c.env.DB.prepare("UPDATE games SET options = ? WHERE id = ?")
+  await c.env.DB
+    .prepare("UPDATE games SET options = ? WHERE id = ?")
     .bind(JSON.stringify(next), id)
     .run();
 
   return c.json(next);
 });
 
+// PATCH /games/:id -> partial update of title/name/summary
 games.patch("/:id", async (c) => {
   const { id } = c.req.param();
 

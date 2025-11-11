@@ -3,6 +3,14 @@ import { one } from "../utils/db";
 
 export const auth = new Hono<{ Bindings: { DB: D1Database } }>();
 
+function getBearerToken(c: import("hono").Context) {
+  const h = c.req.header("authorization") || c.req.header("Authorization");
+  if (h?.startsWith("Bearer ")) return h.slice(7).trim();
+  // optional: also support ?token=... for quick tests
+  const url = new URL(c.req.url);
+  return url.searchParams.get("token") || null;
+}
+
 function id() { return crypto.randomUUID(); }
 function nowISO() { return new Date().toISOString(); }
 
@@ -54,3 +62,23 @@ auth.post("/logout", async (c) => {
   }
   return c.json({ ok: true });
 });
+
+// GET /auth/me  -> returns the current authenticated user based on session token
+auth.get("/auth/me", async (c) => {
+  const token = getBearerToken(c);
+  if (!token) return c.json({ error: "Unauthorized" }, 401);
+
+  const user = await one<any>(
+    c.env.DB,
+    `SELECT u.id, u.name, u.email
+       FROM sessions s
+       JOIN users u ON u.id = s.userId
+      WHERE s.token = ?
+      LIMIT 1`,
+    [token]
+  );
+
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  return c.json(user);
+});
+
