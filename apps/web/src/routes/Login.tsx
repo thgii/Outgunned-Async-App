@@ -16,7 +16,7 @@ export default function Login() {
     e.preventDefault();
     setBusy(true);
     try {
-      const { token, user } = await api("/auth/login-dev", {
+      const { token, user } = await api("/login-dev", {
         json: { name, email: email || undefined },
         method: "POST",
       });
