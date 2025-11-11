@@ -29,13 +29,13 @@ app.use(
   })
 );
 
-app.route("/auth", auth);
+app.route("/", auth);
 app.use("*", requireUser);
 app.route("/campaigns", campaigns);
 app.route("/games", games);
 app.route("/", messages);     // these already use absolute paths like /games/:id/messages
 app.route("/characters", characters);
-app.route("api/characters", characters);
+app.route("/api/characters", characters);
 app.route("/", rolls);        // also uses absolute path /games/:id/rolls
 app.route('/', npcs);
 app.route("/", uploads);
