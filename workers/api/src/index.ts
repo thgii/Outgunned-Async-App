@@ -10,7 +10,6 @@ import { requireUser } from "./utils/auth";
 import { npcs } from './routes/npcs';
 import { uploads } from "./routes/uploads";
 import notes from "./routes/notes";
-import villains from "./routes/villains";
 
 type Env = { DB: D1Database };
 
@@ -40,6 +39,5 @@ app.route("/", rolls);        // also uses absolute path /games/:id/rolls
 app.route('/', npcs);
 app.route("/", uploads);
 app.route("/", notes); // notes registers /games/:id/notes...
-app.route("/", villains); // exposes /campaigns/:id/villains...
 
 export default app;

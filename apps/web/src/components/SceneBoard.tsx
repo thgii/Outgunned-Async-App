@@ -4,7 +4,6 @@ import { HeatMeter } from "./HeatMeter";
 import { CountdownsPanel } from "./CountdownsPanel";
 import { ChaseTracker } from "./ChaseTracker";
 import { NotesPanel } from "./NotesPanel";
-import { VillainsPanel } from "./VillainsPanel";
 
 type Options = {
   heat?: number;
@@ -73,9 +72,6 @@ export function SceneBoard({
             isDirector={isDirector}
           />
 
-          {campaignId && (
-            <VillainsPanel campaignId={campaignId} isDirector={isDirector} />
-          )}
         </>
       )}
     </div>
