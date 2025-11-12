@@ -262,6 +262,27 @@ export default function CharacterSheetV2({
 
   const [local, setLocal] = useState<CharacterDTO>(safe);
   useEffect(() => setLocal(safe), [value?.id]);
+  // Ensure canonical `conditions` exists/aligns on initial load
+  useEffect(() => {
+    const arr = Array.from(new Set(local.youLookSelected ?? []));
+    const broken = !!(local.isBroken ?? local.resources?.isBroken);
+    const canonical = buildConditionsFromState(arr, broken);
+
+    // Only write if missing or different
+    const current = Array.isArray((local as any).conditions) ? (local as any).conditions : [];
+    const differs =
+      canonical.length !== current.length ||
+      canonical.some((c, i) => c !== current[i]);
+
+    if (differs) {
+      update({
+        conditions: canonical,
+        resources: { ...(local.resources ?? {}), conditions: canonical },
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [local.id]);
+
 
   const update = (patch: Partial<CharacterDTO>) => {
     const next = { ...local, ...patch };
@@ -346,10 +367,14 @@ async function spendAdrenaline(amount = 1) {
       if (e.target.checked) next.add(k);
       else next.delete(k);
       const arr = Array.from(next);
+
+      const conditions = buildConditionsFromState(arr, isBroken);
+
       update({
         youLookSelected: arr,
         isBroken,
-        resources: { ...(local.resources ?? {}), youLookSelected: arr, isBroken },
+        conditions,
+        resources: { ...(local.resources ?? {}), youLookSelected: arr, isBroken, conditions },
       });
     };
 
@@ -470,6 +495,27 @@ function onPortraitFile(e: React.ChangeEvent<HTMLInputElement>) {
     const description = (f as any).description || FEAT_DESC[name] || "";
     return { name, description };
   });
+
+function normalizeYouLookKeyToName(k: string): string | null {
+  switch (k) {
+    case "Hurt": return "Hurt";
+    case "Nervous": return "Nervous";
+    case "Distracted": return "Distracted";
+    case "LikeAFool": return "Like a Fool";
+    case "Scared": return "Scared";
+    // "Tired" has no dice penalty → not part of canonical conditions
+    case "Tired": return null;
+    default: return null;
+  }
+}
+
+function buildConditionsFromState(youLookArr: string[], broken: boolean): string[] {
+  const base = youLookArr
+    .map(normalizeYouLookKeyToName)
+    .filter((x): x is string => Boolean(x));
+  if (broken) base.push("Broken");
+  return Array.from(new Set(base)); // de-dupe
+}
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4">
@@ -736,12 +782,17 @@ function onPortraitFile(e: React.ChangeEvent<HTMLInputElement>) {
                 type="checkbox"
                 className="h-5 w-5 accent-indigo-600"
                 checked={isBroken}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const nextBroken = e.target.checked;
+                  const arr = Array.from(youLookSelected);
+                  const conditions = buildConditionsFromState(arr, nextBroken);
+
                   update({
-                    isBroken: e.target.checked,
-                    resources: { ...(local.resources ?? {}), isBroken: e.target.checked },
-                  })
-                }
+                    isBroken: nextBroken,
+                    conditions,
+                    resources: { ...(local.resources ?? {}), isBroken: nextBroken, conditions },
+                  });
+                }}
               />
               <span className="text-[15px] font-medium text-zinc-800">Broken: -1 All Rolls</span>
             </label>

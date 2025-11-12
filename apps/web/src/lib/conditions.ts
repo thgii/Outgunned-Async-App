@@ -8,14 +8,15 @@ import type { CharacterDTO, AttrKey } from "@action-thread/types";
  * - Distracted  -> Focus    (-1)
  * - Like a Fool -> Smooth   (-1)
  * - Scared      -> Crime    (-1)
- * - Broken      -> -1 to every roll (stacks)
+ * - Broken      -> All      (-1)
  */
-const COND_TO_ATTR: Record<string, AttrKey> = {
+const COND_TO_ATTR: Record<string, AttrKey | "all"> = {
   Hurt: "brawn",
   Nervous: "nerves",
   Distracted: "focus",
   "Like a Fool": "smooth",
   Scared: "crime",
+  Broken: "all",
 };
 
 const NORMALIZE: Record<string, string> = {
@@ -42,16 +43,10 @@ function normalizeCondition(raw: unknown): string | null {
   return NORMALIZE[key] ?? name.trim();
 }
 
-function looksBroken(s: string): boolean {
-  // robust token match so "BROKEN!", "broken status", "is-broken" all count
-  return /\bbroken\b/i.test(s);
-}
-
-/**
+/** 
  * Returns the total dice penalty (<= 0) for the given attribute.
- * Rules:
- * - Each matching attribute-specific condition applies -1.
- * - "Broken" always applies -1 to any roll, and stacks.
+ * - Each matching condition applies -1.
+ * - "Broken" also applies -1 to ALL attributes and stacks.
  */
 export function conditionPenaltyForAttribute(
   attribute: AttrKey,
@@ -60,7 +55,7 @@ export function conditionPenaltyForAttribute(
   const raw = dto?.conditions;
   if (!raw) return 0;
 
-  // flatten into list of normalized names
+  // Flatten into a list of normalized names
   const conds: string[] = Array.isArray(raw)
     ? (raw.map(normalizeCondition).filter(Boolean) as string[])
     : typeof raw === "object"
@@ -73,16 +68,10 @@ export function conditionPenaltyForAttribute(
   if (!conds.length) return 0;
 
   let penalty = 0;
-
-  // 1) Broken: unconditional -1 (stacks)
-  if (conds.some((c) => c === "Broken" || looksBroken(c))) {
-    penalty -= 1;
-  }
-
-  // 2) Attribute-specific hits (each -1)
   for (const name of conds) {
-    const hitAttr = COND_TO_ATTR[name];
-    if (hitAttr === attribute) penalty -= 1;
+    const hit = COND_TO_ATTR[name];
+    if (!hit) continue;
+    if (hit === "all" || hit === attribute) penalty -= 1;
   }
 
   return penalty; // e.g., -1, -2, ...
