@@ -173,6 +173,7 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
     const detail = await getCharacter(id);
     const char = detail?.character ?? detail;   // ← unwrap if needed
     setActive(char);
+    console.log("Mini modal active:", char);
     open();
     };
 
