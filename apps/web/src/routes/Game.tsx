@@ -108,7 +108,7 @@ export default function Game() {
             />
             <NPCsPanel
               campaignId={game.campaignId}
-              editable={isDirector} {/* or isDirector={isDirector} if that's the prop */}
+              isDirector={isDirector}
             />
           </>
         )}
