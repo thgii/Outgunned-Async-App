@@ -172,14 +172,63 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = window.setTimeout(async () => {
       try {
-        await api(`/characters/${next.id}`, { method: "PATCH", json: next });
+        await api(`/characters/${next.id}`, {
+          method: "PATCH",
+          json: {
+            ...next,
+            // explicitly preserve condition fields
+            youLookSelected: next.youLookSelected ?? next.resources?.youLookSelected ?? [],
+            isBroken: next.isBroken ?? next.resources?.isBroken ?? false,
+            conditions: next.conditions ?? next.resources?.conditions ?? [],
+            resources: {
+              ...(next.resources ?? {}),
+              youLookSelected: next.resources?.youLookSelected ?? next.youLookSelected ?? [],
+              isBroken: next.resources?.isBroken ?? next.isBroken ?? false,
+              conditions: next.resources?.conditions ?? next.conditions ?? [],
+            },
+          },
+        });
         setSaveState("saved");
         // briefly show "Saved", then go back to idle
         window.setTimeout(() => setSaveState("idle"), 1000);
 
         // keep the list in sync (e.g., grit changes, name edits)
         setChars((prev) =>
-          prev.map((c) => (c.id === next.id ? { ...c, ...next, portraitUrl: c.portraitUrl ?? next.resources?.storage?.portrait ?? c.portraitUrl } : c))
+          prev.map((c) =>
+            c.id === next.id
+              ? {
+                  ...c,
+                  ...next,
+                  // ✅ explicitly preserve condition-related fields
+                  youLookSelected:
+                    next.youLookSelected ??
+                    next.resources?.youLookSelected ??
+                    c.youLookSelected ??
+                    c.resources?.youLookSelected ??
+                    [],
+                  isBroken:
+                    next.isBroken ??
+                    next.resources?.isBroken ??
+                    c.isBroken ??
+                    c.resources?.isBroken ??
+                    false,
+                  conditions:
+                    next.conditions ??
+                    next.resources?.conditions ??
+                    c.conditions ??
+                    c.resources?.conditions ??
+                    [],
+                  // ✅ portrait fallback chain
+                  portraitUrl:
+                    c.portraitUrl ??
+                    next.resources?.storage?.portrait ??
+                    next.storage?.portrait ??
+                    next.portraitUrl ??
+                    c.portraitUrl ??
+                    null,
+                }
+              : c
+          )
         );
       } catch (e) {
         console.error("Character save failed:", e);
