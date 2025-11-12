@@ -56,8 +56,9 @@ export function SceneBoard({
         <>
           <div className="grid gap-4 md:grid-cols-2">
             <HeatMeter gameId={gameId} initialHeat={heat} editable={isDirector} />
-            <ChaseTracker gameId={gameId} initial={chase} editable={isDirector} />
           </div>
+          
+          <ChaseTracker gameId={gameId} initial={chase} editable={isDirector} />
 
           <CountdownsPanel gameId={gameId} initial={countdowns} editable={isDirector} />
 
