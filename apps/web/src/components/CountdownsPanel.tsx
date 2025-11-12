@@ -132,12 +132,6 @@ export function CountdownsPanel({
                   <option value={3} className="text-white">3</option>
                   <option value={4} className="text-white">4</option>
                 </select>
-                <button
-                  onClick={() => startNew(3)}
-                  className="px-2 py-1 text-sm rounded bg-emerald-600 hover:bg-emerald-500"
-                >
-                  + Add
-                </button>
               </>
             ) : (
               <button
