@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import ChatBox from "../components/ChatBox";
 import { SceneBoard } from "../components/SceneBoard";
@@ -29,11 +29,8 @@ export default function Game() {
   const [heroes, setHeroes] = useState<any[]>([]);
   const [myHero, setMyHero] = useState<any | null>(null);
 
-  // Character DTO for CharacterDicePanel
+  // NEW: Character DTO for CharacterDicePanel
   const [dto, setDto] = useState<CharacterDTO | null>(null);
-
-  // 🔧 Drives rerenders when a character save happens (mini modal, etc.)
-  const [dtoRevision, setDtoRevision] = useState(0);
 
   // Load game (for campaignId and top-of-page data)
   useEffect(() => {
@@ -78,7 +75,7 @@ export default function Game() {
     })();
   }, [game?.campaignId, me?.id]);
 
-  // Load full CharacterDTO for the player's hero
+  // Load full CharacterDTO for the player's hero (if not already present on myHero)
   useEffect(() => {
     setDto(null);
     if (!myHero) return;
@@ -88,70 +85,22 @@ export default function Game() {
     (async () => {
       try {
         const c = await getCharacter(characterId);
-        const d = (c as any)?.character ?? c;
-        setDto(d as CharacterDTO);
+        setDto(c as CharacterDTO);
       } catch (e) {
         console.error("Failed to load character dto", e);
       }
     })();
   }, [myHero]);
 
-  // Also listen to a DOM event from the mini modal (belt & suspenders)
-  useEffect(() => {
-    function onCharacterSaved(ev: any) {
-      const updated = ev?.detail?.updated ?? null;
-      // If the saved character is the one whose dice we show, refresh it
-      const myId = myHero?.characterId ?? myHero?.id;
-      if (updated?.id && myId && updated.id === myId) {
-        setDtoRevision((r) => r + 1);
-        // refetch latest dto to ensure penalties/conditions are current
-        getCharacter(myId)
-          .then((c) => {
-            const d = (c as any)?.character ?? c;
-            setDto(d as CharacterDTO);
-          })
-          .catch(() => void 0);
-      }
-    }
-    window.addEventListener("character:saved", onCharacterSaved as any);
-    return () =>
-      window.removeEventListener("character:saved", onCharacterSaved as any);
-  }, [myHero?.id, myHero?.characterId]);
-
-  // Callback passed to CharacterMiniPanel for immediate updates
   async function handleCharacterSaved(updated: any) {
-    const myId = myHero?.characterId ?? myHero?.id;
-    if (!updated?.id || !myId || updated.id !== myId) {
-      // Not my displayed hero; still bump revision so lists refresh if needed.
-      setDtoRevision((r) => r + 1);
-      return;
-    }
-    try {
-      const fresh = await getCharacter(updated.id);
-      const d = (fresh as any)?.character ?? fresh ?? null;
-      if (d) setDto(d as CharacterDTO);
-    } finally {
-      setDtoRevision((r) => r + 1);
+    if (!updated?.id || updated.id !== myHero?.id) return;
+    const fresh = await getCharacter(updated.id);
+    const d = fresh?.character ?? fresh ?? null;
+    if (d) {
+      setDto(d);
+      setDtoRevision((r) => r + 1); // you already use this key to force remounts
     }
   }
-
-  // Build a key that changes when either dtoRevision increments or the conditions set changes.
-  const conditionsKey = useMemo(() => {
-    const arr =
-      (dto as any)?.conditions ??
-      (dto as any)?.resources?.conditions ??
-      (dto as any)?.resources?.youLookSelected ??
-      (dto as any)?.youLookSelected ??
-      [];
-    // stringify for stable key; small array so OK
-    try {
-      return JSON.stringify(arr);
-    } catch {
-      return String(arr);
-    }
-  }, [dto]);
-
-  const diceKey = `${dto?.id ?? "none"}-${dtoRevision}-${conditionsKey}`;
 
   if (!game) return <div className="p-6">Loading…</div>;
 
@@ -168,20 +117,29 @@ export default function Game() {
               isDirector={isDirector}
               onSaved={handleCharacterSaved}
             />
-            <NPCsPanel campaignId={game.campaignId} isDirector={isDirector} />
+            <NPCsPanel
+              campaignId={game.campaignId}
+              isDirector={isDirector}
+            />
           </>
         )}
       </div>
 
       <div className="space-y-4">
-        {/* 🎲 Players only; uses CharacterDicePanel (auto-updates on save/conditions) */}
+        {/* 🎲 Players only; uses CharacterDicePanel (no local selector needed) */}
         {!isDirector && dto && (
           <div>
             <h2 className="text-lg font-bold text-white mb-2">🎲 Dice Roller</h2>
             <CharacterDicePanel
-              key={diceKey}
               dto={dto}
               className="rounded-xl border p-3 bg-white/70"
+              // Optional: wire these if you have endpoints for resource spend
+              // onSpendAdrenaline={async (amt) => {
+              //   await api.post(`/characters/${dto.id}/spend`, { adrenaline: amt });
+              // }}
+              // onPaidRerollSpend={async (amt) => {
+              //   await api.post(`/characters/${dto.id}/spend`, { adrenaline: amt });
+              // }}
             />
           </div>
         )}
