@@ -88,7 +88,7 @@ export default function CharacterDicePanel({
         </Field>
 
         <Field label="Condition Penalty (auto)">
-          <div className="px-2 py-1 rounded border border-gray-300 bg-gray-50 dark:bg-gray-800 dark:border-gray-600 text-sm">
+          <div className="px-2 py-1 rounded border border-gray-400 bg-white text-gray-900 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-500 text-sm font-semibold">
             {condPenalty}
           </div>
         </Field>
@@ -121,7 +121,7 @@ export default function CharacterDicePanel({
         </Field>
 
         <Field label="Selected (A + S)">
-          <div className="px-2 py-1 rounded border border-gray-300 bg-gray-50 dark:bg-gray-800 dark:border-gray-600 font-semibold text-sm">
+          <div className="px-2 py-1 rounded border border-gray-400 bg-white text-gray-900 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-500 font-semibold text-sm">
             {ATTR_LABEL[attr]} {attrVal} + {capitalize(skill)} {skillVal}
           </div>
         </Field>
