@@ -174,7 +174,7 @@ export function ChaseTracker({
 
         {editable && (
           <div className="rounded-lg border border-slate-700 p-2">
-            <div className="text-sm mb-1">Track Length</div>
+            <div className="text-sm mb-1">Chase Need</div>
             <input
               type="number"
               min={6}
