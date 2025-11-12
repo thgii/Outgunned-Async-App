@@ -1,86 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { listCharacters, getCharacter, listCampaignHeroes } from "../lib/api";
-import CharacterSheet from "./CharacterSheetv2"; // we’ll reuse your v2 sheet
-
-// --- add these utilities near the top of the file ---
-function coerceUrl(u?: unknown): string | undefined {
-  if (!u) return undefined;
-  const s = String(u).trim();
-  if (!s) return undefined;
-  if (s.startsWith("data:") || s.startsWith("blob:")) return s;
-  if (/^https?:\/\//i.test(s)) return s;
-  if (s.startsWith("/")) return s;
-  return `/${s}`;
-}
-
-function resolvePortrait(character: any): string | undefined {
-  const c = character ?? {};
-  const r = c.resources ?? {};
-  const candidates = [
-    c.portraitUrl,        // ← will be filled from heroes merge below
-    c.portraitURL,
-    c.portrait,
-    c.imageUrl,
-    c.pictureUrl,
-    c.avatarUrl,
-    c.photoUrl,
-    r.portraitUrl,
-    r.imageUrl,
-    r.pictureUrl,
-  ];
-  for (const cand of candidates) {
-    const url = coerceUrl(cand);
-    if (url) return url;
-  }
-  return undefined;
-}
-
-type GritInfo = { current: number; max?: number };
-
-function resolveGrit(character: any): GritInfo {
-  // Accept a lot of shapes:
-  // - character.grit: number | { current, max } | { value, max/maximum }
-  // - resources.grit: number | { current, max }
-  const c = character ?? {};
-  const r = c.resources ?? {};
-  let current: number | undefined;
-  let max: number | undefined;
-
-  const tryShape = (g: any) => {
-    if (g == null) return;
-    if (typeof g === "number" || typeof g === "string") {
-      // number or numeric string
-      const n = Number(g);
-      if (!Number.isNaN(n)) current = n;
-      return;
-    }
-    if (typeof g === "object") {
-      // common keys
-      const cur = g.current ?? g.value ?? g.now ?? g.level ?? g.amount;
-      const mx = g.max ?? g.maximum ?? g.cap;
-      if (cur != null) {
-        const n = Number(cur);
-        if (!Number.isNaN(n)) current = n;
-      }
-      if (mx != null) {
-        const m = Number(mx);
-        if (!Number.isNaN(m)) max = m;
-      }
-      return;
-    }
-  };
-
-  tryShape(c.grit);
-  if (current == null || (max == null && (r?.grit != null))) {
-    tryShape(r.grit);
-  }
-
-  // Sensible defaults
-  if (current == null || Number.isNaN(current)) current = 0;
-  if (max != null && Number.isNaN(max)) max = undefined;
-
-  return { current, max };
-}
+import CharacterSheet from "./CharacterSheetv2";
 
 type Props = {
   campaignId: string;
@@ -88,7 +8,46 @@ type Props = {
   isDirector: boolean;
 };
 
-/** Small, no-dependency modal using <dialog> for the sheet preview */
+// Mirror the Campaign page row exactly
+type HeroRow = {
+  id: string;
+  name: string;
+  ownerName?: string;
+  ownerId?: string;
+  campaignId?: string;
+  portraitUrl?: string | null;
+  characterId?: string | null; // some APIs include this
+};
+
+type GritInfo = { current: number; max?: number };
+function resolveGrit(character: any): GritInfo {
+  const c = character ?? {};
+  const r = c.resources ?? {};
+  const take = (g: any) => {
+    if (g == null) return { current: undefined, max: undefined };
+    if (typeof g === "number" || typeof g === "string") {
+      const n = Number(g);
+      return { current: Number.isNaN(n) ? undefined : n, max: undefined };
+    }
+    if (typeof g === "object") {
+      const cur = Number(g.current ?? g.value ?? g.now ?? g.level ?? g.amount);
+      const mx = Number(g.max ?? g.maximum ?? g.cap);
+      return {
+        current: Number.isNaN(cur) ? undefined : cur,
+        max: Number.isNaN(mx) ? undefined : mx,
+      };
+    }
+    return { current: undefined, max: undefined };
+  };
+  let { current, max } = take(c.grit);
+  if (current == null) {
+    const rTake = take(r.grit);
+    current ??= rTake.current;
+    max ??= rTake.max;
+  }
+  return { current: current ?? 0, max: max ?? undefined };
+}
+
 function useDialog() {
   const ref = useRef<HTMLDialogElement | null>(null);
   const open = () => ref.current?.showModal();
@@ -96,27 +55,27 @@ function useDialog() {
   return { ref, open, close };
 }
 
-function Portrait({ character }: { character: any }) {
-  const url = resolvePortrait(character);
-  const name = character?.name ?? "Character";
+// Campaign-style portrait block (identical behavior)
+function Portrait({ portraitUrl, name }: { portraitUrl?: string | null; name?: string }) {
   return (
-    <div className="h-12 w-12 rounded-md overflow-hidden bg-zinc-200 shrink-0">
-      {url ? (
+    <div className="h-12 w-12 rounded-md overflow-hidden bg-slate-200 shrink-0 border border-slate-300">
+      {portraitUrl ? (
         <img
-          src={url}
-          alt={`${name} portrait`}
+          src={portraitUrl}
+          alt={name || "Hero portrait"}
           className="h-full w-full object-cover"
           loading="lazy"
           referrerPolicy="no-referrer"
         />
       ) : (
-        <div className="h-full w-full grid place-items-center text-[10px] text-zinc-500">No Image</div>
+        <div className="h-full w-full flex items-center justify-center text-slate-500 text-sm font-semibold">
+          {name?.charAt(0) || "?"}
+        </div>
       )}
     </div>
   );
 }
 
-/** Render (attribute, value) chips */
 function AttrChips({ attributes }: { attributes?: Record<string, number> }) {
   if (!attributes) return null;
   const order = ["brawn", "nerves", "smooth", "focus", "crime"];
@@ -131,7 +90,6 @@ function AttrChips({ attributes }: { attributes?: Record<string, number> }) {
   );
 }
 
-/** Show top 6 skills (by value, desc) */
 function SkillChips({ skills }: { skills?: Record<string, number> }) {
   if (!skills) return null;
   const top = Object.entries(skills)
@@ -168,38 +126,33 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
   useEffect(() => {
     let alive = true;
     (async () => {
-      // Fetch BOTH: full characters (for attrs/skills) + heroes (for portraitUrl)
-      const [charRows, heroRows] = await Promise.all([
+      const [charRows, heroRowsRaw] = await Promise.all([
         listCharacters(campaignId),
         listCampaignHeroes(campaignId),
       ]);
-
       if (!alive) return;
 
-      // Build a quick map from characterId -> portraitUrl (and fallback keys)
-      const pMap = new Map<string, string | null>();
-      for (const h of heroRows || []) {
-        const key = (h as any).characterId ?? (h as any).id;
-        const url =
-          (h as any).portraitUrl ??
-          (h as any).portraitURL ??
-          (h as any).imageUrl ??
-          (h as any).pictureUrl ??
-          null;
-        if (key) pMap.set(String(key), url);
+      // Build a simple map: characterId -> portraitUrl (Campaign semantics only)
+      const heroRows: HeroRow[] = Array.isArray(heroRowsRaw) ? heroRowsRaw as any : [];
+      const portraitByCharId = new Map<string, string | null>();
+      for (const h of heroRows) {
+        const key = (h.characterId ?? h.id) as string;
+        if (key) portraitByCharId.set(key, h.portraitUrl ?? null);
       }
 
-      // Merge portraitUrl into each character if available
-      const merged = (charRows || []).map((c: any) => {
-        const urlFromHeroes = pMap.get(String(c.id));
-        return urlFromHeroes
-          ? { ...c, portraitUrl: urlFromHeroes }
-          : c;
-      });
+      // Merge portraitUrl onto each character so we can render Campaign-style
+      const merged = (charRows || []).map((c: any) => ({
+        ...c,
+        portraitUrl: portraitByCharId.has(String(c.id))
+          ? portraitByCharId.get(String(c.id))
+          : c.portraitUrl ?? null, // keep any existing value if present
+      }));
 
       setChars(merged);
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [campaignId]);
 
   const visible = useMemo(() => {
@@ -222,7 +175,6 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
         {isDirector ? "Heroes in this Campaign" : "Your Hero"}
       </h3>
 
-      {/* Cards list */}
       <div className="flex flex-col gap-2">
         {visible.map((c) => (
           <button
@@ -230,7 +182,9 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
             onClick={() => onOpen(c.id)}
             className="w-full text-left bg-white border rounded-lg p-2 hover:shadow-sm transition grid grid-cols-[auto,1fr,auto] gap-3 items-center"
           >
-            <Portrait character={c} />
+            {/* Portrait rendered EXACTLY like Campaign */}
+            <Portrait portraitUrl={c.portraitUrl} name={c.name} />
+
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <div className="font-medium text-zinc-900 truncate">{c.name}</div>
@@ -243,12 +197,12 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
                 <SkillChips skills={c.skills} />
               </div>
             </div>
+
             <div className="text-xs text-zinc-500">Open</div>
           </button>
         ))}
       </div>
 
-      {/* Modal (character sheet in a small window) */}
       <dialog ref={dialogRef} className="rounded-xl backdrop:bg-black/50 p-0 w-[min(100vw,900px)]">
         <div className="bg-white max-h-[85vh] overflow-y-auto rounded-xl">
           <div className="flex items-center justify-between border-b px-3 py-2">
