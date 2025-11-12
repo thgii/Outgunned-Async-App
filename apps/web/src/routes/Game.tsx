@@ -118,7 +118,7 @@ export default function Game() {
         {/* 🎲 Players only; uses CharacterDicePanel (no local selector needed) */}
         {!isDirector && dto && (
           <div>
-            <h2 className="text-lg font-bold text-gray-800 mb-2">🎲 Dice Roller</h2>
+            <h2 className="text-lg font-bold text-white mb-2">🎲 Dice Roller</h2>
             <CharacterDicePanel
               dto={dto}
               className="rounded-xl border p-3 bg-white/70"
