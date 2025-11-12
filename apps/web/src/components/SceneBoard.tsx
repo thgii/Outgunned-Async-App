@@ -58,9 +58,14 @@ export function SceneBoard({
             <HeatMeter gameId={gameId} initialHeat={heat} editable={isDirector} />
           </div>
           
-          <ChaseTracker gameId={gameId} initial={chase} editable={isDirector} />
-
-          <CountdownsPanel gameId={gameId} initial={countdowns} editable={isDirector} />
+          <div className="p-3 rounded-xl bg-slate-800/70 border border-slate-700 space-y-4">
+            <ChaseTracker gameId={gameId} initial={chase} editable={isDirector} />
+            <CountdownsPanel
+              gameId={gameId}
+              initial={countdowns}
+              editable={isDirector}
+            />
+          </div>
 
           <NotesPanel
             gameId={gameId}
