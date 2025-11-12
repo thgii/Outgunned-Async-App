@@ -94,29 +94,62 @@ const gameUpdateSchema = z.object({
 });
 
 // === Scene Options: Heat / Countdowns / Chase ===
+
+// New chase schema: no speedTarget; tighter bounds; progress <= need
+const ChaseSchema = z
+  .object({
+    need: z.number().int().min(6).max(18),
+    progress: z.number().int().min(0),
+    speedHeroes: z.number().int().min(0).max(6),
+  })
+  .superRefine((val, ctx) => {
+    if (val.progress > val.need) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["progress"],
+        message: "progress cannot exceed need",
+      });
+    }
+  });
+
+const CountdownSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  total: z.number().int().min(1).max(20),
+  current: z.number().int().min(0),
+});
+
 const OptionsSchema = z.object({
   heat: z.number().int().min(0).max(12).optional(),
-  countdowns: z.array(
-    z.object({
-      id: z.string(),
-      label: z.string(),
-      total: z.number().int().min(1).max(20),
-      current: z.number().int().min(0),
-    })
-  ).optional(),
-  chase: z.object({
-    need: z.number().int().min(1).max(20),
-    progress: z.number().int().min(0),
-    speedHeroes: z.number().int().min(-5).max(10),
-    speedTarget: z.number().int().min(-5).max(10),
-  }).optional(),
-}).partial();
+  countdowns: z.array(CountdownSchema).optional(),
+  chase: ChaseSchema.optional(),
+});
+
+// Normalize/clamp helper for chase options (also strips legacy fields)
+function normalizeChase(chase: any | undefined | null) {
+  if (!chase) return undefined;
+  const n = Number.isFinite(chase.need) ? Math.max(6, Math.min(18, chase.need)) : 6;
+  const pRaw = Number.isFinite(chase.progress) ? chase.progress : 0;
+  const p = Math.max(0, Math.min(n, pRaw));
+  const shRaw = Number.isFinite(chase.speedHeroes) ? chase.speedHeroes : 0;
+  const speedHeroes = Math.max(0, Math.min(6, shRaw));
+  return { need: n, progress: p, speedHeroes };
+}
 
 function parseOptions(raw: any): GameOptions {
   try {
     const json = raw ? JSON.parse(raw) : {};
-    const safe = OptionsSchema.parse(json);
-    return { heat: 0, countdowns: [], ...safe };
+    const parsed = OptionsSchema.safeParse(json);
+    if (!parsed.success) {
+      // If stored JSON is old/loose, do a best-effort salvage instead of throwing
+      const heat = Math.max(0, Math.min(12, Number(json?.heat ?? 0)));
+      const countdowns = Array.isArray(json?.countdowns) ? json.countdowns : [];
+      const chase = normalizeChase(json?.chase);
+      return { heat, countdowns, ...(chase ? { chase } : {}) };
+    }
+    const safe = parsed.data;
+    const chase = normalizeChase(safe.chase);
+    return { heat: safe.heat ?? 0, countdowns: safe.countdowns ?? [], ...(chase ? { chase } : {}) };
   } catch {
     return { heat: 0, countdowns: [] };
   }
@@ -182,9 +215,29 @@ games.patch("/:id/options", async (c) => {
   if (!currentRow) return c.json({ error: "Not found" }, 404);
 
   const prev = parseOptions(currentRow.options);
-  const body = await c.req.json().catch(() => ({}));
-  const patch = OptionsSchema.parse(body);
-  const next = { ...prev, ...patch };
+
+  let bodyUnknown: unknown;
+  try {
+    bodyUnknown = await c.req.json();
+  } catch {
+    return c.json({ error: "invalid_json" }, 400);
+  }
+
+  const parsed = OptionsSchema.safeParse(bodyUnknown);
+  if (!parsed.success) {
+    console.error("options zod error", parsed.error.flatten());
+    return c.json({ error: "validation_failed", details: parsed.error.flatten() }, 400);
+  }
+
+  // Merge, then normalize/clamp, and strip legacy fields
+  const patch = parsed.data;
+  const next: GameOptions = {
+    heat: Math.max(0, Math.min(12, patch.heat ?? prev.heat ?? 0)),
+    countdowns: patch.countdowns ?? prev.countdowns ?? [],
+    ...(patch.chase !== undefined || prev.chase !== undefined
+      ? { chase: normalizeChase(patch.chase ?? prev.chase)! }
+      : {}),
+  };
 
   await c.env.DB
     .prepare("UPDATE games SET options = ? WHERE id = ?")
