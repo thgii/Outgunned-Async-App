@@ -3,13 +3,12 @@ import { api } from "../lib/api";
 
 type Countdown = {
   id: string;
-  label: string;
-  total: number;
-  current: number;
+  label: string;   // kept for backend compatibility; not shown
+  total: number;   // starting turns (2..4)
+  current: number; // elapsed turns (0..total)
 };
 
 function makeId() {
-  // safe both in browser and SSR
   return (globalThis as any)?.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
 }
 
@@ -22,143 +21,201 @@ export function CountdownsPanel({
   initial?: Countdown[];
   editable?: boolean;
 }) {
-  const [items, setItems] = useState<Countdown[]>(initial);
+  // Normalize to 0 or 1 countdown; clamp ranges
+  const boot = useMemo(() => {
+    const first = initial?.[0];
+    if (!first) return [] as Countdown[];
+    const total = Math.max(2, Math.min(4, Number(first.total ?? 2)));
+    const current = Math.max(0, Math.min(total, Number(first.current ?? 0)));
+    return [{ ...first, total, current, label: first.label ?? "Countdown" }];
+  }, [initial]);
+
+  const [items, setItems] = useState<Countdown[]>(boot);
   const [saving, setSaving] = useState(false);
 
   async function persist(next: Countdown[]) {
-    setItems(next);
+    // enforce one-at-a-time on save too
+    const payload = next.length > 1 ? [next[0]] : next;
+    setItems(payload);
     if (!editable) return;
     setSaving(true);
     try {
-      await api.patch(`/games/${gameId}/options`, { countdowns: next });
+      await api.patch(`/games/${gameId}/options`, { countdowns: payload });
     } finally {
       setSaving(false);
     }
   }
 
-  function bump(id: string, delta: number) {
-    const next = items.map(c =>
-      c.id === id
-        ? { ...c, current: Math.max(0, Math.min(c.total, c.current + delta)) }
-        : c
-    );
+  function startNew(total: number) {
+    const t = Math.max(2, Math.min(4, total));
+    const next: Countdown[] = [{ id: makeId(), label: "Countdown", total: t, current: 0 }];
     persist(next);
   }
 
-  function addNew() {
-    const next: Countdown[] = [
-      ...items,
-      { id: makeId(), label: "Clock", total: 6, current: 0 },
-    ];
-    persist(next);
+  function removeCountdown() {
+    persist([]);
   }
 
-  function updateMeta(id: string, patch: Partial<Countdown>) {
-    const next = items.map(c => (c.id === id ? { ...c, ...patch } : c));
-    persist(next);
+  function setTotal(t: number) {
+    if (!items[0]) return;
+    const total = Math.max(2, Math.min(4, Number(t || 2)));
+    const current = Math.min(items[0].current, total);
+    persist([{ ...items[0], total, current }]);
   }
 
-  function removeId(id: string) {
-    const next = items.filter(c => c.id !== id);
-    persist(next);
+  // Advance turn increases "elapsed", which reduces "remaining"
+  function advance() {
+    const c = items[0];
+    if (!c) return;
+    const current = Math.min(c.total, c.current + 1);
+    persist([{ ...c, current }]);
   }
+
+  function previous() {
+    const c = items[0];
+    if (!c) return;
+    const current = Math.max(0, c.current - 1);
+    persist([{ ...c, current }]);
+  }
+
+  const c = items[0];
+  const remaining = c ? Math.max(0, c.total - c.current) : 0;
 
   return (
     <div className="p-3 rounded-xl bg-slate-800/70 border border-slate-700">
       <div className="flex items-center justify-between mb-2">
-        <div className="font-bold text-lg">⏱️ Countdowns</div>
+        <div className="flex items-center gap-2">
+          <div className="font-bold text-lg">⏱️ Countdown</div>
+
+          {/* Tooltip */}
+          <div className="relative group">
+            <button
+              type="button"
+              aria-label="Countdown optional rule"
+              className="w-5 h-5 rounded-full text-xs border border-slate-500 text-slate-300 hover:text-white hover:border-slate-400"
+              tabIndex={0}
+            >
+              ?
+            </button>
+            <div
+              className="invisible opacity-0 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100
+                         absolute z-20 left-1/2 -translate-x-1/2 mt-2 w-[26rem] max-w-[90vw] text-left rounded-lg border border-slate-600
+                         bg-slate-900/95 shadow-xl p-3 transition duration-150"
+            >
+              <div className="text-slate-200 text-sm leading-snug space-y-2">
+                <p className="font-semibold">Countdown — OPTIONAL RULE</p>
+                <p>
+                  At the beginning of a chase, or at any time during one, the Director can announce
+                  the beginning of a Countdown. From that moment, Heroes have <span className="font-medium">2, 3, or 4 turns</span> to
+                  fill up all Need boxes. Otherwise, it’s too late.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Add / Remove (one at a time) */}
         {editable && (
-          <button
-            onClick={addNew}
-            className="px-2 py-1 text-sm rounded bg-emerald-600 hover:bg-emerald-500"
-          >
-            + Add
-          </button>
+          <div className="flex items-center gap-2">
+            {!c ? (
+              <>
+                <label className="text-sm text-slate-300">Start at</label>
+                <select
+                  onChange={(e) => startNew(Number(e.target.value))}
+                  className="px-2 py-1 rounded bg-slate-900 border border-slate-700 text-sm"
+                  defaultValue=""
+                >
+                  <option value="" disabled>
+                    Select (2–4)
+                  </option>
+                  <option value={2}>2</option>
+                  <option value={3}>3</option>
+                  <option value={4}>4</option>
+                </select>
+                <button
+                  onClick={() => startNew(3)}
+                  className="px-2 py-1 text-sm rounded bg-emerald-600 hover:bg-emerald-500"
+                >
+                  + Add
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={removeCountdown}
+                className="px-2 py-1 text-sm rounded bg-red-600/80 hover:bg-red-500"
+                title="Remove countdown"
+              >
+                Remove
+              </button>
+            )}
+          </div>
         )}
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        {items.map(c => (
-          <div key={c.id} className="rounded-lg border border-slate-700 p-2">
-            <div className="flex items-center justify-between mb-1">
-              {editable ? (
-                <input
-                  className="bg-transparent border-b border-slate-600 focus:outline-none px-1"
-                  value={c.label}
-                  onChange={e => updateMeta(c.id, { label: e.target.value })}
+      {/* Active countdown view */}
+      {c ? (
+        <div className="rounded-lg border border-slate-700 p-3">
+          {/* Boxes show elapsed vs total; label hidden per spec */}
+          <div className="flex items-center gap-2 mb-2">
+            {Array.from({ length: c.total }).map((_, i) => {
+              const elapsed = i < c.current;
+              return (
+                <div
+                  key={i}
+                  className={`h-4 flex-1 rounded ${elapsed ? "bg-amber-400" : "bg-slate-600"}`}
+                  title={`${c.current}/${c.total} elapsed`}
                 />
-              ) : (
-                <div className="font-semibold">{c.label}</div>
-              )}
+              );
+            })}
+          </div>
 
-              {editable && (
-                <button
-                  onClick={() => removeId(c.id)}
-                  className="text-xs text-red-300 hover:text-red-200"
-                  title="Remove"
-                >
-                  Remove
-                </button>
-              )}
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-slate-200">
+              <span className="font-semibold">{remaining}</span> turns remaining
             </div>
 
             <div className="flex items-center gap-2">
-              {Array.from({ length: c.total }).map((_, i) => {
-                const filled = i < c.current;
-                return (
-                  <div
-                    key={i}
-                    onClick={() => editable && updateMeta(c.id, { current: i + 1 })}
-                    className={`h-4 flex-1 rounded cursor-pointer transition
-                      ${filled ? "bg-amber-400" : "bg-slate-600 hover:bg-slate-500"}`}
-                    title={`${c.current}/${c.total}`}
-                  />
-                );
-              })}
-            </div>
-
-            <div className="flex items-center justify-between mt-2 text-sm">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => bump(c.id, -1)}
-                  className="px-2 py-1 rounded bg-slate-700 hover:bg-slate-600"
-                  disabled={!editable && c.current === 0}
-                >
-                  −
-                </button>
-                <div className="min-w-[3rem] text-center">
-                  {c.current}/{c.total}
-                </div>
-                <button
-                  onClick={() => bump(c.id, +1)}
-                  className="px-2 py-1 rounded bg-slate-700 hover:bg-slate-600"
-                >
-                  +
-                </button>
-              </div>
-
-              {editable ? (
-                <div className="flex items-center gap-2">
-                  <label className="text-slate-300">Total</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={20}
-                    value={c.total}
-                    onChange={e =>
-                      updateMeta(c.id, {
-                        total: Math.max(1, Math.min(20, Number(e.target.value || 1))),
-                        current: Math.min(c.current, Math.max(1, Math.min(20, Number(e.target.value || 1))))
-                      })
-                    }
-                    className="w-16 bg-slate-900 border border-slate-700 rounded px-2 py-1"
-                  />
-                </div>
-              ) : null}
+              {editable && (
+                <>
+                  <button
+                    onClick={previous}
+                    className="px-3 py-1 rounded bg-slate-700 hover:bg-slate-600 text-sm"
+                    disabled={c.current <= 0}
+                    title="Previous Turn"
+                  >
+                    Previous Turn
+                  </button>
+                  <button
+                    onClick={advance}
+                    className="px-3 py-1 rounded bg-slate-700 hover:bg-slate-600 text-sm"
+                    disabled={c.current >= c.total}
+                    title="Advance Turn"
+                  >
+                    Advance Turn
+                  </button>
+                </>
+              )}
             </div>
           </div>
-        ))}
-      </div>
+
+          {editable && (
+            <div className="mt-3 flex items-center gap-2">
+              <label className="text-sm text-slate-300">Starting turns</label>
+              <input
+                type="number"
+                min={2}
+                max={4}
+                value={c.total}
+                onChange={(e) => setTotal(Number(e.target.value))}
+                className="w-16 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm"
+              />
+              <span className="text-[11px] text-slate-400">Min 2 • Max 4</span>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="text-sm text-slate-400 italic">No active countdown.</div>
+      )}
 
       {saving && <div className="text-xs text-slate-400 mt-2">saving…</div>}
     </div>
