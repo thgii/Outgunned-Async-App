@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { listCharacters, getCharacter } from "../lib/api";
+import { api, listCharacters, getCharacter } from "../lib/api";
 import CharacterSheet from "./CharacterSheetv2";
 
 type Props = {
@@ -106,6 +106,9 @@ function GritBadge({ character }: { character: any }) {
 export default function CharacterMiniPanel({ campaignId, currentUserId, isDirector }: Props) {
   const [chars, setChars] = useState<any[]>([]);
   const [active, setActive] = useState<any | null>(null);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const saveTimerRef = useRef<number | null>(null);
+
   const { ref: dialogRef, open, close } = useDialog();
 
   useEffect(() => {
@@ -148,12 +151,41 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
     const detail = await getCharacter(id);
     const char = detail?.character ?? detail;
     setActive(char);
+    setSaveState("idle");
     open();
   };
 
   const onClose = () => {
+    // clear any pending save
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
     setActive(null);
     close();
+  };
+
+  // Debounced auto-save whenever the sheet changes
+  const handleChange = (next: any) => {
+    setActive(next);
+    setSaveState("saving");
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = window.setTimeout(async () => {
+      try {
+        await api(`/characters/${next.id}`, { method: "PATCH", json: next });
+        setSaveState("saved");
+        // briefly show "Saved", then go back to idle
+        window.setTimeout(() => setSaveState("idle"), 1000);
+
+        // keep the list in sync (e.g., grit changes, name edits)
+        setChars((prev) =>
+          prev.map((c) => (c.id === next.id ? { ...c, ...next, portraitUrl: c.portraitUrl ?? next.resources?.storage?.portrait ?? c.portraitUrl } : c))
+        );
+      } catch (e) {
+        console.error("Character save failed:", e);
+        setSaveState("error");
+      }
+    }, 600); // debounce window
   };
 
   if (!visible.length) return null;
@@ -193,13 +225,22 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
         <div className="bg-white text-black max-h-[85vh] overflow-y-auto rounded-xl">
           <div className="flex items-center justify-between border-b px-3 py-2">
             <div className="font-semibold text-zinc-800">{active?.name ?? "Character"}</div>
-            <button onClick={onClose} className="text-zinc-500 hover:text-zinc-800 text-sm px-2 py-1 rounded">
-              Close
-            </button>
+            <div className="flex items-center gap-2">
+              {saveState === "saving" && <span className="text-xs px-2 py-1 rounded bg-slate-200">Saving…</span>}
+              {saveState === "saved" && (
+                <span className="text-xs px-2 py-1 rounded bg-emerald-100 text-emerald-700">Saved</span>
+              )}
+              {saveState === "error" && (
+                <span className="text-xs px-2 py-1 rounded bg-red-100 text-red-700">Error</span>
+              )}
+              <button onClick={onClose} className="text-zinc-500 hover:text-zinc-800 text-sm px-2 py-1 rounded">
+                Close
+              </button>
+            </div>
           </div>
           <div className="p-3">
             {active ? (
-              <CharacterSheet key={active.id} value={active} onChange={() => {}} />
+              <CharacterSheet key={active.id} value={active} onChange={handleChange} />
             ) : (
               <div className="text-sm text-zinc-500">Loading…</div>
             )}
