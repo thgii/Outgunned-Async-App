@@ -12,6 +12,14 @@ const NoteSchema = z.object({
 
 const now = () => new Date().toISOString();
 
+// --- visibility mapping: API <-> DB ---
+function toDbVisibility(v: "public" | "director_private" | "hero") {
+  return v === "hero" ? "player" : v; // DB expects 'player'
+}
+function isHeroLike(v: string) {
+  return v === "hero" || v === "player";
+}
+
 async function isDirectorForGame(DB: D1Database, userId: string | undefined, gameId: string) {
   if (!userId) return false;
   const row = await DB
@@ -22,7 +30,7 @@ async function isDirectorForGame(DB: D1Database, userId: string | undefined, gam
 }
 
 // GET /games/:id/notes
-// Directors: all notes. Heroes: public + their own "hero" notes
+// Directors: all notes. Heroes: public + their own hero/player notes
 notes.get("/games/:id/notes", async (c) => {
   const gameId = c.req.param("id");
   const user = c.get("user") as { id: string } | undefined;
@@ -39,7 +47,7 @@ notes.get("/games/:id/notes", async (c) => {
     const res = await c.env.DB
       .prepare(`SELECT * FROM game_notes
                WHERE gameId = ?
-                 AND (visibility = 'public' OR (visibility='hero' AND userId = ?))
+                 AND (visibility = 'public' OR (visibility IN ('hero','player') AND userId = ?))
                ORDER BY createdAt ASC`)
       .bind(gameId, uid)
       .all();
@@ -50,6 +58,7 @@ notes.get("/games/:id/notes", async (c) => {
 // POST /games/:id/notes
 // - Director can create public or director_private
 // - Hero can create only "hero" notes (auto-assign userId)
+//   (We map 'hero' -> 'player' when writing to DB)
 notes.post("/games/:id/notes", async (c) => {
   const gameId = c.req.param("id");
   const user = c.get("user") as { id: string } | undefined;
@@ -64,11 +73,14 @@ notes.post("/games/:id/notes", async (c) => {
 
   const id = crypto.randomUUID();
   const ts = now();
+  const dbVisibility = toDbVisibility(data.visibility);
 
   await c.env.DB.prepare(
     `INSERT INTO game_notes (id, gameId, heroId, userId, visibility, title, content, createdAt, updatedAt)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).bind(id, gameId, data.heroId ?? null, user.id, data.visibility, data.title ?? null, data.content, ts, ts).run();
+  ).bind(
+    id, gameId, data.heroId ?? null, user.id, dbVisibility, data.title ?? null, data.content, ts, ts
+  ).run();
 
   const row = await c.env.DB.prepare("SELECT * FROM game_notes WHERE id = ?").bind(id).first();
   return c.json(row, 201);
@@ -76,7 +88,8 @@ notes.post("/games/:id/notes", async (c) => {
 
 // PATCH /games/:id/notes/:noteId
 // - Director can edit any
-// - Heroes can edit only their own 'hero' notes
+// - Heroes can edit only their own hero/player notes
+//   (If visibility is changed via PATCH, map 'hero' -> 'player' before saving)
 notes.patch("/games/:id/notes/:noteId", async (c) => {
   const gameId = c.req.param("id");
   const noteId = c.req.param("noteId");
@@ -86,14 +99,18 @@ notes.patch("/games/:id/notes/:noteId", async (c) => {
   const patch = NoteSchema.partial().parse(await c.req.json());
   const isDirector = await isDirectorForGame(c.env.DB, user.id, gameId);
 
-  const note = await c.env.DB.prepare("SELECT * FROM game_notes WHERE id = ? AND gameId = ?").bind(noteId, gameId).first<any>();
+  const note = await c.env.DB
+    .prepare("SELECT * FROM game_notes WHERE id = ? AND gameId = ?")
+    .bind(noteId, gameId)
+    .first<any>();
   if (!note) return c.json({ error: "Not found" }, 404);
 
-  if (!isDirector && !(note.visibility === "hero" && note.userId === user.id)) {
+  if (!isDirector && !(isHeroLike(note.visibility) && note.userId === user.id)) {
     return c.json({ error: "Forbidden" }, 403);
   }
 
   const updatedAt = now();
+  const mappedVis = patch.visibility ? toDbVisibility(patch.visibility) : null;
 
   await c.env.DB.prepare(
     `UPDATE game_notes SET
@@ -103,13 +120,15 @@ notes.patch("/games/:id/notes/:noteId", async (c) => {
        heroId     = COALESCE(?, heroId),
        updatedAt  = ?
      WHERE id = ?`
-  ).bind(patch.visibility ?? null, patch.title ?? null, patch.content ?? null, patch.heroId ?? null, updatedAt, noteId).run();
+  ).bind(
+    mappedVis, patch.title ?? null, patch.content ?? null, patch.heroId ?? null, updatedAt, noteId
+  ).run();
 
   const updated = await c.env.DB.prepare("SELECT * FROM game_notes WHERE id = ?").bind(noteId).first();
   return c.json(updated);
 });
 
-// DELETE /games/:id/notes/:noteId  (Director or author of hero note)
+// DELETE /games/:id/notes/:noteId  (Director or author of hero/player note)
 notes.delete("/games/:id/notes/:noteId", async (c) => {
   const gameId = c.req.param("id");
   const noteId = c.req.param("noteId");
@@ -117,10 +136,13 @@ notes.delete("/games/:id/notes/:noteId", async (c) => {
   if (!user) return c.json({ error: "Unauthorized" }, 401);
 
   const isDirector = await isDirectorForGame(c.env.DB, user.id, gameId);
-  const note = await c.env.DB.prepare("SELECT * FROM game_notes WHERE id = ? AND gameId = ?").bind(noteId, gameId).first<any>();
+  const note = await c.env.DB
+    .prepare("SELECT * FROM game_notes WHERE id = ? AND gameId = ?")
+    .bind(noteId, gameId)
+    .first<any>();
   if (!note) return c.json({ error: "Not found" }, 404);
 
-  if (!isDirector && !(note.visibility === "hero" && note.userId === user.id)) {
+  if (!isDirector && !(isHeroLike(note.visibility) && note.userId === user.id)) {
     return c.json({ error: "Forbidden" }, 403);
   }
 
