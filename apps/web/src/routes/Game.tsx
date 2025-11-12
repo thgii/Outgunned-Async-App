@@ -92,16 +92,6 @@ export default function Game() {
     })();
   }, [myHero]);
 
-  async function handleCharacterSaved(updated: any) {
-    if (!updated?.id || updated.id !== myHero?.id) return;
-    const fresh = await getCharacter(updated.id);
-    const d = fresh?.character ?? fresh ?? null;
-    if (d) {
-      setDto(d);
-      setDtoRevision((r) => r + 1); // you already use this key to force remounts
-    }
-  }
-
   if (!game) return <div className="p-6">Loading…</div>;
 
   return (
@@ -115,7 +105,6 @@ export default function Game() {
               campaignId={game.campaignId}
               currentUserId={me?.id ?? null}
               isDirector={isDirector}
-              onSaved={handleCharacterSaved}
             />
             <NPCsPanel
               campaignId={game.campaignId}

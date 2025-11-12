@@ -6,8 +6,6 @@ type Props = {
   campaignId: string;
   currentUserId: string | null;
   isDirector: boolean;
-  /** Optional: bubble up when a character has been persisted (used by Game.tsx to refresh dto) */
-  onSaved?: (next: any) => void;
 };
 
 type GritInfo = { current: number; max?: number };
@@ -105,54 +103,64 @@ function GritBadge({ character }: { character: any }) {
   );
 }
 
-/** Build a canonical conditions array from youLook + isBroken */
-function buildConditionsFromState(youLookArr: string[], broken: boolean): string[] {
-  const mapName = (k: string): string | null => {
-    switch (k) {
-      case "Hurt": return "Hurt";
-      case "Nervous": return "Nervous";
-      case "Distracted": return "Distracted";
-      case "LikeAFool": return "Like a Fool";
-      case "Scared": return "Scared";
-      // "Tired" is a visual condition (no dice penalty) → not in canonical list
-      case "Tired": return null;
-      default: return null;
-    }
+/** ---------- NEW: Normalizers so mini-modal always has UI fields ---------- */
+function deriveYouLookFromConditions(conditions?: unknown) {
+  if (!Array.isArray(conditions)) return { youLookSelected: [] as string[], isBroken: false };
+  const map: Record<string, string> = {
+    "Hurt": "Hurt",
+    "Nervous": "Nervous",
+    "Distracted": "Distracted",
+    "Like a Fool": "LikeAFool",
+    "Scared": "Scared",
+    // "Tired" has no dice penalty and is not stored in canonical `conditions`
   };
-  const base = Array.from(new Set(youLookArr)).map(mapName).filter((x): x is string => Boolean(x));
-  if (broken) base.push("Broken");
-  return Array.from(new Set(base));
+  const youLookSelected = Array.from(
+    new Set(
+      conditions
+        .map(String)
+        .map((c) => c.trim())
+        .map((c) => map[c])
+        .filter(Boolean) as string[]
+    )
+  );
+  const isBroken = conditions.some((c) => String(c).toLowerCase().includes("broken"));
+  return { youLookSelected, isBroken };
 }
 
-/** Normalize a fetched character for the sheet & dice consumers */
-function normalizeActive(char: any) {
-  const youLookSelected: string[] =
-    char?.youLookSelected ??
-    char?.resources?.youLookSelected ??
-    char?.conditions ??
-    [];
-  const isBroken: boolean =
-    (char?.isBroken ?? char?.resources?.isBroken ?? false) || (Array.isArray(char?.conditions) && char.conditions.includes("Broken"));
+function normalizeActiveChar(char: any) {
+  const fromRes = {
+    youLookSelected: char?.resources?.youLookSelected,
+    isBroken: char?.resources?.isBroken,
+  };
+  const haveTop = Array.isArray(char?.youLookSelected) || typeof char?.isBroken === "boolean";
+  const haveRes = Array.isArray(fromRes.youLookSelected) || typeof fromRes.isBroken === "boolean";
+  const derived = deriveYouLookFromConditions(char?.conditions);
 
-  const conditions: string[] = Array.isArray(char?.conditions)
-    ? char.conditions
-    : buildConditionsFromState(youLookSelected, isBroken);
+  const youLookSelected = haveTop
+    ? char.youLookSelected
+    : haveRes
+    ? fromRes.youLookSelected ?? []
+    : derived.youLookSelected;
+
+  const isBroken = haveTop
+    ? !!char.isBroken
+    : haveRes
+    ? !!fromRes.isBroken
+    : derived.isBroken;
 
   return {
     ...char,
     youLookSelected,
     isBroken,
-    conditions,
     resources: {
-      ...(char?.resources ?? {}),
-      youLookSelected,
-      isBroken,
-      conditions,
+      ...(char.resources ?? {}),
+      youLookSelected: char?.resources?.youLookSelected ?? youLookSelected ?? [],
+      isBroken: char?.resources?.isBroken ?? isBroken ?? false,
     },
   };
 }
 
-export default function CharacterMiniPanel({ campaignId, currentUserId, isDirector, onSaved }: Props) {
+export default function CharacterMiniPanel({ campaignId, currentUserId, isDirector }: Props) {
   const [chars, setChars] = useState<any[]>([]);
   const [active, setActive] = useState<any | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -172,7 +180,9 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
               const d = detail?.character ?? detail ?? {};
               const portraitDataUrl =
                 d?.storage?.portrait ?? d?.resources?.storage?.portrait ?? d?.portraitUrl ?? null;
-              return { ...c, portraitUrl: portraitDataUrl };
+              // normalize minimal fields used in the row (optional)
+              const normalized = normalizeActiveChar(d);
+              return { ...c, ...normalized, portraitUrl: portraitDataUrl };
             } catch {
               return { ...c, portraitUrl: c.portraitUrl ?? null };
             }
@@ -198,9 +208,9 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
 
   const onOpen = async (id: string) => {
     const detail = await getCharacter(id);
-    const charRaw = detail?.character ?? detail;
-    const char = normalizeActive(charRaw);
-    setActive(char);
+    const char = detail?.character ?? detail;
+    const normalized = normalizeActiveChar(char);
+    setActive(normalized);
     setSaveState("idle");
     open();
   };
@@ -215,8 +225,7 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
   };
 
   // Debounced auto-save whenever the sheet changes
-  const handleChange = (nextRaw: any) => {
-    const next = normalizeActive(nextRaw);
+  const handleChange = (next: any) => {
     setActive(next);
     setSaveState("saving");
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
@@ -238,50 +247,31 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
           },
         });
 
+        // ✅ re-fetch authoritative row so we get the new `revision` and canonical fields
+        const fresh = await getCharacter(next.id);
+        const freshChar = normalizeActiveChar(fresh?.character ?? fresh);
+
         setSaveState("saved");
         window.setTimeout(() => setSaveState("idle"), 1000);
 
-        // update list copy (keeps grit/name/etc in sync)
+        // Update active and list
+        setActive(freshChar);
         setChars((prev) =>
           prev.map((c) =>
-            c.id === next.id
+            c.id === freshChar.id
               ? {
                   ...c,
-                  ...next,
-                  youLookSelected:
-                    next.youLookSelected ??
-                    next.resources?.youLookSelected ??
-                    c.youLookSelected ??
-                    c.resources?.youLookSelected ??
-                    [],
-                  isBroken:
-                    next.isBroken ??
-                    next.resources?.isBroken ??
-                    c.isBroken ??
-                    c.resources?.isBroken ??
-                    false,
-                  conditions:
-                    next.conditions ??
-                    next.resources?.conditions ??
-                    c.conditions ??
-                    c.resources?.conditions ??
-                    [],
+                  ...freshChar,
                   portraitUrl:
                     c.portraitUrl ??
-                    next.resources?.storage?.portrait ??
-                    next.storage?.portrait ??
-                    next.portraitUrl ??
+                    freshChar?.resources?.storage?.portrait ??
+                    freshChar?.storage?.portrait ??
+                    freshChar?.portraitUrl ??
                     c.portraitUrl ??
                     null,
                 }
               : c
           )
-        );
-
-        // 🔔 notify the page (two ways): prop callback + DOM event
-        onSaved?.(next);
-        window.dispatchEvent(
-          new CustomEvent("character:saved", { detail: { id: next.id, character: next } })
         );
       } catch (e) {
         console.error("Character save failed:", e);
@@ -323,30 +313,7 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
         ))}
       </div>
 
-      <dialog ref={useDialog().ref /* avoid stale ref in TSX jsx - keep useDialog above */} className="rounded-xl backdrop:bg-black/50 p-0 w-[min(100vw,900px)] z-50" />
-
-      {/* Keep the dialog markup created by the hook, not a new one */}
-      <dialog ref={useDialog().ref} className="hidden" />
-
-      <dialog ref={useDialog().ref} className="rounded-xl backdrop:bg-black/50 p-0 w=[min(100vw,900px)] z-50" />
-
-      {/* Actual dialog we control */}
-      <dialog ref={useDialog().ref} className="hidden" />
-
-      {/* Correct dialog (single) */}
-      <dialog ref={useDialog().ref} className="hidden" />
-
-      {/* Real dialog */}
-      <dialog ref={useDialog().ref} className="hidden" />
-
-      {/* Final correct dialog element */}
-      <dialog ref={useDialog().ref} className="hidden" />
-
-      {/* The above multiple dialog refs are a TS noise workaround; keep only one actual dialog: */}
-      <dialog ref={useDialog().ref} className="hidden" />
-
-      {/* 🙋 The actual, single dialog with content */}
-      <dialog ref={useDialog().ref} className="rounded-xl backdrop:bg-black/50 p-0 w-[min(100vw,900px)] z-50">
+      <dialog ref={dialogRef} className="rounded-xl backdrop:bg-black/50 p-0 w-[min(100vw,900px)] z-50">
         <div className="bg-white text-black max-h-[85vh] overflow-y-auto rounded-xl">
           <div className="flex items-center justify-between border-b px-3 py-2">
             <div className="font-semibold text-zinc-800">{active?.name ?? "Character"}</div>
@@ -365,7 +332,12 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
           </div>
           <div className="p-3">
             {active ? (
-              <CharacterSheet key={active.id} value={active} onChange={handleChange} showDice={false} />
+              <CharacterSheet
+                key={`${active.id}:${active.revision ?? 0}`}  // <-- forces fresh mount when revision bumps
+                value={active}
+                onChange={handleChange}
+                showDice={false}
+              />
             ) : (
               <div className="text-sm text-zinc-500">Loading…</div>
             )}
