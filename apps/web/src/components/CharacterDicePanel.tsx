@@ -33,7 +33,8 @@ export default function CharacterDicePanel({
   const skillVal = Number(dto.skills?.[skill] ?? 0);
   const condPenalty = useMemo(
     () => conditionPenaltyForAttribute(attr, dto),
-    [attr, dto]
+    // recompute when the conditions payload changes, even if mutated in place
+    [attr, JSON.stringify(dto.conditions ?? null)]
   );
 
   const preRollAdrenaline = spendAdrenalineNow ? 1 : 0;
