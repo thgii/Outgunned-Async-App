@@ -169,11 +169,22 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
     return chars.filter((c) => c.ownerId === currentUserId);
   }, [chars, isDirector, currentUserId]);
 
+    const [showSheet, setShowSheet] = useState(false);
+
     const onOpen = async (id: string) => {
         const detail = await getCharacter(id);
-        const char = detail?.character ?? detail;   // ← unwrap if needed
+        const char = detail?.character ?? detail; // unwrap
         setActive(char);
-        open();
+        // mount sheet after dialog is visible (prevents zero-size layout)
+        setTimeout(() => {
+            dialogRef.current?.showModal();
+            setShowSheet(true);
+        }, 0);
+    };
+
+    const closeDialog = () => {
+        setShowSheet(false);
+        dialogRef.current?.close();
     };
 
   if (!visible.length) return null;
@@ -213,40 +224,43 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
       </div>
 
         <dialog
-        ref={dialogRef}
-        className="rounded-xl backdrop:bg-black/50 p-0 w-[min(100vw,900px)] z-50"
-        >
-        <div className="bg-white text-black max-h-[85vh] overflow-y-auto rounded-xl">
-            <div className="flex items-center justify-between border-b px-3 py-2">
-            <div className="font-semibold text-zinc-800">{active?.name ?? "Character"}</div>
-            <button onClick={close} className="text-zinc-500 hover:text-zinc-800 text-sm px-2 py-1 rounded">
-                Close
-            </button>
-            </div>
-            <div className="p-3">
-            {active ? (
-                <>
-                {/* Full sheet — pass multiple prop aliases to satisfy the component */}
-                <CharacterSheet
-                    key={active.id}
-                    initial={active}
-                    character={active}
-                    hero={active}
-                    data={active}
-                    readOnly
-                    mode="readonly"
-                    onChange={() => {}}
-                />
-                <pre className="mt-3 text-xs bg-slate-50 border rounded p-2 overflow-auto">
+            ref={dialogRef}
+            className="rounded-xl backdrop:bg-black/50 p-0 w-[min(100vw,900px)] z-50"
+            >
+            <div className="bg-white text-black max-h-[85vh] overflow-y-auto rounded-xl">
+                <div className="flex items-center justify-between border-b px-3 py-2">
+                <div className="font-semibold text-zinc-800">{active?.name ?? "Character"}</div>
+                <button onClick={closeDialog} className="text-zinc-500 hover:text-zinc-800 text-sm px-2 py-1 rounded">
+                    Close
+                </button>
+                </div>
+
+                <div className="p-3">
+                {active && showSheet ? (
+                    // Pass multiple aliases so v2 finds what it wants
+                    <div className="[&_*]:text-black"> {/* force text visible if sheet uses dark classes */}
+                    <CharacterSheet
+                        key={active.id}         // force remount on different hero
+                        initial={active}
+                        character={active}
+                        hero={active}
+                        data={active}
+                        readOnly
+                        mode="readonly"
+                        onChange={() => {}}
+                    />
+                    </div>
+                ) : (
+                    <div className="text-sm text-zinc-500">Loading…</div>
+                )}
+
+                {/* --- TEMP DEBUG: remove once you see the sheet --- */}
+                {/* <pre className="mt-3 text-xs bg-slate-50 border rounded p-2 overflow-auto">
                     {JSON.stringify(active, null, 2)}
-                </pre>
-                </>
-            ) : (
-                <div className="text-sm text-zinc-500">Loading…</div>
-            )}
+                </pre> */}
+                </div>
             </div>
-        </div>
-        </dialog>
+            </dialog>
     </div>
   );
 }
