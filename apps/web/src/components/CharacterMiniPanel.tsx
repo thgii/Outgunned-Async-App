@@ -170,11 +170,10 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
   }, [chars, isDirector, currentUserId]);
 
     const onOpen = async (id: string) => {
-    const detail = await getCharacter(id);
-    const char = detail?.character ?? detail;   // ← unwrap if needed
-    setActive(char);
-    console.log("Mini modal active:", char);
-    open();
+        const detail = await getCharacter(id);
+        const char = detail?.character ?? detail;   // ← unwrap if needed
+        setActive(char);
+        open();
     };
 
   if (!visible.length) return null;
@@ -213,23 +212,38 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
         ))}
       </div>
 
-      <dialog ref={dialogRef} className="rounded-xl backdrop:bg-black/50 p-0 w-[min(100vw,900px)] z-50">
-        <div className="bg-white max-h-[85vh] overflow-y-auto rounded-xl">
-          <div className="flex items-center justify-between border-b px-3 py-2">
+        <dialog
+        ref={dialogRef}
+        className="rounded-xl backdrop:bg-black/50 p-0 w-[min(100vw,900px)] z-50"
+        >
+        <div className="bg-white text-black max-h-[85vh] overflow-y-auto rounded-xl">
+            <div className="flex items-center justify-between border-b px-3 py-2">
             <div className="font-semibold text-zinc-800">{active?.name ?? "Character"}</div>
             <button onClick={close} className="text-zinc-500 hover:text-zinc-800 text-sm px-2 py-1 rounded">
-              Close
+                Close
             </button>
-          </div>
+            </div>
             <div className="p-3">
             {active ? (
-                <CharacterSheet key={active.id} initial={active} readOnly />
+                <>
+                {/* Full sheet — pass multiple prop aliases to satisfy the component */}
+                <CharacterSheet
+                    key={active.id}
+                    initial={active}
+                    character={active}
+                    hero={active}
+                    data={active}
+                    readOnly
+                    mode="readonly"
+                    onChange={() => {}}
+                />
+                </>
             ) : (
                 <div className="text-sm text-zinc-500">Loading…</div>
             )}
             </div>
         </div>
-      </dialog>
+        </dialog>
     </div>
   );
 }
