@@ -115,17 +115,6 @@ export function HeatMeter({
         })}
       </div>
 
-      {/* Threshold legend */}
-      <div className="mt-2 flex flex-col gap-1 text-[11px] text-slate-300">
-        <div className="flex items-center gap-2 justify-center">
-          <span className="inline-block w-3 h-3 rounded-full ring-2 ring-amber-400 bg-slate-600" />
-          <span className="text-slate-300/90">Milestones at 6, 9, 12</span>
-        </div>
-        <div className="text-slate-400">
-          6: Lethal Bullet • 9: Enemies +1 FP • 12: +1 Adrenaline & Lethal Bullet
-        </div>
-      </div>
-
       {saving && <div className="text-xs text-slate-400 mt-1">saving…</div>}
     </div>
   );
