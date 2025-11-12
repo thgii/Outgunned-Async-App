@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import ChatBox from "../components/ChatBox";
-import DiceRoller from "../components/DiceRoller";
 import { SceneBoard } from "../components/SceneBoard";
 import GMControls from "../components/GMControls";
 import { api } from "../lib/api";
@@ -26,6 +25,8 @@ export default function Game() {
   const [game, setGame] = useState<GameRow | null>(null);
   const [me, setMe] = useState<Me>(null);
   const [isDirector, setIsDirector] = useState(false);
+  const [heroes, setHeroes] = useState<any[]>([]);
+  const [myHero, setMyHero] = useState<any | null>(null);
 
   // Load game (for campaignId and top-of-page data)
   useEffect(() => {
@@ -42,7 +43,6 @@ export default function Game() {
         const user = await api.get("/auth/me").catch(() => null);
         setMe(user ?? null);
 
-        // Prefer a real endpoint if you have it; otherwise this can be replaced by your existing membership fetch.
         const roleRow: RoleResp = await api
           .get(`/games/${gameId}/role`)
           .catch(() => ({} as RoleResp));
@@ -53,6 +53,23 @@ export default function Game() {
       }
     })();
   }, [gameId]);
+
+  // Load heroes for the campaign and find this user's hero
+  useEffect(() => {
+    if (!game?.campaignId || !me?.id) return;
+    (async () => {
+      try {
+        const list = await api
+          .get(`/campaigns/${game.campaignId}/heroes`)
+          .catch(() => []);
+        setHeroes(list ?? []);
+        const mine = (list as any[]).find((h) => h.ownerId === me.id);
+        setMyHero(mine ?? null);
+      } catch (err) {
+        console.error("Failed to load heroes", err);
+      }
+    })();
+  }, [game?.campaignId, me?.id]);
 
   if (!game) return <div className="p-6">Loading…</div>;
 
@@ -79,14 +96,17 @@ export default function Game() {
       </div>
 
       <div className="space-y-4">
-        <GameDiceRoller
-          hero={selectedHero}             // pass the live hero object to avoid refetch
-          defaultAttribute="Nerves"       // optional default
-          defaultSkill="Drive"            // optional default
-          bonusDice={0}
-          onRolled={(r) => console.log("rolled:", r)}
-          compact
-        />
+        {/* 🎲 Dice Roller — only visible for players with a hero */}
+        {!isDirector && myHero && (
+          <GameDiceRoller
+            hero={myHero}
+            defaultAttribute="Nerves"
+            defaultSkill="Drive"
+            bonusDice={0}
+            onRolled={(r) => console.log("rolled:", r)}
+            compact
+          />
+        )}
 
         <SceneBoard
           gameId={gameId}
