@@ -122,7 +122,7 @@ export function CountdownsPanel({
                 <label className="text-sm text-slate-300">Start at</label>
                 <select
                   onChange={(e) => startNew(Number(e.target.value))}
-                  className="px-2 py-1 rounded bg-slate-900 border border-slate-700 text-sm"
+                  className="px-2 py-1 rounded bg-slate-900 border border-slate-700 text-sm text-white"
                   defaultValue=""
                 >
                   <option value="" disabled>
