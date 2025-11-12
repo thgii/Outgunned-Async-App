@@ -2,6 +2,95 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { listCharacters, getCharacter } from "../lib/api";
 import CharacterSheet from "./CharacterSheetv2"; // we’ll reuse your v2 sheet
 
+// --- add these utilities near the top of the file ---
+function coerceUrl(u?: unknown): string | undefined {
+  if (!u) return undefined;
+  const s = String(u).trim();
+  if (!s) return undefined;
+
+  // Handle common “data-ish” or blob urls directly
+  if (s.startsWith("data:") || s.startsWith("blob:")) return s;
+
+  // If it already looks absolute, use as-is
+  if (/^https?:\/\//i.test(s)) return s;
+
+  // Otherwise treat as relative path
+  if (s.startsWith("/")) return s;
+
+  // Last resort: make it relative (prevents broken <img> with "undefined")
+  return `/${s}`;
+}
+
+function resolvePortrait(character: any): string | undefined {
+  // Try a bunch of likely places/names
+  const c = character ?? {};
+  const r = c.resources ?? {};
+  const candidates = [
+    c.portraitUrl,
+    c.portraitURL,
+    c.portrait,
+    c.imageUrl,
+    c.pictureUrl,
+    c.avatarUrl,
+    c.photoUrl,
+    r.portraitUrl,
+    r.imageUrl,
+    r.pictureUrl,
+  ];
+  for (const cand of candidates) {
+    const url = coerceUrl(cand);
+    if (url) return url;
+  }
+  return undefined;
+}
+
+type GritInfo = { current: number; max?: number };
+
+function resolveGrit(character: any): GritInfo {
+  // Accept a lot of shapes:
+  // - character.grit: number | { current, max } | { value, max/maximum }
+  // - resources.grit: number | { current, max }
+  const c = character ?? {};
+  const r = c.resources ?? {};
+  let current: number | undefined;
+  let max: number | undefined;
+
+  const tryShape = (g: any) => {
+    if (g == null) return;
+    if (typeof g === "number" || typeof g === "string") {
+      // number or numeric string
+      const n = Number(g);
+      if (!Number.isNaN(n)) current = n;
+      return;
+    }
+    if (typeof g === "object") {
+      // common keys
+      const cur = g.current ?? g.value ?? g.now ?? g.level ?? g.amount;
+      const mx = g.max ?? g.maximum ?? g.cap;
+      if (cur != null) {
+        const n = Number(cur);
+        if (!Number.isNaN(n)) current = n;
+      }
+      if (mx != null) {
+        const m = Number(mx);
+        if (!Number.isNaN(m)) max = m;
+      }
+      return;
+    }
+  };
+
+  tryShape(c.grit);
+  if (current == null || (max == null && (r?.grit != null))) {
+    tryShape(r.grit);
+  }
+
+  // Sensible defaults
+  if (current == null || Number.isNaN(current)) current = 0;
+  if (max != null && Number.isNaN(max)) max = undefined;
+
+  return { current, max };
+}
+
 type Props = {
   campaignId: string;
   currentUserId: string | null;
@@ -16,17 +105,21 @@ function useDialog() {
   return { ref, open, close };
 }
 
-function Portrait({ url, name }: { url?: string | null; name: string }) {
-  // Characters don’t have a guaranteed portrait column; try a few places or fallback
-  const src = typeof url === "string" && url
-    ? url
-    : undefined;
+function Portrait({ character }: { character: any }) {
+  const url = resolvePortrait(character);
+  const name = character?.name ?? "Character";
   return (
     <div className="h-12 w-12 rounded-md overflow-hidden bg-zinc-200 shrink-0">
-      {src ? (
-        <img src={src} alt={`${name} portrait`} className="h-full w-full object-cover" />
+      {url ? (
+        <img
+          src={url}
+          alt={`${name} portrait`}
+          className="h-full w-full object-cover"
+          loading="lazy"
+          referrerPolicy="no-referrer"
+        />
       ) : (
-        <div className="h-full w-full grid place-items-center text-xs text-zinc-500">No Image</div>
+        <div className="h-full w-full grid place-items-center text-[10px] text-zinc-500">No Image</div>
       )}
     </div>
   );
@@ -67,20 +160,8 @@ function SkillChips({ skills }: { skills?: Record<string, number> }) {
 }
 
 function GritBadge({ character }: { character: any }) {
-  // Grit is inconsistent across old records; try multiple spots.
-  // Accepts meter-like {current,max}, or a flat number in resources.grit, or top-level grit.
-  const { resources, grit } = character || {};
-  let current: number | undefined;
-  let max: number | undefined;
-
-  if (grit && typeof grit === "object") {
-    current = Number(grit.current ?? grit.value ?? 0);
-    max = Number(grit.max ?? grit.maximum ?? 0) || undefined;
-  } else if (resources && typeof resources === "object" && resources.grit != null) {
-    current = Number(resources.grit || 0);
-  }
-
-  const label = max ? `${current ?? 0}/${max}` : `${current ?? 0}`;
+  const { current, max } = resolveGrit(character);
+  const label = max ? `${current}/${max}` : `${current}`;
   return (
     <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px]">
       Grit: {label}
@@ -134,7 +215,7 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
             onClick={() => onOpen(c.id)}
             className="w-full text-left bg-white border rounded-lg p-2 hover:shadow-sm transition grid grid-cols-[auto,1fr,auto] gap-3 items-center"
           >
-            <Portrait url={(c as any).portraitUrl || (c?.resources?.portraitUrl)} name={c.name} />
+            <Portrait character={c} />
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <div className="font-medium text-zinc-900 truncate">{c.name}</div>
