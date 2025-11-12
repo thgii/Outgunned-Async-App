@@ -245,8 +245,12 @@ const tropeAttribute = body?.tropeAttribute ?? null;
     (dto as any).storage ?? { backpack: [], bag: [], gunsAndGear: [] }
   );
 
-  // Conditions mirror what ended up in resources
-  const conditions = JSON.stringify(finalResourcesPost.youLookSelected ?? []);
+  // Conditions mirror resources.youLookSelected and stack "Broken" if flagged
+  const condArr = Array.isArray(finalResourcesPost.youLookSelected)
+    ? [...finalResourcesPost.youLookSelected]
+    : [];
+  if (finalResourcesPost.isBroken) condArr.push("Broken");
+  const conditions = JSON.stringify(Array.from(new Set(condArr)));
 
   // Notes: drop missionOrTreasure; accept a plain "notes" if provided
   const notes =
@@ -433,10 +437,14 @@ characters.patch("/:id", async (c) => {
     (dto as any).storage ?? { backpack: [], bag: [], gunsAndGear: [] }
   );
 
-  // Conditions mirror what ended up in resources (final)
-  const conditions = JSON.stringify(
-    finalResourcesPatch.youLookSelected ?? (dto as any).youLookSelected ?? []
-  );
+  // Conditions mirror resources.youLookSelected and stack "Broken" if flagged (final)
+  const condArrPatch = Array.isArray(finalResourcesPatch.youLookSelected)
+    ? [...finalResourcesPatch.youLookSelected]
+    : Array.isArray((dto as any).youLookSelected)
+    ? [...(dto as any).youLookSelected]
+    : [];
+  if (finalResourcesPatch.isBroken ?? (dto as any).isBroken) condArrPatch.push("Broken");
+  const conditions = JSON.stringify(Array.from(new Set(condArrPatch)));
 
   // Notes: keep existing unless an explicit "notes" string is provided
   const notes =
