@@ -159,3 +159,12 @@ export async function uploadImage(file: File): Promise<{ url: string }> {
   form.append("file", file);
   return api("/upload/image", { body: form, method: "POST" }) as Promise<{ url: string }>;
 }
+
+export async function listCharacters(campaignId?: string) {
+  const qs = campaignId ? `?campaignId=${encodeURIComponent(campaignId)}` : "";
+  return api.get(`/characters${qs}`) as Promise<any[]>;
+}
+
+export async function getCharacter(id: string) {
+  return api.get(`/characters/${id}`) as Promise<any>;
+}

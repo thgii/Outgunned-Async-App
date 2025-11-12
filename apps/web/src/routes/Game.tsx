@@ -5,6 +5,7 @@ import DiceRoller from "../components/DiceRoller";
 import { SceneBoard } from "../components/SceneBoard";
 import GMControls from "../components/GMControls";
 import { api } from "../lib/api";
+import CharacterMiniPanel from "../components/CharacterMiniPanel";
 
 type GameRow = {
   id: string;
@@ -55,8 +56,15 @@ export default function Game() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-4">
-      <div className="lg:col-span-2">
+      <div className="lg:col-span-2 flex flex-col gap-3">
         <ChatBox gameId={gameId} />
+        {game?.campaignId && (
+          <CharacterMiniPanel
+            campaignId={game.campaignId}
+            currentUserId={me?.id ?? null}
+            isDirector={isDirector}
+          />
+        )}
       </div>
 
       <div className="space-y-4">
