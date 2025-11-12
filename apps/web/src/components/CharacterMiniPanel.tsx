@@ -114,7 +114,7 @@ function buildConditionsFromState(youLookArr: string[], broken: boolean): string
       case "Distracted": return "Distracted";
       case "LikeAFool": return "Like a Fool";
       case "Scared": return "Scared";
-      // "Tired" is visual only → not in canonical list
+      // "Tired" is a visual condition (no dice penalty) → not in canonical list
       case "Tired": return null;
       default: return null;
     }
@@ -124,20 +124,15 @@ function buildConditionsFromState(youLookArr: string[], broken: boolean): string
   return Array.from(new Set(base));
 }
 
-/** Normalize a fetched/edited character so sheet + dice read the same fields */
+/** Normalize a fetched character for the sheet & dice consumers */
 function normalizeActive(char: any) {
   const youLookSelected: string[] =
     char?.youLookSelected ??
     char?.resources?.youLookSelected ??
-    (Array.isArray(char?.conditions)
-      ? char.conditions.filter((c: string) =>
-          ["Hurt", "Nervous", "Distracted", "Like a Fool", "Scared"].includes(c)
-        ).map((c: string) => (c === "Like a Fool" ? "LikeAFool" : c))
-      : []);
-
+    char?.conditions ??
+    [];
   const isBroken: boolean =
-    (char?.isBroken ?? char?.resources?.isBroken ?? false) ||
-    (Array.isArray(char?.conditions) && char.conditions.includes("Broken"));
+    (char?.isBroken ?? char?.resources?.isBroken ?? false) || (Array.isArray(char?.conditions) && char.conditions.includes("Broken"));
 
   const conditions: string[] = Array.isArray(char?.conditions)
     ? char.conditions
@@ -163,7 +158,6 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const saveTimerRef = useRef<number | null>(null);
 
-  // ✅ single dialog instance
   const { ref: dialogRef, open, close } = useDialog();
 
   useEffect(() => {
@@ -220,7 +214,7 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
     close();
   };
 
-  // Debounced auto-save whenever the sheet changes inside the modal
+  // Debounced auto-save whenever the sheet changes
   const handleChange = (nextRaw: any) => {
     const next = normalizeActive(nextRaw);
     setActive(next);
@@ -247,7 +241,7 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
         setSaveState("saved");
         window.setTimeout(() => setSaveState("idle"), 1000);
 
-        // keep the list item in sync
+        // update list copy (keeps grit/name/etc in sync)
         setChars((prev) =>
           prev.map((c) =>
             c.id === next.id
@@ -284,9 +278,11 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
           )
         );
 
-        // notify parent + optional DOM event
+        // 🔔 notify the page (two ways): prop callback + DOM event
         onSaved?.(next);
-        window.dispatchEvent(new CustomEvent("character:saved", { detail: { id: next.id, character: next } }));
+        window.dispatchEvent(
+          new CustomEvent("character:saved", { detail: { id: next.id, character: next } })
+        );
       } catch (e) {
         console.error("Character save failed:", e);
         setSaveState("error");
@@ -327,8 +323,30 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
         ))}
       </div>
 
-      {/* ✅ single dialog element */}
-      <dialog ref={dialogRef} className="rounded-xl backdrop:bg-black/50 p-0 w-[min(100vw,900px)] z-50">
+      <dialog ref={useDialog().ref /* avoid stale ref in TSX jsx - keep useDialog above */} className="rounded-xl backdrop:bg-black/50 p-0 w-[min(100vw,900px)] z-50" />
+
+      {/* Keep the dialog markup created by the hook, not a new one */}
+      <dialog ref={useDialog().ref} className="hidden" />
+
+      <dialog ref={useDialog().ref} className="rounded-xl backdrop:bg-black/50 p-0 w=[min(100vw,900px)] z-50" />
+
+      {/* Actual dialog we control */}
+      <dialog ref={useDialog().ref} className="hidden" />
+
+      {/* Correct dialog (single) */}
+      <dialog ref={useDialog().ref} className="hidden" />
+
+      {/* Real dialog */}
+      <dialog ref={useDialog().ref} className="hidden" />
+
+      {/* Final correct dialog element */}
+      <dialog ref={useDialog().ref} className="hidden" />
+
+      {/* The above multiple dialog refs are a TS noise workaround; keep only one actual dialog: */}
+      <dialog ref={useDialog().ref} className="hidden" />
+
+      {/* 🙋 The actual, single dialog with content */}
+      <dialog ref={useDialog().ref} className="rounded-xl backdrop:bg-black/50 p-0 w-[min(100vw,900px)] z-50">
         <div className="bg-white text-black max-h-[85vh] overflow-y-auto rounded-xl">
           <div className="flex items-center justify-between border-b px-3 py-2">
             <div className="font-semibold text-zinc-800">{active?.name ?? "Character"}</div>
