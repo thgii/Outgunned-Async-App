@@ -228,9 +228,11 @@ function getMaybeName(v: any): string | undefined {
 export default function CharacterSheetV2({
   value,
   onChange,
+  showDice = true,
 }: {
   value: CharacterDTO | null | undefined; // accepts undefined during first render
   onChange: (c: CharacterDTO) => void;
+  showDice?: boolean;
 }) {
   // Guard against the very first render while the route is still loading
   if (!value) return null;
@@ -613,23 +615,26 @@ function onPortraitFile(e: React.ChangeEvent<HTMLInputElement>) {
           </div>
         </Card>
 
-        {/* Right: stack Dice Roller above Grit above Feats */}
+        {/* Right: stack Dice (optional) above Grit above Feats */}
         <div className="space-y-6">
-          <Card>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <SectionTitle>Dice Roller</SectionTitle>
+          {/* ⬇️ Only render Dice Roller if showDice is true */}
+          {showDice && (
+            <Card>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <SectionTitle>Dice Roller</SectionTitle>
+                </div>
               </div>
-            </div>
-            <div className="mt-4">
-              <CharacterDicePanel
-                dto={local}
-                onSpendAdrenaline={(n) => spendAdrenaline(n)}
-                onPaidRerollSpend={(n) => spendAdrenaline(n)}
-              />
-            </div>
-          </Card>
-
+              <div className="mt-4">
+                <CharacterDicePanel
+                  dto={local}
+                  onSpendAdrenaline={(n) => spendAdrenaline(n)}
+                  onPaidRerollSpend={(n) => spendAdrenaline(n)}
+                />
+              </div>
+            </Card>
+          )}
+          {/* Grit + Feats cards */}
           <Card>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">

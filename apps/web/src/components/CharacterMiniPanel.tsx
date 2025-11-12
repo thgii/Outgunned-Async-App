@@ -240,7 +240,7 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
           </div>
           <div className="p-3">
             {active ? (
-              <CharacterSheet key={active.id} value={active} onChange={handleChange} />
+              <CharacterSheet key={active.id} value={active} onChange={handleChange} showDice={false} />
             ) : (
               <div className="text-sm text-zinc-500">Loading…</div>
             )}
