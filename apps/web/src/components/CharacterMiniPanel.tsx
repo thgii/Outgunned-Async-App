@@ -237,6 +237,9 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
                     mode="readonly"
                     onChange={() => {}}
                 />
+                <pre className="mt-3 text-xs bg-slate-50 border rounded p-2 overflow-auto">
+                    {JSON.stringify(active, null, 2)}
+                </pre>
                 </>
             ) : (
                 <div className="text-sm text-zinc-500">Loading…</div>
