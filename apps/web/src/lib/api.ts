@@ -168,3 +168,16 @@ export async function listCharacters(campaignId?: string) {
 export async function getCharacter(id: string) {
   return api.get(`/characters/${id}`) as Promise<any>;
 }
+
+// Fetch the heroes list for a campaign (includes portraitUrl like Campaign page)
+export async function listCampaignHeroes(campaignId: string) {
+  return api.get(`/campaigns/${encodeURIComponent(campaignId)}/heroes`) as Promise<Array<{
+    id: string;            // usually the character id in your app
+    name: string;
+    ownerId?: string | null;
+    ownerName?: string | null;
+    campaignId?: string | null;
+    portraitUrl?: string | null; // <- important
+    characterId?: string | null; // some endpoints return this instead of id
+  }>>;
+}

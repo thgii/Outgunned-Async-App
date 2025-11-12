@@ -1,55 +1,23 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { listCharacters, getCharacter } from "../lib/api";
-import CharacterSheet from "./CharacterSheetv2"; // we’ll reuse your v2 sheet
+import { listCampaignHeroes, getCharacter } from "../lib/api";
+import CharacterSheet from "./CharacterSheetv2";
 
-// --- add these utilities near the top of the file ---
-function coerceUrl(u?: unknown): string | undefined {
-  if (!u) return undefined;
-  const s = String(u).trim();
-  if (!s) return undefined;
+type Props = {
+  campaignId: string;
+  currentUserId: string | null;
+  isDirector: boolean;
+};
 
-  // Handle common “data-ish” or blob urls directly
-  if (s.startsWith("data:") || s.startsWith("blob:")) return s;
-
-  // If it already looks absolute, use as-is
-  if (/^https?:\/\//i.test(s)) return s;
-
-  // Otherwise treat as relative path
-  if (s.startsWith("/")) return s;
-
-  // Last resort: make it relative (prevents broken <img> with "undefined")
-  return `/${s}`;
+function useDialog() {
+  const ref = useRef<HTMLDialogElement | null>(null);
+  const open = () => ref.current?.showModal();
+  const close = () => ref.current?.close();
+  return { ref, open, close };
 }
 
-function resolvePortrait(character: any): string | undefined {
-  // Try a bunch of likely places/names
-  const c = character ?? {};
-  const r = c.resources ?? {};
-  const candidates = [
-    c.portraitUrl,
-    c.portraitURL,
-    c.portrait,
-    c.imageUrl,
-    c.pictureUrl,
-    c.avatarUrl,
-    c.photoUrl,
-    r.portraitUrl,
-    r.imageUrl,
-    r.pictureUrl,
-  ];
-  for (const cand of candidates) {
-    const url = coerceUrl(cand);
-    if (url) return url;
-  }
-  return undefined;
-}
-
+// ---- robust grit parsing (kept from earlier fix) ----
 type GritInfo = { current: number; max?: number };
-
 function resolveGrit(character: any): GritInfo {
-  // Accept a lot of shapes:
-  // - character.grit: number | { current, max } | { value, max/maximum }
-  // - resources.grit: number | { current, max }
   const c = character ?? {};
   const r = c.resources ?? {};
   let current: number | undefined;
@@ -58,13 +26,11 @@ function resolveGrit(character: any): GritInfo {
   const tryShape = (g: any) => {
     if (g == null) return;
     if (typeof g === "number" || typeof g === "string") {
-      // number or numeric string
       const n = Number(g);
       if (!Number.isNaN(n)) current = n;
       return;
     }
     if (typeof g === "object") {
-      // common keys
       const cur = g.current ?? g.value ?? g.now ?? g.level ?? g.amount;
       const mx = g.max ?? g.maximum ?? g.cap;
       if (cur != null) {
@@ -75,57 +41,26 @@ function resolveGrit(character: any): GritInfo {
         const m = Number(mx);
         if (!Number.isNaN(m)) max = m;
       }
-      return;
     }
   };
 
   tryShape(c.grit);
-  if (current == null || (max == null && (r?.grit != null))) {
-    tryShape(r.grit);
-  }
-
-  // Sensible defaults
+  if (current == null || (max == null && (r?.grit != null))) tryShape(r.grit);
   if (current == null || Number.isNaN(current)) current = 0;
   if (max != null && Number.isNaN(max)) max = undefined;
-
   return { current, max };
 }
 
-type Props = {
-  campaignId: string;
-  currentUserId: string | null;
-  isDirector: boolean;
-};
-
-/** Small, no-dependency modal using <dialog> for the sheet preview */
-function useDialog() {
-  const ref = useRef<HTMLDialogElement | null>(null);
-  const open = () => ref.current?.showModal();
-  const close = () => ref.current?.close();
-  return { ref, open, close };
-}
-
-function Portrait({ character }: { character: any }) {
-  const url = resolvePortrait(character);
-  const name = character?.name ?? "Character";
+function GritBadge({ character }: { character: any }) {
+  const { current, max } = resolveGrit(character);
+  const label = max ? `${current}/${max}` : `${current}`;
   return (
-    <div className="h-12 w-12 rounded-md overflow-hidden bg-zinc-200 shrink-0">
-      {url ? (
-        <img
-          src={url}
-          alt={`${name} portrait`}
-          className="h-full w-full object-cover"
-          loading="lazy"
-          referrerPolicy="no-referrer"
-        />
-      ) : (
-        <div className="h-full w-full grid place-items-center text-[10px] text-zinc-500">No Image</div>
-      )}
-    </div>
+    <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px]">
+      Grit: {label}
+    </span>
   );
 }
 
-/** Render (attribute, value) chips */
 function AttrChips({ attributes }: { attributes?: Record<string, number> }) {
   if (!attributes) return null;
   const order = ["brawn", "nerves", "smooth", "focus", "crime"];
@@ -140,7 +75,6 @@ function AttrChips({ attributes }: { attributes?: Record<string, number> }) {
   );
 }
 
-/** Show top 6 skills (by value, desc) */
 function SkillChips({ skills }: { skills?: Record<string, number> }) {
   if (!skills) return null;
   const top = Object.entries(skills)
@@ -159,81 +93,89 @@ function SkillChips({ skills }: { skills?: Record<string, number> }) {
   );
 }
 
-function GritBadge({ character }: { character: any }) {
-  const { current, max } = resolveGrit(character);
-  const label = max ? `${current}/${max}` : `${current}`;
-  return (
-    <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px]">
-      Grit: {label}
-    </span>
-  );
-}
+type HeroRow = {
+  id: string; // usually character id
+  name: string;
+  ownerId?: string | null;
+  portraitUrl?: string | null;
+  characterId?: string | null; // sometimes present
+};
 
 export default function CharacterMiniPanel({ campaignId, currentUserId, isDirector }: Props) {
-  const [chars, setChars] = useState<any[]>([]);
+  const [heroes, setHeroes] = useState<HeroRow[]>([]);
   const [active, setActive] = useState<any | null>(null);
   const { ref: dialogRef, open, close } = useDialog();
 
   useEffect(() => {
     let alive = true;
     (async () => {
-      const rows = await listCharacters(campaignId);
+      const rows = await listCampaignHeroes(campaignId);
       if (!alive) return;
-      setChars(rows || []);
+      setHeroes(rows || []);
     })();
     return () => { alive = false; };
   }, [campaignId]);
 
   const visible = useMemo(() => {
-    if (isDirector) return chars;
+    if (isDirector) return heroes;
     if (!currentUserId) return [];
-    return chars.filter((c) => c.ownerId === currentUserId);
-  }, [chars, isDirector, currentUserId]);
+    return heroes.filter((h) => h.ownerId === currentUserId);
+  }, [heroes, isDirector, currentUserId]);
 
-  const onOpen = async (id: string) => {
-    const full = await getCharacter(id);
+  const onOpen = async (row: HeroRow) => {
+    // Some endpoints return both id and characterId; prefer characterId if present
+    const charId = row.characterId ?? row.id;
+    const full = await getCharacter(charId);
     setActive(full);
     open();
   };
 
-  if (!visible.length) {
-    // Don’t render a big empty block—keep it subtle
-    return null;
-  }
+  if (!visible.length) return null;
 
   return (
     <div className="mt-3">
-      <h3 className="text-sm font-semibold text-zinc-700 mb-2">
+      <h3 className="text-sm font-semibold text-white mb-2">
         {isDirector ? "Heroes in this Campaign" : "Your Hero"}
       </h3>
 
-      {/* Cards list */}
       <div className="flex flex-col gap-2">
-        {visible.map((c) => (
+        {visible.map((h) => (
           <button
-            key={c.id}
-            onClick={() => onOpen(c.id)}
+            key={h.characterId ?? h.id}
+            onClick={() => onOpen(h)}
             className="w-full text-left bg-white border rounded-lg p-2 hover:shadow-sm transition grid grid-cols-[auto,1fr,auto] gap-3 items-center"
           >
-            <Portrait character={c} />
+            {/* --- portrait logic identical to your Campaign page --- */}
+            <div className="flex items-center gap-3">
+              {h.portraitUrl ? (
+                <img
+                  src={h.portraitUrl}
+                  alt={h.name || "Hero portrait"}
+                  className="w-12 h-12 rounded-md object-cover border border-slate-300"
+                  loading="lazy"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-md bg-slate-200 flex items-center justify-center text-slate-500 text-sm font-semibold">
+                  {h.name?.charAt(0) || "?"}
+                </div>
+              )}
+            </div>
+
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <div className="font-medium text-zinc-900 truncate">{c.name}</div>
-                <GritBadge character={c} />
-              </div>
-              <div className="mt-1">
-                <AttrChips attributes={c.attributes} />
-              </div>
-              <div className="mt-1">
-                <SkillChips skills={c.skills} />
+                <div className="font-medium text-zinc-900 truncate">{h.name}</div>
+                {/* Grit/attributes/skills come from the full character, so we only show them after load.
+                   For a quick glance, you can remove this badge here OR pre-join on the server. */}
               </div>
             </div>
+
             <div className="text-xs text-zinc-500">Open</div>
           </button>
         ))}
       </div>
 
-      {/* Modal (character sheet in a small window) */}
+      {/* Modal with full sheet */}
       <dialog ref={dialogRef} className="rounded-xl backdrop:bg-black/50 p-0 w-[min(100vw,900px)]">
         <div className="bg-white max-h-[85vh] overflow-y-auto rounded-xl">
           <div className="flex items-center justify-between border-b px-3 py-2">
@@ -244,7 +186,13 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
           </div>
           <div className="p-3">
             {active ? (
-              <CharacterSheet initial={active} readOnly />
+              <>
+                {/* If you want grit/attrs visible in the header, we can render badges from 'active' here */}
+                <div className="mb-2 flex items-center gap-2">
+                  <GritBadge character={active} />
+                </div>
+                <CharacterSheet initial={active} readOnly />
+              </>
             ) : (
               <div className="text-sm text-zinc-500">Loading…</div>
             )}
