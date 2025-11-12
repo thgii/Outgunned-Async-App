@@ -19,6 +19,16 @@ function toDbVisibility(v: "public" | "director_private" | "hero") {
 function isHeroLike(v: string) {
   return v === "hero" || v === "player";
 }
+// Normalize rows coming *out* of DB so UI always sees 'hero'
+function normalizeRow<T extends { visibility?: string } | null | undefined>(row: T): T {
+  if (row && (row as any).visibility === "player") {
+    (row as any).visibility = "hero";
+  }
+  return row;
+}
+function normalizeRows(rows: any[] | null | undefined) {
+  return (rows ?? []).map(normalizeRow);
+}
 
 async function isDirectorForGame(DB: D1Database, userId: string | undefined, gameId: string) {
   if (!userId) return false;
@@ -40,8 +50,8 @@ notes.get("/games/:id/notes", async (c) => {
   if (isDirector) {
     const all = await c.env.DB
       .prepare("SELECT * FROM game_notes WHERE gameId = ? ORDER BY createdAt ASC")
-      .bind(gameId).all();
-    return c.json(all.results ?? []);
+      .bind(gameId).all<any>();
+    return c.json(normalizeRows(all.results));
   } else {
     const uid = user?.id ?? "__anon__";
     const res = await c.env.DB
@@ -50,15 +60,15 @@ notes.get("/games/:id/notes", async (c) => {
                  AND (visibility = 'public' OR (visibility IN ('hero','player') AND userId = ?))
                ORDER BY createdAt ASC`)
       .bind(gameId, uid)
-      .all();
-    return c.json(res.results ?? []);
+      .all<any>();
+    return c.json(normalizeRows(res.results));
   }
 });
 
 // POST /games/:id/notes
 // - Director can create public or director_private
 // - Hero can create only "hero" notes (auto-assign userId)
-//   (We map 'hero' -> 'player' when writing to DB)
+//   (We map 'hero' -> 'player' when writing to DB; return 'hero' to client)
 notes.post("/games/:id/notes", async (c) => {
   const gameId = c.req.param("id");
   const user = c.get("user") as { id: string } | undefined;
@@ -82,14 +92,14 @@ notes.post("/games/:id/notes", async (c) => {
     id, gameId, data.heroId ?? null, user.id, dbVisibility, data.title ?? null, data.content, ts, ts
   ).run();
 
-  const row = await c.env.DB.prepare("SELECT * FROM game_notes WHERE id = ?").bind(id).first();
-  return c.json(row, 201);
+  const row = await c.env.DB.prepare("SELECT * FROM game_notes WHERE id = ?").bind(id).first<any>();
+  return c.json(normalizeRow(row), 201);
 });
 
 // PATCH /games/:id/notes/:noteId
 // - Director can edit any
 // - Heroes can edit only their own hero/player notes
-//   (If visibility is changed via PATCH, map 'hero' -> 'player' before saving)
+//   (If visibility is changed via PATCH, map 'hero' -> 'player' before saving; return 'hero')
 notes.patch("/games/:id/notes/:noteId", async (c) => {
   const gameId = c.req.param("id");
   const noteId = c.req.param("noteId");
@@ -124,8 +134,8 @@ notes.patch("/games/:id/notes/:noteId", async (c) => {
     mappedVis, patch.title ?? null, patch.content ?? null, patch.heroId ?? null, updatedAt, noteId
   ).run();
 
-  const updated = await c.env.DB.prepare("SELECT * FROM game_notes WHERE id = ?").bind(noteId).first();
-  return c.json(updated);
+  const updated = await c.env.DB.prepare("SELECT * FROM game_notes WHERE id = ?").bind(noteId).first<any>();
+  return c.json(normalizeRow(updated));
 });
 
 // DELETE /games/:id/notes/:noteId  (Director or author of hero/player note)
