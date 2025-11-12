@@ -78,7 +78,14 @@ export default function Game() {
       </div>
 
       <div className="space-y-4">
-        <DiceRoller gameId={gameId} />
+        <GameDiceRoller
+          hero={selectedHero}             // pass the live hero object to avoid refetch
+          defaultAttribute="Nerves"       // optional default
+          defaultSkill="Drive"            // optional default
+          bonusDice={0}
+          onRolled={(r) => console.log("rolled:", r)}
+          compact
+        />
 
         <SceneBoard
           gameId={gameId}
