@@ -117,17 +117,20 @@ export default function Game() {
       <div className="space-y-4">
         {/* 🎲 Players only; uses CharacterDicePanel (no local selector needed) */}
         {!isDirector && dto && (
-          <CharacterDicePanel
-            dto={dto}
-            className="rounded-xl border p-3 bg-white/70"
-            // Optional: wire these if you have endpoints for resource spend
-            // onSpendAdrenaline={async (amt) => {
-            //   await api.post(`/characters/${dto.id}/spend`, { adrenaline: amt });
-            // }}
-            // onPaidRerollSpend={async (amt) => {
-            //   await api.post(`/characters/${dto.id}/spend`, { adrenaline: amt });
-            // }}
-          />
+          <div>
+            <h2 className="text-lg font-bold text-gray-800 mb-2">🎲 Dice Roller</h2>
+            <CharacterDicePanel
+              dto={dto}
+              className="rounded-xl border p-3 bg-white/70"
+              // Optional: wire these if you have endpoints for resource spend
+              // onSpendAdrenaline={async (amt) => {
+              //   await api.post(`/characters/${dto.id}/spend`, { adrenaline: amt });
+              // }}
+              // onPaidRerollSpend={async (amt) => {
+              //   await api.post(`/characters/${dto.id}/spend`, { adrenaline: amt });
+              // }}
+            />
+          </div>
         )}
 
         <SceneBoard
