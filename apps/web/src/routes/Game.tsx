@@ -7,6 +7,7 @@ import GMControls from "../components/GMControls";
 import { api } from "../lib/api";
 import CharacterMiniPanel from "../components/CharacterMiniPanel";
 import { NPCsPanel } from "../components/NPCsPanel";
+import { GameDiceRoller } from "../components/GameDiceRoller";
 
 type GameRow = {
   id: string;
