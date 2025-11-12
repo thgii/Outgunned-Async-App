@@ -169,11 +169,12 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
     return chars.filter((c) => c.ownerId === currentUserId);
   }, [chars, isDirector, currentUserId]);
 
-  const onOpen = async (id: string) => {
-    const full = await getCharacter(id);
-    setActive(full);
+    const onOpen = async (id: string) => {
+    const detail = await getCharacter(id);
+    const char = detail?.character ?? detail;   // ← unwrap if needed
+    setActive(char);
     open();
-  };
+    };
 
   if (!visible.length) return null;
 
@@ -219,13 +220,13 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
               Close
             </button>
           </div>
-          <div className="p-3">
+            <div className="p-3">
             {active ? (
-              <CharacterSheet initial={active} readOnly />
+                <CharacterSheet key={active.id} initial={active} readOnly />
             ) : (
-              <div className="text-sm text-zinc-500">Loading…</div>
+                <div className="text-sm text-zinc-500">Loading…</div>
             )}
-          </div>
+            </div>
         </div>
       </dialog>
     </div>
