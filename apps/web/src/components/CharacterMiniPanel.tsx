@@ -123,37 +123,45 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
   const [active, setActive] = useState<any | null>(null);
   const { ref: dialogRef, open, close } = useDialog();
 
-  useEffect(() => {
+    useEffect(() => {
     let alive = true;
     (async () => {
-      const [charRows, heroRowsRaw] = await Promise.all([
-        listCharacters(campaignId),
-        listCampaignHeroes(campaignId),
-      ]);
-      if (!alive) return;
+        try {
+        // 1) Get the full character rows (has attrs/skills/grit)
+        const charRows = await listCharacters(campaignId);
 
-      // Build a simple map: characterId -> portraitUrl (Campaign semantics only)
-      const heroRows: HeroRow[] = Array.isArray(heroRowsRaw) ? heroRowsRaw as any : [];
-      const portraitByCharId = new Map<string, string | null>();
-      for (const h of heroRows) {
-        const key = (h.characterId ?? h.id) as string;
-        if (key) portraitByCharId.set(key, h.portraitUrl ?? null);
-      }
+        // 2) For each character, fetch detail and attach portraitUrl
+        const withPortraits = await Promise.all(
+            (charRows || []).map(async (c: any) => {
+            try {
+                const detail = await getCharacter(c.id);
+                const d = detail?.character ?? detail ?? {};
+                const portraitDataUrl =
+                d?.storage?.portrait ??
+                d?.resources?.storage?.portrait ??
+                d?.portraitUrl ??
+                null;
 
-      // Merge portraitUrl onto each character so we can render Campaign-style
-      const merged = (charRows || []).map((c: any) => ({
-        ...c,
-        portraitUrl: portraitByCharId.has(String(c.id))
-          ? portraitByCharId.get(String(c.id))
-          : c.portraitUrl ?? null, // keep any existing value if present
-      }));
+                return { ...c, portraitUrl: portraitDataUrl };
+            } catch {
+                // If detail fetch fails, just return the character as-is
+                return { ...c, portraitUrl: c.portraitUrl ?? null };
+            }
+            })
+        );
 
-      setChars(merged);
+        if (!alive) return;
+        setChars(withPortraits);
+        } catch (e) {
+        // don’t hard-fail the panel
+        if (!alive) return;
+        setChars([]);
+        // Optionally: console.error("MiniPanel load error", e);
+        }
     })();
-    return () => {
-      alive = false;
-    };
-  }, [campaignId]);
+
+    return () => { alive = false; };
+    }, [campaignId]);
 
   const visible = useMemo(() => {
     if (isDirector) return chars;
