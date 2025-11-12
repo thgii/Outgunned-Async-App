@@ -1,22 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { listCharacters, getCharacter, listCampaignHeroes } from "../lib/api";
+import { listCharacters, getCharacter } from "../lib/api";
 import CharacterSheet from "./CharacterSheetv2";
 
 type Props = {
   campaignId: string;
   currentUserId: string | null;
   isDirector: boolean;
-};
-
-// Mirror the Campaign page row exactly
-type HeroRow = {
-  id: string;
-  name: string;
-  ownerName?: string;
-  ownerId?: string;
-  campaignId?: string;
-  portraitUrl?: string | null;
-  characterId?: string | null; // some APIs include this
 };
 
 type GritInfo = { current: number; max?: number };
@@ -32,10 +21,7 @@ function resolveGrit(character: any): GritInfo {
     if (typeof g === "object") {
       const cur = Number(g.current ?? g.value ?? g.now ?? g.level ?? g.amount);
       const mx = Number(g.max ?? g.maximum ?? g.cap);
-      return {
-        current: Number.isNaN(cur) ? undefined : cur,
-        max: Number.isNaN(mx) ? undefined : mx,
-      };
+      return { current: Number.isNaN(cur) ? undefined : cur, max: Number.isNaN(mx) ? undefined : mx };
     }
     return { current: undefined, max: undefined };
   };
@@ -55,7 +41,6 @@ function useDialog() {
   return { ref, open, close };
 }
 
-// Campaign-style portrait block (identical behavior)
 function Portrait({ portraitUrl, name }: { portraitUrl?: string | null; name?: string }) {
   return (
     <div className="h-12 w-12 rounded-md overflow-hidden bg-slate-200 shrink-0 border border-slate-300">
@@ -123,45 +108,35 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
   const [active, setActive] = useState<any | null>(null);
   const { ref: dialogRef, open, close } = useDialog();
 
-    useEffect(() => {
+  useEffect(() => {
     let alive = true;
     (async () => {
-        try {
-        // 1) Get the full character rows (has attrs/skills/grit)
+      try {
         const charRows = await listCharacters(campaignId);
-
-        // 2) For each character, fetch detail and attach portraitUrl
         const withPortraits = await Promise.all(
-            (charRows || []).map(async (c: any) => {
+          (charRows || []).map(async (c: any) => {
             try {
-                const detail = await getCharacter(c.id);
-                const d = detail?.character ?? detail ?? {};
-                const portraitDataUrl =
-                d?.storage?.portrait ??
-                d?.resources?.storage?.portrait ??
-                d?.portraitUrl ??
-                null;
-
-                return { ...c, portraitUrl: portraitDataUrl };
+              const detail = await getCharacter(c.id);
+              const d = detail?.character ?? detail ?? {};
+              const portraitDataUrl =
+                d?.storage?.portrait ?? d?.resources?.storage?.portrait ?? d?.portraitUrl ?? null;
+              return { ...c, portraitUrl: portraitDataUrl };
             } catch {
-                // If detail fetch fails, just return the character as-is
-                return { ...c, portraitUrl: c.portraitUrl ?? null };
+              return { ...c, portraitUrl: c.portraitUrl ?? null };
             }
-            })
+          })
         );
-
         if (!alive) return;
         setChars(withPortraits);
-        } catch (e) {
-        // don’t hard-fail the panel
+      } catch {
         if (!alive) return;
         setChars([]);
-        // Optionally: console.error("MiniPanel load error", e);
-        }
+      }
     })();
-
-    return () => { alive = false; };
-    }, [campaignId]);
+    return () => {
+      alive = false;
+    };
+  }, [campaignId]);
 
   const visible = useMemo(() => {
     if (isDirector) return chars;
@@ -169,23 +144,17 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
     return chars.filter((c) => c.ownerId === currentUserId);
   }, [chars, isDirector, currentUserId]);
 
-    const [showSheet, setShowSheet] = useState(false);
+  const onOpen = async (id: string) => {
+    const detail = await getCharacter(id);
+    const char = detail?.character ?? detail;
+    setActive(char);
+    open();
+  };
 
-    const onOpen = async (id: string) => {
-        const detail = await getCharacter(id);
-        const char = detail?.character ?? detail; // unwrap
-        setActive(char);
-        // mount sheet after dialog is visible (prevents zero-size layout)
-        setTimeout(() => {
-            dialogRef.current?.showModal();
-            setShowSheet(true);
-        }, 0);
-    };
-
-    const closeDialog = () => {
-        setShowSheet(false);
-        dialogRef.current?.close();
-    };
+  const onClose = () => {
+    setActive(null);
+    close();
+  };
 
   if (!visible.length) return null;
 
@@ -202,9 +171,7 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
             onClick={() => onOpen(c.id)}
             className="w-full text-left bg-white border rounded-lg p-2 hover:shadow-sm transition grid grid-cols-[auto,1fr,auto] gap-3 items-center"
           >
-            {/* Portrait rendered EXACTLY like Campaign */}
             <Portrait portraitUrl={c.portraitUrl} name={c.name} />
-
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <div className="font-medium text-zinc-900 truncate">{c.name}</div>
@@ -217,50 +184,28 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
                 <SkillChips skills={c.skills} />
               </div>
             </div>
-
             <div className="text-xs text-zinc-500">Open</div>
           </button>
         ))}
       </div>
 
-        <dialog
-            ref={dialogRef}
-            className="rounded-xl backdrop:bg-black/50 p-0 w-[min(100vw,900px)] z-50"
-            >
-            <div className="bg-white text-black max-h-[85vh] overflow-y-auto rounded-xl">
-                <div className="flex items-center justify-between border-b px-3 py-2">
-                <div className="font-semibold text-zinc-800">{active?.name ?? "Character"}</div>
-                <button onClick={closeDialog} className="text-zinc-500 hover:text-zinc-800 text-sm px-2 py-1 rounded">
-                    Close
-                </button>
-                </div>
-
-                <div className="p-3">
-                {active && showSheet ? (
-                    // Pass multiple aliases so v2 finds what it wants
-                    <div className="[&_*]:text-black"> {/* force text visible if sheet uses dark classes */}
-                    <CharacterSheet
-                        key={active.id}         // force remount on different hero
-                        initial={active}
-                        character={active}
-                        hero={active}
-                        data={active}
-                        readOnly
-                        mode="readonly"
-                        onChange={() => {}}
-                    />
-                    </div>
-                ) : (
-                    <div className="text-sm text-zinc-500">Loading…</div>
-                )}
-
-                {/* --- TEMP DEBUG: remove once you see the sheet --- */}
-                {/* <pre className="mt-3 text-xs bg-slate-50 border rounded p-2 overflow-auto">
-                    {JSON.stringify(active, null, 2)}
-                </pre> */}
-                </div>
-            </div>
-            </dialog>
+      <dialog ref={dialogRef} className="rounded-xl backdrop:bg-black/50 p-0 w-[min(100vw,900px)] z-50">
+        <div className="bg-white text-black max-h-[85vh] overflow-y-auto rounded-xl">
+          <div className="flex items-center justify-between border-b px-3 py-2">
+            <div className="font-semibold text-zinc-800">{active?.name ?? "Character"}</div>
+            <button onClick={onClose} className="text-zinc-500 hover:text-zinc-800 text-sm px-2 py-1 rounded">
+              Close
+            </button>
+          </div>
+          <div className="p-3">
+            {active ? (
+              <CharacterSheet key={active.id} value={active} onChange={() => {}} />
+            ) : (
+              <div className="text-sm text-zinc-500">Loading…</div>
+            )}
+          </div>
+        </div>
+      </dialog>
     </div>
   );
 }
