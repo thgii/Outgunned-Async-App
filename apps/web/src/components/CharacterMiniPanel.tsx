@@ -103,6 +103,63 @@ function GritBadge({ character }: { character: any }) {
   );
 }
 
+/** ---------- NEW: Normalizers so mini-modal always has UI fields ---------- */
+function deriveYouLookFromConditions(conditions?: unknown) {
+  if (!Array.isArray(conditions)) return { youLookSelected: [] as string[], isBroken: false };
+  const map: Record<string, string> = {
+    "Hurt": "Hurt",
+    "Nervous": "Nervous",
+    "Distracted": "Distracted",
+    "Like a Fool": "LikeAFool",
+    "Scared": "Scared",
+    // "Tired" has no dice penalty and is not stored in canonical `conditions`
+  };
+  const youLookSelected = Array.from(
+    new Set(
+      conditions
+        .map(String)
+        .map((c) => c.trim())
+        .map((c) => map[c])
+        .filter(Boolean) as string[]
+    )
+  );
+  const isBroken = conditions.some((c) => String(c).toLowerCase().includes("broken"));
+  return { youLookSelected, isBroken };
+}
+
+function normalizeActiveChar(char: any) {
+  const fromRes = {
+    youLookSelected: char?.resources?.youLookSelected,
+    isBroken: char?.resources?.isBroken,
+  };
+  const haveTop = Array.isArray(char?.youLookSelected) || typeof char?.isBroken === "boolean";
+  const haveRes = Array.isArray(fromRes.youLookSelected) || typeof fromRes.isBroken === "boolean";
+  const derived = deriveYouLookFromConditions(char?.conditions);
+
+  const youLookSelected = haveTop
+    ? char.youLookSelected
+    : haveRes
+    ? fromRes.youLookSelected ?? []
+    : derived.youLookSelected;
+
+  const isBroken = haveTop
+    ? !!char.isBroken
+    : haveRes
+    ? !!fromRes.isBroken
+    : derived.isBroken;
+
+  return {
+    ...char,
+    youLookSelected,
+    isBroken,
+    resources: {
+      ...(char.resources ?? {}),
+      youLookSelected: char?.resources?.youLookSelected ?? youLookSelected ?? [],
+      isBroken: char?.resources?.isBroken ?? isBroken ?? false,
+    },
+  };
+}
+
 export default function CharacterMiniPanel({ campaignId, currentUserId, isDirector }: Props) {
   const [chars, setChars] = useState<any[]>([]);
   const [active, setActive] = useState<any | null>(null);
@@ -123,7 +180,9 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
               const d = detail?.character ?? detail ?? {};
               const portraitDataUrl =
                 d?.storage?.portrait ?? d?.resources?.storage?.portrait ?? d?.portraitUrl ?? null;
-              return { ...c, portraitUrl: portraitDataUrl };
+              // normalize minimal fields used in the row (optional)
+              const normalized = normalizeActiveChar(d);
+              return { ...c, ...normalized, portraitUrl: portraitDataUrl };
             } catch {
               return { ...c, portraitUrl: c.portraitUrl ?? null };
             }
@@ -150,13 +209,13 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
   const onOpen = async (id: string) => {
     const detail = await getCharacter(id);
     const char = detail?.character ?? detail;
-    setActive(char);
+    const normalized = normalizeActiveChar(char);
+    setActive(normalized);
     setSaveState("idle");
     open();
   };
 
   const onClose = () => {
-    // clear any pending save
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current);
       saveTimerRef.current = null;
@@ -176,7 +235,6 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
           method: "PATCH",
           json: {
             ...next,
-            // explicitly preserve condition fields
             youLookSelected: next.youLookSelected ?? next.resources?.youLookSelected ?? [],
             isBroken: next.isBroken ?? next.resources?.isBroken ?? false,
             conditions: next.conditions ?? next.resources?.conditions ?? [],
@@ -188,42 +246,27 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
             },
           },
         });
+
+        // ✅ re-fetch authoritative row so we get the new `revision` and canonical fields
+        const fresh = await getCharacter(next.id);
+        const freshChar = normalizeActiveChar(fresh?.character ?? fresh);
+
         setSaveState("saved");
-        // briefly show "Saved", then go back to idle
         window.setTimeout(() => setSaveState("idle"), 1000);
 
-        // keep the list in sync (e.g., grit changes, name edits)
+        // Update active and list
+        setActive(freshChar);
         setChars((prev) =>
           prev.map((c) =>
-            c.id === next.id
+            c.id === freshChar.id
               ? {
                   ...c,
-                  ...next,
-                  // ✅ explicitly preserve condition-related fields
-                  youLookSelected:
-                    next.youLookSelected ??
-                    next.resources?.youLookSelected ??
-                    c.youLookSelected ??
-                    c.resources?.youLookSelected ??
-                    [],
-                  isBroken:
-                    next.isBroken ??
-                    next.resources?.isBroken ??
-                    c.isBroken ??
-                    c.resources?.isBroken ??
-                    false,
-                  conditions:
-                    next.conditions ??
-                    next.resources?.conditions ??
-                    c.conditions ??
-                    c.resources?.conditions ??
-                    [],
-                  // ✅ portrait fallback chain
+                  ...freshChar,
                   portraitUrl:
                     c.portraitUrl ??
-                    next.resources?.storage?.portrait ??
-                    next.storage?.portrait ??
-                    next.portraitUrl ??
+                    freshChar?.resources?.storage?.portrait ??
+                    freshChar?.storage?.portrait ??
+                    freshChar?.portraitUrl ??
                     c.portraitUrl ??
                     null,
                 }
@@ -234,7 +277,7 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
         console.error("Character save failed:", e);
         setSaveState("error");
       }
-    }, 600); // debounce window
+    }, 600);
   };
 
   if (!visible.length) return null;
@@ -289,7 +332,12 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
           </div>
           <div className="p-3">
             {active ? (
-              <CharacterSheet key={active.id} value={active} onChange={handleChange} showDice={false} />
+              <CharacterSheet
+                key={`${active.id}:${active.revision ?? 0}`}  // <-- forces fresh mount when revision bumps
+                value={active}
+                onChange={handleChange}
+                showDice={false}
+              />
             ) : (
               <div className="text-sm text-zinc-500">Loading…</div>
             )}
