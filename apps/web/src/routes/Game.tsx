@@ -29,7 +29,10 @@ export default function Game() {
   const [heroes, setHeroes] = useState<any[]>([]);
   const [myHero, setMyHero] = useState<any | null>(null);
 
-  // NEW: Character DTO for CharacterDicePanel
+  // 🔹 Bump this when the sheet saves, to force a fresh load
+  const [characterVersion, setCharacterVersion] = useState(0);
+
+  // Character DTO for CharacterDicePanel
   const [dto, setDto] = useState<CharacterDTO | null>(null);
 
   // Load game (for campaignId and top-of-page data)
@@ -90,7 +93,11 @@ export default function Game() {
         console.error("Failed to load character dto", e);
       }
     })();
-  }, [myHero]);
+  }, [myHero, characterVersion]);
+
+    const handleCharacterSaved = () => {
+    setCharacterVersion((v) => v + 1);
+  };
 
   if (!game) return <div className="p-6">Loading…</div>;
 
@@ -105,6 +112,7 @@ export default function Game() {
               campaignId={game.campaignId}
               currentUserId={me?.id ?? null}
               isDirector={isDirector}
+              onCharacterSaved={handleCharacterSaved}
             />
             <NPCsPanel
               campaignId={game.campaignId}

@@ -6,6 +6,7 @@ type Props = {
   campaignId: string;
   currentUserId: string | null;
   isDirector: boolean;
+  onCharacterSaved?: () => void;
 };
 
 type GritInfo = { current: number; max?: number };
@@ -160,7 +161,7 @@ function normalizeActiveChar(char: any) {
   };
 }
 
-export default function CharacterMiniPanel({ campaignId, currentUserId, isDirector }: Props) {
+export default function CharacterMiniPanel({ campaignId, currentUserId, isDirector, onCharacterSaved }: Props) {
   const [chars, setChars] = useState<any[]>([]);
   const [active, setActive] = useState<any | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -273,6 +274,8 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
               : c
           )
         );
+        // 🔹 Notify parent (Game.tsx) that a character was saved
+        onCharacterSaved?.();
       } catch (e) {
         console.error("Character save failed:", e);
         setSaveState("error");
