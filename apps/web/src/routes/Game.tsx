@@ -133,12 +133,12 @@ export default function Game() {
               onSpendAdrenaline={async (amt) => {
                 // Decrease adrenaline/luck pool on the server
                 await api.post(`/characters/${dto.id}/spend`, { adrenaline: amt });
-                setCharacterVersion((v) => v + 1);
+                // setCharacterVersion((v) => v + 1);
               }}
               onPaidRerollSpend={async (amt) => {
                 // Paid re-roll also spends from the same pool
                 await api.post(`/characters/${dto.id}/spend`, { adrenaline: amt });
-                setCharacterVersion((v) => v + 1);
+                // setCharacterVersion((v) => v + 1);
               }}
             />
           </div>
