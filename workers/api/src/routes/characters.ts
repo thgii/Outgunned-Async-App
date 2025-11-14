@@ -114,6 +114,53 @@ function pickTopLevelResourceOverrides(body: any) {
 
 // 🔎 quick ping
 characters.get("/__ping", (c) => c.text("OK: characters router mounted"));
+// SPEND resources (e.g. adrenaline/luck)
+characters.post("/:id/spend", async (c) => {
+  const id = c.req.param("id");
+
+  // Parse body
+  let body: any = null;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: "bad_request", message: "Invalid JSON" }, 400);
+  }
+
+  const delta = Number(body?.adrenaline ?? body?.luck ?? 0);
+  if (!Number.isFinite(delta) || delta <= 0) {
+    return c.json({ error: "bad_request", message: "Invalid spend amount" }, 400);
+  }
+
+  // Load current resources
+  const row = (await one(
+    c.env.DB,
+    "SELECT resources FROM characters WHERE id = ?",
+    [id]
+  )) as { resources?: string } | null;
+
+  if (!row) return c.notFound();
+
+  const existingResources = row.resources ? JSON.parse(row.resources) : {};
+  const currentPool = Number(
+    existingResources.adrenaline ?? existingResources.luck ?? 0
+  ) || 0;
+
+  const nextPool = Math.max(0, currentPool - delta);
+
+  const nextResources = {
+    ...existingResources,
+    adrenaline: nextPool,
+    luck: nextPool, // keep them unified
+  };
+
+  await c.env.DB.prepare(
+    "UPDATE characters SET resources = ? WHERE id = ?"
+  )
+    .bind(JSON.stringify(nextResources), id)
+    .run();
+
+  return c.json({ ok: true, resources: nextResources });
+});
 
 // LIST (optional ?campaignId=..., or ?all=1 for full heroes list with owners)
 characters.get("/", async (c) => {

@@ -130,13 +130,16 @@ export default function Game() {
             <CharacterDicePanel
               dto={dto}
               className="rounded-xl border p-3 bg-white/70"
-              // Optional: wire these if you have endpoints for resource spend
-              // onSpendAdrenaline={async (amt) => {
-              //   await api.post(`/characters/${dto.id}/spend`, { adrenaline: amt });
-              // }}
-              // onPaidRerollSpend={async (amt) => {
-              //   await api.post(`/characters/${dto.id}/spend`, { adrenaline: amt });
-              // }}
+              onSpendAdrenaline={async (amt) => {
+                // Decrease adrenaline/luck pool on the server
+                await api.post(`/characters/${dto.id}/spend`, { adrenaline: amt });
+                setCharacterVersion((v) => v + 1);
+              }}
+              onPaidRerollSpend={async (amt) => {
+                // Paid re-roll also spends from the same pool
+                await api.post(`/characters/${dto.id}/spend`, { adrenaline: amt });
+                setCharacterVersion((v) => v + 1);
+              }}
             />
           </div>
         )}
