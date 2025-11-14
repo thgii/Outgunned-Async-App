@@ -99,6 +99,33 @@ export default function Game() {
     setCharacterVersion((v) => v + 1);
   };
 
+    // 🔹 Spend adrenaline locally + persist to backend (no dice roller reset)
+  const handleAdrenalineSpend = async (amount: number) => {
+    if (!dto || amount <= 0) return;
+
+    const current =
+      Number(dto.resources?.adrenaline ?? dto.resources?.luck ?? 0) || 0;
+    const next = Math.max(0, current - amount);
+
+    // Optimistic UI update: adjust dto in state so CharacterDicePanel sees the new value
+    setDto({
+      ...dto,
+      resources: {
+        ...(dto.resources ?? {}),
+        adrenaline: next,
+        luck: next, // keep these in sync with how your resources work
+      },
+    });
+
+    try {
+      // Persist to backend; this can stay as your /spend endpoint
+      await api.post(`/characters/${dto.id}/spend`, { adrenaline: amount });
+    } catch (err) {
+      console.error("Failed to persist adrenaline spend", err);
+      // (Optional) You could roll back setDto here if you want to be fancy.
+    }
+  };
+
   if (!game) return <div className="p-6">Loading…</div>;
 
   return (
@@ -130,16 +157,8 @@ export default function Game() {
             <CharacterDicePanel
               dto={dto}
               className="rounded-xl border p-3 bg-white/70"
-              onSpendAdrenaline={async (amt) => {
-                // Decrease adrenaline/luck pool on the server
-                await api.post(`/characters/${dto.id}/spend`, { adrenaline: amt });
-                // setCharacterVersion((v) => v + 1);
-              }}
-              onPaidRerollSpend={async (amt) => {
-                // Paid re-roll also spends from the same pool
-                await api.post(`/characters/${dto.id}/spend`, { adrenaline: amt });
-                // setCharacterVersion((v) => v + 1);
-              }}
+              onSpendAdrenaline={handleAdrenalineSpend}
+              onPaidRerollSpend={handleAdrenalineSpend}
             />
           </div>
         )}
