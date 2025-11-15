@@ -128,14 +128,24 @@ export default function Game() {
   };
 
   const handleDiceRollToChat = async (
-    kind: "roll" | "freeReroll" | "paidReroll",
+    kind: "roll" | "freeReroll" | "paidReroll" | "allIn",
     result: RollResult
   ) => {
     if (!dto) return;
 
-    const { jackpot, impossible, extreme, critical, basic } = result;
-
+    const { jackpot, impossible, extreme, critical, basic, flags } = result;
     const who = dto.name || "Unknown hero";
+
+    // 🔥 Special case: All-In bust
+    if (kind === "allIn" && flags?.allInBust) {
+      const content = `${who} went all-in and busted, losing all successes.`;
+      try {
+        await api.post(`/games/${gameId}/messages`, { content });
+      } catch (err) {
+        console.error("Failed to post dice roll to chat", err);
+      }
+      return;
+    }
 
     // Choose prefix based on roll type
     let prefix: string;
@@ -143,6 +153,8 @@ export default function Game() {
       prefix = `${who} used a free re-roll and achieved`;
     } else if (kind === "paidReroll") {
       prefix = `${who} used an adrenaline to re-roll, and achieved`;
+    } else if (kind === "allIn") {
+      prefix = `${who} went all-in and achieved`;
     } else {
       prefix = `${who} achieved`;
     }

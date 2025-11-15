@@ -18,7 +18,7 @@ type DiceRollerProps = {
   className?: string;
   onPaidReroll?: () => void;
   onRollEvent?: (
-    kind: "roll" | "freeReroll" | "paidReroll",
+    kind: "roll" | "freeReroll" | "paidReroll" | "allIn",
     result: RollResult
   ) => void;
 };
@@ -66,12 +66,13 @@ export default function DiceRoller({
     setHistory((h) => [...h, next]);
     onRollEvent?.("paidReroll", next);
   }
-  
+
   function doAllIn() {
     if (!current) return;
     const next = goAllIn(current);
     setCurrent(next);
     setHistory((h) => [...h, next]);
+    onRollEvent?.("allIn", next);
   }
 
   function doReset() {

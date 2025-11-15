@@ -10,7 +10,7 @@ type Props = {
   onPaidRerollSpend?: (amount: number) => void;
   className?: string;
   onRollEvent?: (
-    kind: "roll" | "freeReroll" | "paidReroll",
+    kind: "roll" | "freeReroll" | "paidReroll" | "allIn",
     result: RollResult
   ) => void;
 };
