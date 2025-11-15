@@ -9,6 +9,7 @@ export default function ChatBox({ gameId }: Props) {
   const [messages, setMessages] = useState<any[]>([]);
   const [content, setContent] = useState("");
   const sinceRef = useRef<string | null>(null);
+  const listRef = useRef<HTMLDivElement | null>(null);
 
   // Simple polling; upgrade to SSE or Durable Objects later
   useEffect(() => {
@@ -69,7 +70,12 @@ export default function ChatBox({ gameId }: Props) {
   };
 }, [gameId]);
 
-
+  // Auto-scroll to bottom whenever messages change
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }, [messages.length]);
 
   const send = async () => {
     if (!content.trim()) return;
@@ -82,7 +88,7 @@ export default function ChatBox({ gameId }: Props) {
 
   return (
     <div className="bg-white rounded shadow p-3 h-[78vh] flex flex-col">
-      <div className="flex-1 overflow-y-auto space-y-3">
+      <div ref={listRef} className="flex-1 overflow-y-auto space-y-3">
         {messages.map(m => <Message key={m.id} msg={m} onEdited={(newMsg)=> {
           setMessages((arr)=>arr.map(x=>x.id===newMsg.id?newMsg:x));
         }}/>)}
