@@ -2,12 +2,17 @@ import { useMemo, useState } from "react";
 import type { CharacterDTO, AttrKey, SkillKey } from "@action-thread/types";
 import DiceRoller from "./DiceRoller";
 import { conditionPenaltyForAttribute } from "../lib/conditions";
+import type { RollResult } from "../lib/dice";
 
 type Props = {
   dto: CharacterDTO;
   onSpendAdrenaline?: (amount: number) => void;
   onPaidRerollSpend?: (amount: number) => void;
   className?: string;
+  onRollEvent?: (
+    kind: "roll" | "freeReroll" | "paidReroll",
+    result: RollResult
+  ) => void;
 };
 
 const ATTR_LABEL: Record<AttrKey, string> = {
@@ -23,6 +28,7 @@ export default function CharacterDicePanel({
   onSpendAdrenaline,
   onPaidRerollSpend,
   className = "",
+  onRollEvent,
 }: Props) {
   const [attr, setAttr] = useState<AttrKey>("nerves");
   const [skill, setSkill] = useState<SkillKey>("shoot");
@@ -135,6 +141,7 @@ export default function CharacterDicePanel({
         defaultDifficulty="basic"
         canSpendAdrenaline={canSpendAdrenaline}
         onPaidReroll={() => onPaidRerollSpend?.(1)}
+        onRollEvent={onRollEvent}
       />
     </div>
   );

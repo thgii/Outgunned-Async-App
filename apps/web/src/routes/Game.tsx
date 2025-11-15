@@ -8,6 +8,7 @@ import CharacterMiniPanel from "../components/CharacterMiniPanel";
 import { NPCsPanel } from "../components/NPCsPanel";
 import CharacterDicePanel from "../components/CharacterDicePanel";
 import type { CharacterDTO } from "@action-thread/types";
+import type { RollResult } from "../lib/dice";
 
 type GameRow = {
   id: string;
@@ -126,6 +127,60 @@ export default function Game() {
     }
   };
 
+  const handleDiceRollToChat = async (
+    kind: "roll" | "freeReroll" | "paidReroll",
+    result: RollResult
+  ) => {
+    if (!dto) return;
+
+    const { jackpot, impossible, extreme, critical, basic } = result;
+
+    const who = dto.name || "Unknown hero";
+
+    // Choose prefix based on roll type
+    let prefix: string;
+    if (kind === "freeReroll") {
+      prefix = `${who} used a free re-roll and achieved`;
+    } else if (kind === "paidReroll") {
+      prefix = `${who} used an adrenaline to re-roll, and achieved`;
+    } else {
+      prefix = `${who} achieved`;
+    }
+
+    // Helper for pluralization
+    const seg = (count: number, label: string) => {
+      if (count <= 0) return null;
+      const word = count === 1 ? "success" : "successes";
+      return `${count} ${label} ${word}`;
+    };
+
+    const parts = [
+      seg(jackpot, "jackpot"),
+      seg(impossible, "impossible"),
+      seg(extreme, "extreme"),
+      seg(critical, "critical"),
+      seg(basic, "basic"),
+    ].filter((x): x is string => Boolean(x));
+
+    let content: string;
+
+    if (parts.length === 0) {
+      content = `${prefix} no successes.`;
+    } else if (parts.length === 1) {
+      content = `${prefix} ${parts[0]}.`;
+    } else {
+      const last = parts[parts.length - 1];
+      const rest = parts.slice(0, -1).join(", ");
+      content = `${prefix} ${rest} and ${last}.`;
+    }
+
+    try {
+      await api.post(`/games/${gameId}/messages`, { content });
+    } catch (err) {
+      console.error("Failed to post dice roll to chat", err);
+    }
+  };
+
   if (!game) return <div className="p-6">Loading…</div>;
 
   return (
@@ -159,6 +214,7 @@ export default function Game() {
               className="rounded-xl border p-3 bg-white/70"
               onSpendAdrenaline={handleAdrenalineSpend}
               onPaidRerollSpend={handleAdrenalineSpend}
+              onRollEvent={handleDiceRollToChat}
             />
           </div>
         )}

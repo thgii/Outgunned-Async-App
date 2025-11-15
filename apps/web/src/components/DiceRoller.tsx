@@ -17,6 +17,10 @@ type DiceRollerProps = {
   canSpendAdrenaline?: boolean;
   className?: string;
   onPaidReroll?: () => void;
+  onRollEvent?: (
+    kind: "roll" | "freeReroll" | "paidReroll",
+    result: RollResult
+  ) => void;
 };
 
 export default function DiceRoller({
@@ -27,6 +31,7 @@ export default function DiceRoller({
   canSpendAdrenaline = true,
   className = "",
   onPaidReroll,
+  onRollEvent,
 }: DiceRollerProps) {
   const [difficulty, setDifficulty] = useState<Difficulty>(defaultDifficulty);
   const { pool, clamped } = useMemo(
@@ -41,6 +46,7 @@ export default function DiceRoller({
     const res = performRoll({ attribute, skill, modifier });
     setCurrent(res);
     setHistory([res]);
+    onRollEvent?.("roll", res);
   }
 
   function doRerollFree() {
@@ -48,6 +54,7 @@ export default function DiceRoller({
     const next = applyReroll(current, { free: true });
     setCurrent(next);
     setHistory((h) => [...h, next]);
+    onRollEvent?.("freeReroll", next);
   }
 
   function doRerollPaid() {
@@ -57,8 +64,9 @@ export default function DiceRoller({
     const next = applyReroll(current, { free: false });
     setCurrent(next);
     setHistory((h) => [...h, next]);
+    onRollEvent?.("paidReroll", next);
   }
-
+  
   function doAllIn() {
     if (!current) return;
     const next = goAllIn(current);
