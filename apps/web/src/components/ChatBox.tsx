@@ -14,7 +14,7 @@ export default function ChatBox({ gameId }: Props) {
   // Simple polling; upgrade to SSE or Durable Objects later
   useEffect(() => {
   let timer: number | undefined;
-  let interval = 8000; // start at 8s
+  let interval = 2000; // start at 2s
   let ids = new Set<string>();
 
   // RESET when gameId changes
@@ -38,7 +38,7 @@ export default function ChatBox({ gameId }: Props) {
           setMessages((m) => [...m, ...fresh]);
           sinceRef.current = delta[delta.length - 1].createdAt;
         }
-        interval = 8000; // reset on activity
+        interval = 2000; // reset on activity
       } else {
         // gentle idle backoff (max 30s)
         interval = Math.min(interval + 2000, 30000);
