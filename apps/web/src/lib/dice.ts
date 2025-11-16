@@ -14,9 +14,11 @@ export type RollBreakdown = {
 };
 
 export type RollFlags = {
-  betterThan?: "first" | "previous" | null; // for rerolls: did result improve?
-  lostOneOnReroll?: boolean;                // applied “lose 1 success” penalty
-  allInBust?: boolean;                      // All-In failed: lost everything
+  betterThan?: "first" | "previous" | null;
+  lostOneOnReroll?: boolean;
+  allInBust?: boolean;
+  rerollsUsed?: number;   // how many times applyReroll has been called
+  allInUsed?: boolean;    // has goAllIn been used on this roll chain
 };
 
 export type RollResult = {
@@ -164,7 +166,13 @@ export function analyzePool(faces: number[]): RollBreakdown & {
 export function performRoll(opts: PoolOptions): RollResult {
   const { pool, clamped } = buildPool(opts);
   const faces = rollD6Pool(pool);
-  return finalizeResult(faces, pool, clamped, { betterThan: null, lostOneOnReroll: false, allInBust: false });
+  return finalizeResult(faces, pool, clamped, {
+    betterThan: null,
+    lostOneOnReroll: false,
+    allInBust: false,
+    rerollsUsed: 0,
+    allInUsed: false,
+  });
 }
 
 // Convert analysis to RollResult
@@ -225,29 +233,42 @@ export function defaultRerollIndexes(result: RollResult): number[] {
 
 // Apply a (Free) Re-roll to an existing RollResult
 export function applyReroll(prev: RollResult, opts: ReRollOptions = {}): RollResult {
+  const used = prev.flags?.rerollsUsed ?? 0;
+  if (used >= 1) {
+    // RAW: only one reroll total
+    return prev;
+  }
+
   const hasAnySuccess =
     prev.basic + prev.critical + prev.extreme + prev.impossible + prev.jackpot > 0;
 
   if (!opts.free && !hasAnySuccess) {
-    // Normal reroll requires at least one success to be eligible (RAW).
+    // Normal reroll requires at least one success
     return prev;
   }
 
-  // Copy previous faces (sorted) then reroll chosen indexes
   const faces = [...prev.breakdown.faces];
   const toReroll = opts.rerollIndexes ?? defaultRerollIndexes(prev);
-
   for (const idx of toReroll) {
     faces[idx] = 1 + Math.floor(Math.random() * 6);
   }
 
-  let next = finalizeResult(faces, prev.poolSize, prev.minMaxClamped, { betterThan: null, lostOneOnReroll: false, allInBust: false });
+  let next = finalizeResult(
+    faces,
+    prev.poolSize,
+    prev.minMaxClamped,
+    {
+      ...prev.flags,
+      betterThan: null,
+      lostOneOnReroll: false,
+      allInBust: false,
+      rerollsUsed: used + 1,
+    }
+  );
 
-  // Determine if result improved: extra success OR upgraded a success to a greater tier
   const better =
     rankScore(next) > rankScore(prev) ? "previous" : null;
 
-  // If not a Free Re-roll and not better, lose ONE success of your choice (we drop a Basic first, else Critical, etc.)
   let lostOne = false;
   if (!opts.free && !better) {
     const dec = degradeOneSuccess(next);
@@ -259,22 +280,42 @@ export function applyReroll(prev: RollResult, opts: ReRollOptions = {}): RollRes
 
   next.flags.betterThan = better;
   next.flags.lostOneOnReroll = lostOne;
+  // rerollsUsed is already baked into flags above
   return next;
 }
 
 // “All In”: reroll all non-set dice again; bust if not better -> lose all successes.
 export function goAllIn(prev: RollResult): RollResult {
+  const usedAllIn = prev.flags?.allInUsed ?? false;
+  const rerollsUsed = prev.flags?.rerollsUsed ?? 0;
+
+  // RAW: must have done a reroll, and it must have been better
+  if (!prev.flags?.betterThan || rerollsUsed < 1 || usedAllIn) {
+    return prev;
+  }
+
   const faces = [...prev.breakdown.faces];
   const toReroll = defaultRerollIndexes(prev);
-  for (const idx of toReroll) faces[idx] = 1 + Math.floor(Math.random() * 6);
+  for (const idx of toReroll) {
+    faces[idx] = 1 + Math.floor(Math.random() * 6);
+  }
 
-  let next = finalizeResult(faces, prev.poolSize, prev.minMaxClamped, { betterThan: null, lostOneOnReroll: false, allInBust: false });
+  let next = finalizeResult(
+    faces,
+    prev.poolSize,
+    prev.minMaxClamped,
+    {
+      ...prev.flags,
+      betterThan: null,
+      allInBust: false,
+      allInUsed: true,
+    }
+  );
 
   if (rankScore(next) > rankScore(prev)) {
     next.flags.betterThan = "previous";
     return next;
   } else {
-    // bust -> lose everything
     next.basic = 0;
     next.critical = 0;
     next.extreme = 0;
