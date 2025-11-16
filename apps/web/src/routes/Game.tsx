@@ -253,6 +253,7 @@ export default function Game() {
             </>
           )}
         </div>
+        
 
         <div className="space-y-4">
           {/* 🎲 Players only; uses CharacterDicePanel (no local selector needed) */}
