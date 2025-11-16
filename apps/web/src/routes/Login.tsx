@@ -101,7 +101,7 @@ export default function Login() {
             disabled={busy}
           />
           <p className="text-[11px] text-slate-400 mt-1">
-            Your director should give you this code.
+            Please remember this code for subsequent logins.
           </p>
         </div>
 
