@@ -13,15 +13,18 @@ import type { RollResult } from "../lib/dice";
 type GameRow = {
   id: string;
   campaignId: string;
-  title?: string;
-  name?: string;
+  title: string;                // Acts/games use title
+  status?: string;
   summary?: string | null;
+  membershipRole?: string | null;
+  createdAt?: string;
 };
 
 type CampaignRow = {
   id: string;
-  name: string;
-  title?: string | null;
+  title: string;                // Campaigns use title
+  system?: string;
+  membershipRole?: string | null;
 };
 
 type Me = { id: string } | null;
@@ -46,13 +49,13 @@ export default function Game() {
   // Load game (for campaignId and top-of-page data) + campaign
   useEffect(() => {
     (async () => {
-      const g = await api.get(`/games/${gameId}`).catch(() => null);
+      const g = (await api.get(`/games/${gameId}`).catch(() => null)) as GameRow | null;
       setGame(g);
 
       if (g?.campaignId) {
-        const c = await api
+        const c = (await api
           .get(`/campaigns/${g.campaignId}`)
-          .catch(() => null);
+          .catch(() => null)) as CampaignRow | null;
         setCampaign(c);
       }
     })();
@@ -84,8 +87,9 @@ export default function Game() {
         const list = await api
           .get(`/campaigns/${game.campaignId}/heroes`)
           .catch(() => []);
-        setHeroes(list ?? []);
-        const mine = (list as any[]).find((h) => h.ownerId === me.id);
+        const arr = (list ?? []) as any[];
+        setHeroes(arr);
+        const mine = arr.find((h) => h.ownerId === me.id);
         setMyHero(mine ?? null);
       } catch (err) {
         console.error("Failed to load heroes", err);
@@ -137,7 +141,7 @@ export default function Game() {
       await api.post(`/characters/${dto.id}/spend`, { adrenaline: amount });
     } catch (err) {
       console.error("Failed to persist adrenaline spend", err);
-      // (Optional) You could roll back setDto here if you want to be fancy.
+      // (Optional) rollback dto here if you want
     }
   };
 
@@ -209,8 +213,9 @@ export default function Game() {
 
   if (!game) return <div className="p-6">Loading…</div>;
 
-  const campaignName = campaign?.name ?? "Campaign";
-  const actName = game.title || game.name || "Act";
+  // ✅ Use title for both campaign and act
+  const campaignName = (campaign?.title ?? "").trim() || "Campaign";
+  const actName = (game.title ?? "").trim() || "Act";
 
   return (
     <div className="p-4 space-y-4">
@@ -240,7 +245,10 @@ export default function Game() {
                 isDirector={isDirector}
                 onCharacterSaved={handleCharacterSaved}
               />
-              <NPCsPanel campaignId={game.campaignId} isDirector={isDirector} />
+              <NPCsPanel
+                campaignId={game.campaignId}
+                isDirector={isDirector}
+              />
             </>
           )}
         </div>
