@@ -239,8 +239,6 @@ export default function Game() {
           currentUserId={me?.id ?? null}
           isDirector={isDirector}
         />
-
-        {isDirector && <GMControls gameId={gameId} />}
       </div>
     </div>
   );
