@@ -28,7 +28,7 @@ app.use(
   })
 );
 
-app.route("/", auth);
+app.route("/auth", auth);
 app.use("*", requireUser);
 app.route("/campaigns", campaigns);
 app.route("/games", games);
