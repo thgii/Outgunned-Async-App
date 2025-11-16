@@ -18,6 +18,12 @@ type GameRow = {
   summary?: string | null;
 };
 
+type CampaignRow = {
+  id: string;
+  name: string;
+  title?: string | null;
+};
+
 type Me = { id: string } | null;
 type RoleResp = { role?: "director" | "hero" };
 
@@ -25,6 +31,7 @@ export default function Game() {
   const { id } = useParams();
   const gameId = id!;
   const [game, setGame] = useState<GameRow | null>(null);
+  const [campaign, setCampaign] = useState<CampaignRow | null>(null);
   const [me, setMe] = useState<Me>(null);
   const [isDirector, setIsDirector] = useState(false);
   const [heroes, setHeroes] = useState<any[]>([]);
@@ -36,11 +43,18 @@ export default function Game() {
   // Character DTO for CharacterDicePanel
   const [dto, setDto] = useState<CharacterDTO | null>(null);
 
-  // Load game (for campaignId and top-of-page data)
+  // Load game (for campaignId and top-of-page data) + campaign
   useEffect(() => {
     (async () => {
       const g = await api.get(`/games/${gameId}`).catch(() => null);
       setGame(g);
+
+      if (g?.campaignId) {
+        const c = await api
+          .get(`/campaigns/${g.campaignId}`)
+          .catch(() => null);
+        setCampaign(c);
+      }
     })();
   }, [gameId]);
 
@@ -96,11 +110,11 @@ export default function Game() {
     })();
   }, [myHero, characterVersion]);
 
-    const handleCharacterSaved = () => {
+  const handleCharacterSaved = () => {
     setCharacterVersion((v) => v + 1);
   };
 
-    // 🔹 Spend adrenaline locally + persist to backend (no dice roller reset)
+  // 🔹 Spend adrenaline locally + persist to backend (no dice roller reset)
   const handleAdrenalineSpend = async (amount: number) => {
     if (!dto || amount <= 0) return;
 
@@ -195,50 +209,67 @@ export default function Game() {
 
   if (!game) return <div className="p-6">Loading…</div>;
 
+  const campaignName = campaign?.name ?? "Campaign";
+  const actName = game.title || game.name || "Act";
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-4">
-      <div className="lg:col-span-2 flex flex-col gap-3">
-        <ChatBox
-          gameId={gameId}
-          currentUserId={me?.id ?? null}
-          isDirector={isDirector}
-        />
-        {game?.campaignId && (
-          <>
-            <CharacterMiniPanel
-              campaignId={game.campaignId}
-              currentUserId={me?.id ?? null}
-              isDirector={isDirector}
-              onCharacterSaved={handleCharacterSaved}
-            />
-            <NPCsPanel
-              campaignId={game.campaignId}
-              isDirector={isDirector}
-            />
-          </>
+    <div className="p-4 space-y-4">
+      {/* 🔹 Header above both columns */}
+      <header className="mb-2">
+        <h1 className="text-2xl font-bold text-white drop-shadow">
+          {campaignName}: {actName}
+        </h1>
+        {game.summary && (
+          <p className="text-sm text-white/80 mt-1">{game.summary}</p>
         )}
-      </div>
+      </header>
 
-      <div className="space-y-4">
-        {/* 🎲 Players only; uses CharacterDicePanel (no local selector needed) */}
-        {!isDirector && dto && (
-          <div>
-            <h2 className="text-lg font-bold text-white mb-2">🎲 Dice Roller</h2>
-            <CharacterDicePanel
-              dto={dto}
-              className="rounded-xl border p-3 bg-white/70"
-              onSpendAdrenaline={handleAdrenalineSpend}
-              onPaidRerollSpend={handleAdrenalineSpend}
-              onRollEvent={handleDiceRollToChat}
-            />
-          </div>
-        )}
+      {/* 🔹 Main layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 flex flex-col gap-3">
+          <ChatBox
+            gameId={gameId}
+            currentUserId={me?.id ?? null}
+            isDirector={isDirector}
+          />
+          {game?.campaignId && (
+            <>
+              <CharacterMiniPanel
+                campaignId={game.campaignId}
+                currentUserId={me?.id ?? null}
+                isDirector={isDirector}
+                onCharacterSaved={handleCharacterSaved}
+              />
+              <NPCsPanel campaignId={game.campaignId} isDirector={isDirector} />
+            </>
+          )}
+        </div>
 
-        <SceneBoard
-          gameId={gameId}
-          currentUserId={me?.id ?? null}
-          isDirector={isDirector}
-        />
+        <div className="space-y-4">
+          {/* 🎲 Players only; uses CharacterDicePanel (no local selector needed) */}
+          {!isDirector && dto && (
+            <div>
+              <h2 className="text-lg font-bold text-white mb-2">
+                🎲 Dice Roller
+              </h2>
+              <CharacterDicePanel
+                dto={dto}
+                className="rounded-xl border p-3 bg-white/70"
+                onSpendAdrenaline={handleAdrenalineSpend}
+                onPaidRerollSpend={handleAdrenalineSpend}
+                onRollEvent={handleDiceRollToChat}
+              />
+            </div>
+          )}
+
+          <SceneBoard
+            gameId={gameId}
+            currentUserId={me?.id ?? null}
+            isDirector={isDirector}
+          />
+
+          {isDirector && <GMControls gameId={gameId} />}
+        </div>
       </div>
     </div>
   );
