@@ -9,6 +9,7 @@ import { NPCsPanel } from "../components/NPCsPanel";
 import CharacterDicePanel from "../components/CharacterDicePanel";
 import type { CharacterDTO } from "@action-thread/types";
 import type { RollResult } from "../lib/dice";
+import { SceneSettingPanel } from "../components/SceneSettingPanel";
 
 type GameRow = {
   id: string;
@@ -269,6 +270,9 @@ export default function Game() {
               />
             </div>
           )}
+
+          {/* 🖼 Current Setting: sits above Heat/SceneBoard */}
+          <SceneSettingPanel gameId={gameId} isDirector={isDirector} />
 
           <SceneBoard
             gameId={gameId}

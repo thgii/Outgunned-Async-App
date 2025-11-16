@@ -129,7 +129,9 @@ export interface GameOptions {
   heat?: number;               // default 0
   countdowns?: Countdown[];    // default []
   chase?: ChaseState;          // optional
+  sceneImageUrl?: string | null; // optional scene setting image
 }
+
 
 // ---- Notes ----
 export type GameNoteVisibility = 'public' | 'director_private' | 'player';
@@ -171,6 +173,7 @@ export interface Villain {
 export const defaultGameOptions = (): GameOptions => ({
   heat: 0,
   countdowns: [],
+  sceneImageUrl: null,
 });
 
 export const makeCountdown = (label = 'Clock', total = 6): Countdown => ({

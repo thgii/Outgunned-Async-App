@@ -123,6 +123,7 @@ const OptionsSchema = z.object({
   heat: z.number().int().min(0).max(12).optional(),
   countdowns: z.array(CountdownSchema).optional(),
   chase: ChaseSchema.optional(),
+  sceneImageUrl: z.string().max(4096).optional().nullable(),
 });
 
 // Normalize/clamp helper for chase options (also strips legacy fields)
@@ -145,11 +146,28 @@ function parseOptions(raw: any): GameOptions {
       const heat = Math.max(0, Math.min(12, Number(json?.heat ?? 0)));
       const countdowns = Array.isArray(json?.countdowns) ? json.countdowns : [];
       const chase = normalizeChase(json?.chase);
-      return { heat, countdowns, ...(chase ? { chase } : {}) };
+      const sceneImageUrl =
+        typeof json?.sceneImageUrl === "string" && json.sceneImageUrl.length
+          ? json.sceneImageUrl
+          : undefined;
+
+      return {
+        heat,
+        countdowns,
+        ...(chase ? { chase } : {}),
+        ...(sceneImageUrl ? { sceneImageUrl } : {}),
+      };
     }
+
     const safe = parsed.data;
     const chase = normalizeChase(safe.chase);
-    return { heat: safe.heat ?? 0, countdowns: safe.countdowns ?? [], ...(chase ? { chase } : {}) };
+
+    return {
+      heat: safe.heat ?? 0,
+      countdowns: safe.countdowns ?? [],
+      ...(chase ? { chase } : {}),
+      ...(safe.sceneImageUrl != null ? { sceneImageUrl: safe.sceneImageUrl } : {}),
+    };
   } catch {
     return { heat: 0, countdowns: [] };
   }
@@ -236,6 +254,9 @@ games.patch("/:id/options", async (c) => {
     countdowns: patch.countdowns ?? prev.countdowns ?? [],
     ...(patch.chase !== undefined || prev.chase !== undefined
       ? { chase: normalizeChase(patch.chase ?? prev.chase)! }
+      : {}),
+    ...(patch.sceneImageUrl !== undefined || prev.sceneImageUrl !== undefined
+      ? { sceneImageUrl: patch.sceneImageUrl ?? prev.sceneImageUrl ?? null }
       : {}),
   };
 
