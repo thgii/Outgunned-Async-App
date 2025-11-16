@@ -198,8 +198,11 @@ export default function Game() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-4">
       <div className="lg:col-span-2 flex flex-col gap-3">
-        <ChatBox gameId={gameId} />
-
+        <ChatBox
+          gameId={gameId}
+          currentUserId={me?.id ?? null}
+          isDirector={isDirector}
+        />
         {game?.campaignId && (
           <>
             <CharacterMiniPanel

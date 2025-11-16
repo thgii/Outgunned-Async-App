@@ -3,9 +3,13 @@ import { api } from "../lib/api";
 import Message from "./Message";
 import MessageEditor from "./MessageEditor";
 
-type Props = { gameId: string };
+type Props = {
+  gameId: string;
+  currentUserId: string | null;
+  isDirector: boolean;
+};
 
-export default function ChatBox({ gameId }: Props) {
+export default function ChatBox({ gameId, currentUserId, isDirector }: Props) {
   const [messages, setMessages] = useState<any[]>([]);
   const [content, setContent] = useState("");
   const sinceRef = useRef<string | null>(null);
@@ -89,9 +93,17 @@ export default function ChatBox({ gameId }: Props) {
   return (
     <div className="bg-white rounded shadow p-3 h-[78vh] flex flex-col">
       <div ref={listRef} className="flex-1 overflow-y-auto space-y-3">
-        {messages.map(m => <Message key={m.id} msg={m} onEdited={(newMsg)=> {
-          setMessages((arr)=>arr.map(x=>x.id===newMsg.id?newMsg:x));
-        }}/>)}
+        {messages.map((m) => (
+          <Message
+            key={m.id}
+            msg={m}
+            currentUserId={currentUserId}
+            isDirector={isDirector}
+            onEdited={(newMsg) => {
+              setMessages((arr) => arr.map((x) => (x.id === newMsg.id ? newMsg : x)));
+            }}
+          />
+        ))}
       </div>
       <div className="mt-3 flex gap-2">
         <input

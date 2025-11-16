@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { q, one } from "../utils/db";
 import type { AuthedUser } from "../utils/auth";
+import { getCampaignMembershipByGame } from "../utils/auth";
 
 export const messages = new Hono<{ Bindings: { DB: D1Database } }>();
 
@@ -68,14 +69,43 @@ messages.patch("/messages/:id", async (c) => {
   const id = c.req.param("id");
   const { content } = await c.req.json();
   const editedAt = new Date().toISOString();
-  // append to versions JSON
+
+  // Authenticated user set by requireUser middleware
+  const user = c.get("user") as AuthedUser | undefined;
+  if (!user?.id) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  // Load the existing message so we know who wrote it and which game it's in
   const prev = await one<any>(c.env.DB, "SELECT * FROM messages WHERE id = ?", [id]);
   if (!prev) return c.notFound();
-  const versions = Array.isArray(prev.versions ? JSON.parse(prev.versions) : []) ? JSON.parse(prev.versions ?? "[]") : [];
+
+  // Check the user's role in this game's campaign
+  const mem = await getCampaignMembershipByGame(c.env.DB, user.id, prev.gameId);
+  if (!mem) {
+    // Not part of this campaign at all
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  const isDirector = mem.role === "director";
+  const isAuthor = prev.authorId === user.id;
+
+  // Directors can edit any message; players can only edit their own
+  if (!isDirector && !isAuthor) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  // append to versions JSON
+  const versions = Array.isArray(prev.versions ? JSON.parse(prev.versions) : [])
+    ? JSON.parse(prev.versions ?? "[]")
+    : [];
   versions.push({ content: prev.content, editedAt });
-  await c.env.DB.prepare("UPDATE messages SET content = ?, editedAt = ?, versions = ? WHERE id = ?")
+
+  await c.env.DB
+    .prepare("UPDATE messages SET content = ?, editedAt = ?, versions = ? WHERE id = ?")
     .bind(content, editedAt, JSON.stringify(versions), id)
     .run();
+
   const row = await one<any>(
     c.env.DB,
     `SELECT m.*, u.name as authorName, c.name as characterName

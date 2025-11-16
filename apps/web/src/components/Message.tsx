@@ -2,8 +2,21 @@ import { useState } from "react";
 import MessageEditor from "./MessageEditor";
 import { api } from "../lib/api";
 
-export default function Message({ msg, onEdited }: { msg: any; onEdited: (m: any) => void }) {
+export default function Message({
+  msg,
+  currentUserId,
+  isDirector,
+  onEdited,
+}: {
+  msg: any;
+  currentUserId: string | null;
+  isDirector: boolean;
+  onEdited: (m: any) => void;
+}) {
   const [editing, setEditing] = useState(false);
+
+  const canEdit =
+    isDirector || (currentUserId && msg.authorId === currentUserId);
 
   // Prefer character name, then fall back to player username, then "Unknown"
   const label = msg.characterName || msg.authorName || "Unknown";
@@ -30,14 +43,16 @@ export default function Message({ msg, onEdited }: { msg: any; onEdited: (m: any
 
           <div className="mt-1 whitespace-pre-wrap">{msg.content}</div>
 
-          <div className="text-right">
-            <button
-              className="text-xs text-blue-600 underline"
-              onClick={() => setEditing(true)}
-            >
-              Edit
-            </button>
-          </div>
+          {canEdit && (
+            <div className="text-right">
+              <button
+                className="text-xs text-blue-600 underline"
+                onClick={() => setEditing(true)}
+              >
+                Edit
+              </button>
+            </div>
+          )}
         </>
       ) : (
         <MessageEditor
