@@ -35,7 +35,7 @@ export default function Login() {
       };
       if (email.trim()) body.email = email.trim();
 
-      const res = await api.post("/login", body); // expects { token, user }
+      const res = await api.post("/auth/login", body); // expects { token, user }
       setAuth(res.token, res.user);
       nav(from, { replace: true });
     } catch (err: any) {
