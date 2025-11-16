@@ -123,7 +123,7 @@ const OptionsSchema = z.object({
   heat: z.number().int().min(0).max(12).optional(),
   countdowns: z.array(CountdownSchema).optional(),
   chase: ChaseSchema.optional(),
-  sceneImageUrl: z.string().max(4096).optional().nullable(),
+  sceneImageUrl: z.string().max(200_000).optional().nullable(),
 });
 
 // Normalize/clamp helper for chase options (also strips legacy fields)

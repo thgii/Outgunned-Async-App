@@ -132,7 +132,6 @@ export interface GameOptions {
   sceneImageUrl?: string | null; // optional scene setting image
 }
 
-
 // ---- Notes ----
 export type GameNoteVisibility = 'public' | 'director_private' | 'player';
 
