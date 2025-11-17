@@ -315,6 +315,16 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
           </button>
         ))}
       </div>
+      // Key that only changes when the character changes OR conditions change
+       const sheetKey = useMemo(() => {
+        if (!active) return "none";
+        const conditions =
+          (active.conditions as unknown) ??
+          (active.resources?.conditions as unknown) ??
+          [];
+        const sig = Array.isArray(conditions) ? conditions.join("|") : String(conditions);
+        return `${active.id}:${sig}`;
+      }, [active?.id, JSON.stringify(active?.conditions ?? active?.resources?.conditions ?? [])]);
 
       <dialog ref={dialogRef} className="rounded-xl backdrop:bg-black/50 p-0 w-[min(100vw,900px)] z-50">
         <div className="bg-white text-black max-h-[85vh] overflow-y-auto rounded-xl">
@@ -336,7 +346,7 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
           <div className="p-3">
             {active ? (
               <CharacterSheet
-                key={`${active.id}:${active.revision ?? 0}`}  // <-- forces fresh mount when revision bumps
+                key={sheetKey}  // ⬅️ remount only when id or conditions change
                 value={active}
                 onChange={handleChange}
                 showDice={false}
