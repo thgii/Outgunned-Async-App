@@ -574,7 +574,7 @@ const preTropeDTO = useMemo(() => {
               <Text label="Name *" value={name} onChange={setName} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-700 mb-1 text-white">Portrait</label>
+              <label className="block text-sm font-medium mb-1 text-white">Portrait</label>
               <input
                 type="file"
                 accept="image/*"
