@@ -162,7 +162,9 @@ export default function CharacterDicePanel({
           type="button"
           className="mt-1 inline-flex items-center rounded-md border border-slate-400 bg-slate-800 px-3 py-1 text-xs font-medium text-slate-100 shadow-sm hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
           disabled={!gamble || !lastResult}
-          onClick={() => {
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
             if (!gamble || !lastResult) return;
             const counts = lastResult.breakdown?.counts ?? {};
             const snakeEyes = counts[1] ?? 0;

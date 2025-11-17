@@ -862,7 +862,11 @@ function buildConditionsFromState(youLookArr: string[], broken: boolean): string
               <button
                 type="button"
                 className="inline-flex items-center rounded-md border border-zinc-300 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-100"
-                onClick={spinDeathRoulette}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  spinDeathRoulette();
+                }}
               >
                 🎲 Spin the Cylinder (1d6)
               </button>
