@@ -6952,25 +6952,25 @@
       "description": "You grew up on the streets of an ultrametropolis, you know how things work around here.\nGain a Free Re-roll for all rolls made to move through the Sprawl, to find contacts, and to interact with people who live in the slums."
     },
     {
-      "name": "Higher Self (Master of Multiverse)",
+      "name": "Higher Self",
       "source": "OGAF-EO",
       "requires_meter": true,
       "description": "You can channel the power of the Multiverse through your body to reach a higher form of your self, temporarily gaining their abilities.\n[Quick Action] Decrease your score in an Attribute from 3 to 2 and increase the score of another Attribute you choose. Additionally, you lose one of your Feats- excluding Higher Self - and gain another Feat of your choosing.\nThis effect lasts until the end of the Scene, of Combat, or until you decide to willingly stop it."
     },
     {
-      "name": "Multiversal Control (Master of Multiverse)",
+      "name": "Multiversal Control",
       "source": "OGAF-EO",
       "requires_meter": false,
       "description": "You learned to control the powers of the Multiverse and can sometimes even repair the fabric of reality.\nWhenever you take a spin on the Multiverse Roulette, you may roll 2 dice and choose the better result."
     },
     {
-      "name": "Osmosis (Master of Multiverse)",
+      "name": "Osmosis",
       "source": "OGAF-EO",
       "requires_meter": false,
       "description": "You’ve made contact with an alternate version of yourself and have absorbed their powers or abilities.\nYou immediately gain one Feat of your choice among the ones found in Action Flicks."
     },
     {
-      "name": "Possible Futures (Master of Multiverse)",
+      "name": "Possible Futures",
       "source": "OGAF-EO",
       "requires_meter": true,
       "description": "You have already seen what’s coming. You are prepared.\nYou or another Hero may repeat an Action or Reaction Roll of any kind."
