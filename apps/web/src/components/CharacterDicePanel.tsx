@@ -169,6 +169,7 @@ export default function CharacterDicePanel({
             if (snakeEyes > 0) {
               onGambleGritLoss?.(snakeEyes);
             }
+            setGamble(false);
           }}
         >
           Resolve Gamble

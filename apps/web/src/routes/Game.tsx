@@ -155,7 +155,7 @@ export default function Game() {
     const max =
       Number(dto.grit?.max ?? (dto as any).resources?.grit?.max ?? 12) || 12;
 
-    const nextCurrent = Math.max(0, current - snakeEyes);
+    const nextCurrent = Math.max(0, current + snakeEyes);
 
     // Optimistic UI update for the sheet + any panels using dto
     setDto({
