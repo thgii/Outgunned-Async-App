@@ -14,7 +14,7 @@ import { SceneSettingPanel } from "../components/SceneSettingPanel";
 type GameRow = {
   id: string;
   campaignId: string;
-  title: string;                // Acts/games use title
+  title: string; // Acts/games use title
   status?: string;
   summary?: string | null;
   membershipRole?: string | null;
@@ -23,7 +23,7 @@ type GameRow = {
 
 type CampaignRow = {
   id: string;
-  title: string;                // Campaigns use title
+  title: string; // Campaigns use title
   system?: string;
   membershipRole?: string | null;
 };
@@ -253,10 +253,9 @@ export default function Game() {
             </>
           )}
         </div>
-        
 
         <div className="space-y-4">
-         {/* 🎲 Players only; uses CharacterDicePanel (no local selector needed) */}
+          {/* 🎲 Players only; uses CharacterDicePanel (no local selector needed) */}
           {!isDirector && dto && (
             <div>
               <div className="flex items-center gap-2 mb-2">
@@ -296,18 +295,22 @@ export default function Game() {
                         count your Basic / Critical / higher successes.
                       </li>
                       <li>
-                        If you scored at least one success, you may take <span className="font-medium">one normal
-                        Re-roll</span>. Reroll only dice that weren&apos;t part of a success. If the new result
+                        If you scored at least one success, you may take{" "}
+                        <span className="font-medium">one normal Re-roll</span>. Reroll only
+                        dice that weren&apos;t part of a success. If the new result
                         isn&apos;t better, you lose one previous success.
                       </li>
                       <li>
-                        If you have a <span className="font-medium">Free Re-roll</span>, you may use it instead (even with
-                        0 successes). Free Re-rolls never make you lose successes.
+                        If you have a <span className="font-medium">Free Re-roll</span>, you may use it instead
+                        (even with 0 successes). Free Re-rolls never make you
+                        lose successes.
                       </li>
                       <li>
-                        If your Re-roll (normal or free) <span className="font-medium">improved</span> the result, you may go{" "}
-                        <span className="font-semibold">All In</span>: reroll all non-success dice again. If that roll
-                        isn&apos;t better, you lose all previous successes.
+                        If your Re-roll (normal or free){" "}
+                        <span className="font-medium">improved</span> the result, you may go{" "}
+                        <span className="font-semibold">All In</span>: reroll all non-success
+                        dice again. If that roll isn&apos;t better, you lose all
+                        previous successes.
                       </li>
                     </ol>
 
@@ -323,7 +326,7 @@ export default function Game() {
                 className="rounded-xl border p-3 bg-white/70"
                 onSpendAdrenaline={handleAdrenalineSpend}
                 onPaidRerollSpend={handleAdrenalineSpend}
-                onRollEvent={handleRollEvent}
+                onRollEvent={handleDiceRollToChat}
               />
             </div>
           )}
