@@ -1250,7 +1250,7 @@ return (
     <div className="text-sm text-muted-foreground">
       Skill bumps selected: <b>{total}</b> / {max}
     </div>
-    <div className="grid grid-cols-2 gap-2">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
       {ALL_SKILLS.map((k) => {
         const c = counts.get(k as SkillKey) || 0;
         const baseVal = (baseLevels[k as SkillKey] as number) ?? 0;
@@ -1259,7 +1259,7 @@ return (
         return (
           <div
             key={k}
-            className="border rounded px-3 py-2 flex items-center justify-between"
+            className="border rounded px-3 py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
           >
             <span className="mr-2">{labelize(k)}</span>
             <div className="flex items-center gap-2">
