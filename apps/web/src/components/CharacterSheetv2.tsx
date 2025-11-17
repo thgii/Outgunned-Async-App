@@ -349,12 +349,38 @@ async function spendAdrenaline(amount = 1) {
   /** ---------- Death Roulette ---------- */
   const death = (local.deathRoulette ?? [false, false, false, false, false, false]).slice() as boolean[];
   const deathValue = death.reduce((acc, v) => acc + (v ? 1 : 0), 0);
+
   const setDeathFromCount = (n: number) => {
-    const next = Array.from({ length: 6 }, (_, i) => i < n);
+    const clamped = Math.max(0, Math.min(6, n));
+    const next = Array.from({ length: 6 }, (_, i) => i < clamped);
     update({
       deathRoulette: next as any,
       resources: { ...(local.resources ?? {}), deathRoulette: next as any },
     });
+  };
+
+  // Death Roulette roll state
+  const [deathRoll, setDeathRoll] = useState<number | null>(null);
+  const [deathOutcome, setDeathOutcome] = useState<string | null>(null);
+
+  // Spin the cylinder: 1d6 vs current number of lethal bullets
+  const spinDeathRoulette = () => {
+    const bullets = deathValue; // current Lethal Bullets in the cylinder
+    const roll = 1 + Math.floor(Math.random() * 6);
+    setDeathRoll(roll);
+
+    // RAW: roll > bullets = narrow escape (add a bullet); roll <= bullets = Left for Dead (unless Spotlight)
+    if (roll > bullets) {
+      const nextBullets = Math.min(6, bullets + 1);
+      setDeathFromCount(nextBullets);
+      setDeathOutcome(
+        `Rolled ${roll} vs ${bullets} Lethal Bullet${bullets === 1 ? "" : "s"}: narrow escape! Add 1 Lethal Bullet.`
+      );
+    } else {
+      setDeathOutcome(
+        `Rolled ${roll} vs ${bullets} Lethal Bullet${bullets === 1 ? "" : "s"}: LEFT FOR DEAD (unless an ally spends a Spotlight).`
+      );
+    }
   };
 
   /** ---------- You Look ---------- */
@@ -803,12 +829,39 @@ function buildConditionsFromState(youLookArr: string[], broken: boolean): string
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <SectionTitle>Death Roulette</SectionTitle>
-              <InfoTooltip className="ml-2" text={"Six-chamber fate. Lethal hits add bullets to the roulette. When you’d die, roll 1d6: hit a loaded chamber and you’re dead; miss and you survive (but usually add another bullet)."} />
+              <InfoTooltip
+                className="ml-2"
+                text={
+                  "When you’re about to be Left for Dead, roll 1d6. If the result is greater than your Lethal Bullets, you narrowly escape and add 1 bullet. If it’s equal or lower, you’re Left for Dead (unless a friend spends a Spotlight to save you)."
+                }
+              />
             </div>
-            <span className="text-sm text-zinc-500">{deathValue} / 6</span>
+            <span className="text-sm text-zinc-500">{deathValue} / 6 Lethal Bullets</span>
           </div>
-          <div className="mt-3">
+
+          <div className="mt-3 space-y-3">
+            {/* The 6-chamber cylinder */}
             <BoxRow count={6} value={deathValue} onChange={setDeathFromCount} />
+
+            {/* Spin + result */}
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                className="inline-flex items-center rounded-md border border-zinc-300 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-100"
+                onClick={spinDeathRoulette}
+              >
+                🎲 Spin the Cylinder (1d6)
+              </button>
+
+              {deathRoll != null && (
+                <div className="text-xs text-zinc-700">
+                  <div>
+                    Last roll: <span className="font-semibold">{deathRoll}</span>
+                  </div>
+                  {deathOutcome && <div>{deathOutcome}</div>}
+                </div>
+              )}
+            </div>
           </div>
         </Card>
       </div>
