@@ -256,18 +256,74 @@ export default function Game() {
         
 
         <div className="space-y-4">
-          {/* 🎲 Players only; uses CharacterDicePanel (no local selector needed) */}
+         {/* 🎲 Players only; uses CharacterDicePanel (no local selector needed) */}
           {!isDirector && dto && (
             <div>
-              <h2 className="text-lg font-bold text-white mb-2">
-                🎲 Dice Roller
-              </h2>
+              <div className="flex items-center gap-2 mb-2">
+                <h2 className="text-lg font-bold text-white">
+                  🎲 Dice Roller
+                </h2>
+
+                {/* Tooltip trigger + panel */}
+                <div className="relative group">
+                  <button
+                    type="button"
+                    aria-label="How dice rolling works"
+                    className="w-5 h-5 rounded-full text-xs leading-[18px] border border-slate-400 text-slate-100 bg-slate-700/60 hover:bg-slate-600 hover:border-slate-200 focus:outline-none"
+                    tabIndex={0}
+                  >
+                    ?
+                  </button>
+
+                  {/* Tooltip panel */}
+                  <div
+                    className="
+                      invisible opacity-0
+                      group-hover:visible group-hover:opacity-100
+                      group-focus-within:visible group-focus-within:opacity-100
+                      absolute z-20 left-1/2 -translate-x-1/2 mt-2
+                      w-[22rem] text-left rounded-lg border border-slate-600
+                      bg-slate-900/95 text-slate-100 shadow-xl p-3
+                      text-xs sm:text-sm leading-snug space-y-2
+                      transition duration-150
+                    "
+                  >
+                    <p className="font-semibold">Outgunned dice flow</p>
+
+                    <ol className="list-decimal pl-4 space-y-1">
+                      <li>
+                        Roll <span className="font-medium">Attribute + Skill (+ modifiers)</span> and
+                        count your Basic / Critical / higher successes.
+                      </li>
+                      <li>
+                        If you scored at least one success, you may take <span className="font-medium">one normal
+                        Re-roll</span>. Reroll only dice that weren&apos;t part of a success. If the new result
+                        isn&apos;t better, you lose one previous success.
+                      </li>
+                      <li>
+                        If you have a <span className="font-medium">Free Re-roll</span>, you may use it instead (even with
+                        0 successes). Free Re-rolls never make you lose successes.
+                      </li>
+                      <li>
+                        If your Re-roll (normal or free) <span className="font-medium">improved</span> the result, you may go{" "}
+                        <span className="font-semibold">All In</span>: reroll all non-success dice again. If that roll
+                        isn&apos;t better, you lose all previous successes.
+                      </li>
+                    </ol>
+
+                    <p className="italic text-[0.7rem] sm:text-xs text-slate-300">
+                      Max 3 rolls total: initial roll → 1 reroll (normal or free) → optional All In.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <CharacterDicePanel
                 dto={dto}
                 className="rounded-xl border p-3 bg-white/70"
                 onSpendAdrenaline={handleAdrenalineSpend}
                 onPaidRerollSpend={handleAdrenalineSpend}
-                onRollEvent={handleDiceRollToChat}
+                onRollEvent={handleRollEvent}
               />
             </div>
           )}
