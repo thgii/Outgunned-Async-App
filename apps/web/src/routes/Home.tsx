@@ -3,13 +3,9 @@ import { Link } from "react-router-dom";
 export default function Home() {
   return (
     <div className="p-8 text-center space-y-4">
-      <h1 className="text-4xl font-bold mb-6">Outgunned Campaign Helper</h1>
+      <h1 className="text-4xl font-bold mb-6">OCAP: Outgunned Campaign Async Platform</h1>
 
-      <p className="mb-4">Chat-first tabletop for Outgunned/Adventure.</p>
-      <div className="space-x-4">
-        <Link to="/campaign/demo-camp" className="text-blue-600 underline">Demo Campaign</Link>
-      </div>
-
+      <p className="mb-4">Chat-first tabletop for Outgunned Cinematic Campaigns.</p>
 
       <div className="space-x-4">
         <Link to="/characters/new">
@@ -23,6 +19,13 @@ export default function Home() {
             View All Heroes
           </button>
         </Link>
+
+        <Link to="/campaigns">
+          <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded">
+            View All Campaigns
+          </button>
+        </Link>
+
       </div>
     </div>
   );
