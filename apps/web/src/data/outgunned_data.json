@@ -573,7 +573,7 @@
         "Always Prepared",
         "Gunslinger",
         "I'll Make a Phone Call",
-        "Lockpick",
+        "Lockpicker",
         "Pickpocket",
         "Silver Tongue"
       ],
@@ -592,7 +592,7 @@
         "Always Prepared",
         "Gunslinger",
         "I'll Make a Phone Call",
-        "Lockpick",
+        "Lockpicker",
         "Pickpocket",
         "Silver Tongue"
       ],
@@ -2771,7 +2771,7 @@
       ],
       "feats": [
         "Pickpocket",
-        "Lockpick",
+        "Lockpicker",
         "Shadow",
         "Silver Tongue"
       ],
@@ -2781,7 +2781,7 @@
       ],
       "feat_options": [
         "Pickpocket",
-        "Lockpick",
+        "Lockpicker",
         "Shadow",
         "Silver Tongue"
       ],
@@ -6478,7 +6478,7 @@
       "description": "You pull the break and quickly turn the wheel. Everyone better hold on tight.\n[Full Turn] All Heroes on the ride you are driving skip their Reaction Turn during a Chase. Flip a coin. Heads: -1 Speed. Tails: +1 Speed."
     },
     {
-      "name": "That’s All?",
+      "name": "That's All?",
       "source": "OG",
       "requires_meter": false,
       "description": "You are hard to persuade and even harder to impress.\nGain a Free Re-roll for all rolls made to show courage, to withstand pain, and to resist threats or interrogations."
