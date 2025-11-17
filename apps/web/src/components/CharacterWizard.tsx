@@ -43,6 +43,26 @@ function asName(x: any): string {
   return "";
 }
 
+// Build "[Hero Name], the [Trope] [Role]" style tagline
+function buildHeroTagline(
+  name: string,
+  trope?: string,
+  role?: string
+): string {
+  const safeName = name.trim();
+  const safeTrope = (trope ?? "").trim();
+  const safeRole = (role ?? "").trim();
+
+  if (!safeName) return "";
+
+  const parts: string[] = [];
+  if (safeTrope) parts.push(safeTrope);
+  if (safeRole) parts.push(safeRole);
+
+  if (!parts.length) return "";
+  return `${safeName}, the ${parts.join(" ")}`;
+}
+
 function sanitizeFeats(
   picks: string[],
   roleFeats: string[],
@@ -737,10 +757,17 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
     }
   }
 
+  // inside CharacterWizard component, after all your state/derived values:
+  const tagline = buildHeroTagline(name, trope, role);
+
   // Basic UI: (Tailwind present; keep it minimal and readable)
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-4">
       <h1 className="text-2xl font-bold">Create Hero</h1>
+
+      {tagline && (
+        <p className="text-sm text-zinc-300">{tagline}</p>
+      )}
 
       {step === "identity" && (
         <Card title="Identity">

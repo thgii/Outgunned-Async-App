@@ -304,6 +304,7 @@ export default function CharacterSheetV2({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [local.id]);
 
+  const heroTagline = buildHeroTagline(local.name, local.trope, local.role);
 
   const update = (patch: Partial<CharacterDTO>) => {
     const next = { ...local, ...patch };
@@ -576,11 +577,36 @@ function buildConditionsFromState(youLookArr: string[], broken: boolean): string
   return Array.from(new Set(base)); // de-dupe
 }
 
+function buildHeroTagline(
+  name?: string | null,
+  trope?: string | null,
+  role?: string | null
+): string {
+  const safeName = (name ?? "").trim();
+  const safeTrope = (trope ?? "").trim();
+  const safeRole = (role ?? "").trim();
+
+  if (!safeName) return "";
+
+  const parts: string[] = [];
+  if (safeTrope) parts.push(safeTrope);
+  if (safeRole) parts.push(safeRole);
+
+  if (!parts.length) return "";
+  return `${safeName}, the ${parts.join(" ")}`;
+}
+
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4">
       {/* Header */}
       <Card className="p-5">
         <SectionTitle>Character</SectionTitle>
+
+        {heroTagline && (
+          <p className="mt-1 text-sm text-zinc-600">
+            {heroTagline}
+          </p>
+        )}
 
         <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-4">
           {/* Portrait column */}
