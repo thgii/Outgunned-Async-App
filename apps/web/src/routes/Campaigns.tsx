@@ -68,7 +68,7 @@ export default function Campaigns() {
           />
           <label className="inline-flex items-center gap-2 text-sm">
             <input type="checkbox" checked={showOnlyActive} onChange={(e) => setShowOnlyActive(e.target.checked)} />
-            Only active (has games)
+            Only active (has acts)
           </label>
           <button
             onClick={() => navigate("/campaigns/new")}
