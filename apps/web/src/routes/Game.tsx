@@ -146,6 +146,45 @@ export default function Game() {
     }
   };
 
+    // 🔹 Apply Gamble consequences: lose 1 Grit per Snake Eye
+  const handleGambleGritLoss = async (snakeEyes: number) => {
+    if (!dto || snakeEyes <= 0) return;
+
+    const current =
+      Number(dto.grit?.current ?? (dto as any).resources?.grit?.current ?? 0) || 0;
+    const max =
+      Number(dto.grit?.max ?? (dto as any).resources?.grit?.max ?? 12) || 12;
+
+    const nextCurrent = Math.max(0, current - snakeEyes);
+
+    // Optimistic UI update for the sheet + any panels using dto
+    setDto({
+      ...dto,
+      grit: { current: nextCurrent, max },
+      resources: {
+        ...(dto as any).resources,
+        grit: { current: nextCurrent, max },
+      },
+    });
+
+    const heroName = dto.name || "Unknown hero";
+    const suffix = snakeEyes === 1 ? "Snake Eye" : "Snake Eyes";
+    const msg = `${heroName} gambled and rolled ${snakeEyes} ${suffix}, losing ${snakeEyes} Grit.`;
+
+    try {
+      // Persist Grit change
+      await api.patch(`/characters/${dto.id}`, {
+        grit: { current: nextCurrent, max },
+      });
+
+      // Log to chat
+      await api.post(`/games/${gameId}/messages`, { content: msg });
+    } catch (err) {
+      console.error("Failed to apply Gamble grit loss", err);
+      // (Optional) rollback dto here if you want to be strict
+    }
+  };
+
   const handleDiceRollToChat = async (
     kind: "roll" | "freeReroll" | "paidReroll" | "allIn",
     result: RollResult
@@ -327,6 +366,7 @@ export default function Game() {
                 onSpendAdrenaline={handleAdrenalineSpend}
                 onPaidRerollSpend={handleAdrenalineSpend}
                 onRollEvent={handleDiceRollToChat}
+                onGambleGritLoss={handleGambleGritLoss}
               />
             </div>
           )}

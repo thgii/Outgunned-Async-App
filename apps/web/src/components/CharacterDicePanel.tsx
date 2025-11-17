@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import type { CharacterDTO, AttrKey, SkillKey } from "@action-thread/types";
 import DiceRoller from "./DiceRoller";
 import { conditionPenaltyForAttribute } from "../lib/conditions";
@@ -13,6 +13,8 @@ type Props = {
     kind: "roll" | "freeReroll" | "paidReroll" | "allIn",
     result: RollResult
   ) => void;
+  // 🔹 Called when a Gamble roll finishes and we know how many Snake Eyes were rolled
+  onGambleGritLoss?: (amount: number) => void;
 };
 
 const ATTR_LABEL: Record<AttrKey, string> = {
@@ -29,14 +31,18 @@ export default function CharacterDicePanel({
   onPaidRerollSpend,
   className = "",
   onRollEvent,
+  onGambleGritLoss,
 }: Props) {
   const [attr, setAttr] = useState<AttrKey>("nerves");
   const [skill, setSkill] = useState<SkillKey>("shoot");
   const [adHoc, setAdHoc] = useState<number>(0);
   const [spendAdrenalineNow, setSpendAdrenalineNow] = useState<boolean>(false);
+  const [gamble, setGamble] = useState<boolean>(false);
+  const [lastResult, setLastResult] = useState<RollResult | null>(null);
 
   const attrVal = Number(dto.attributes?.[attr] ?? 0);
   const skillVal = Number(dto.skills?.[skill] ?? 0);
+
   const condPenalty = useMemo(
     () => conditionPenaltyForAttribute(attr, dto),
     // recompute when the conditions payload changes, even if mutated in place
@@ -60,10 +66,9 @@ export default function CharacterDicePanel({
     });
   }
 
-  {/* Controls */}
   return (
     <div className={`space-y-4 ${className}`}>
-      {/* Controls */}
+      {/* Attribute / Skill / Condition */}
       <div className="grid gap-3 sm:grid-cols-3">
         <Field label="Attribute">
           <select
@@ -85,11 +90,13 @@ export default function CharacterDicePanel({
             value={skill}
             onChange={(e) => setSkill(e.target.value as SkillKey)}
           >
-            {Object.keys(dto.skills ?? {}).sort().map((k) => (
-              <option key={k} value={k}>
-                {capitalize(k)} ({Number(dto.skills?.[k as SkillKey] ?? 0)})
-              </option>
-            ))}
+            {Object.keys(dto.skills ?? {})
+              .sort()
+              .map((k) => (
+                <option key={k} value={k}>
+                  {capitalize(k)} ({Number(dto.skills?.[k as SkillKey] ?? 0)})
+                </option>
+              ))}
           </select>
         </Field>
 
@@ -100,6 +107,7 @@ export default function CharacterDicePanel({
         </Field>
       </div>
 
+      {/* Spend adrenaline / ad-hoc / summary */}
       <div className="grid gap-3 sm:grid-cols-3">
         <Field label="Spend 1 Adrenaline now (+1 die)">
           <button
@@ -133,6 +141,40 @@ export default function CharacterDicePanel({
         </Field>
       </div>
 
+      {/* 🔹 Gamble toggle + resolve button */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <Field label="Gamble (Snake Eyes cost 1 Grit each)">
+          <label className="inline-flex items-center gap-2 text-sm text-gray-800 dark:text-gray-100">
+            <input
+              type="checkbox"
+              className="h-4 w-4"
+              checked={gamble}
+              onChange={(e) => setGamble(e.target.checked)}
+            />
+            <span>
+              When this roll is a Gamble, each final <code>1</code> on the dice makes you
+              lose 1 Grit.
+            </span>
+          </label>
+        </Field>
+
+        <button
+          type="button"
+          className="mt-1 inline-flex items-center rounded-md border border-slate-400 bg-slate-800 px-3 py-1 text-xs font-medium text-slate-100 shadow-sm hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+          disabled={!gamble || !lastResult}
+          onClick={() => {
+            if (!gamble || !lastResult) return;
+            const counts = lastResult.breakdown?.counts ?? {};
+            const snakeEyes = counts[1] ?? 0;
+            if (snakeEyes > 0) {
+              onGambleGritLoss?.(snakeEyes);
+            }
+          }}
+        >
+          Resolve Gamble
+        </button>
+      </div>
+
       {/* Embedded roller */}
       <DiceRoller
         attribute={attrVal}
@@ -141,13 +183,19 @@ export default function CharacterDicePanel({
         defaultDifficulty="basic"
         canSpendAdrenaline={canSpendAdrenaline}
         onPaidReroll={() => onPaidRerollSpend?.(1)}
-        onRollEvent={onRollEvent}
+        onRollEvent={(kind, result) => {
+          // 🔹 Track the most recent result in this roll chain
+          setLastResult(result);
+
+          // Preserve existing behavior (chat logging, etc.)
+          onRollEvent?.(kind, result);
+        }}
       />
     </div>
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="block">
       <div className="text-sm font-semibold text-zinc-800 dark:text-gray-100 mb-1">
