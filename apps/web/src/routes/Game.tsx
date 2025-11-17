@@ -171,7 +171,7 @@ export default function Game() {
     if (kind === "freeReroll") {
       prefix = `${who} used a free re-roll and achieved`;
     } else if (kind === "paidReroll") {
-      prefix = `${who} used an adrenaline to re-roll, and achieved`;
+      prefix = `${who} used a re-roll and achieved`;
     } else if (kind === "allIn") {
       prefix = `${who} went all-in and achieved`;
     } else {

@@ -23,16 +23,16 @@ type DiceRollerProps = {
   ) => void;
 };
 
-export default function DiceRoller({
-  attribute,
-  skill,
-  modifier = 0,
-  defaultDifficulty = "basic",
-  canSpendAdrenaline = true,
-  className = "",
-  onPaidReroll,
-  onRollEvent,
-}: DiceRollerProps) {
+export default function DiceRoller(props: DiceRollerProps) {
+  const {
+    attribute,
+    skill,
+    modifier = 0,
+    defaultDifficulty = "basic",
+    className = "",
+    onRollEvent,
+  } = props;
+
   const [difficulty, setDifficulty] = useState<Difficulty>(defaultDifficulty);
   const { pool, clamped } = useMemo(
     () => buildPool({ attribute, skill, modifier }),
@@ -42,6 +42,26 @@ export default function DiceRoller({
   const [current, setCurrent] = useState<RollResult | null>(null);
   const [history, setHistory] = useState<RollResult[]>([]);
 
+  // Derived flags from the engine
+  const rerollsUsed = current?.flags?.rerollsUsed ?? 0;
+  const hasRerolled = rerollsUsed >= 1;
+
+  const hasAnySuccess =
+    current
+      ? current.basic +
+          current.critical +
+          current.extreme +
+          current.impossible +
+          current.jackpot >
+        0
+      : false;
+
+  const canAllIn =
+    !!current &&
+    (current.flags?.rerollsUsed ?? 0) >= 1 &&
+    !!current.flags?.betterThan &&
+    !current.flags?.allInUsed;
+
   function doRoll() {
     const res = performRoll({ attribute, skill, modifier });
     setCurrent(res);
@@ -50,7 +70,7 @@ export default function DiceRoller({
   }
 
   function doRerollFree() {
-    if (!current) return;
+    if (!current || hasRerolled) return;
     const next = applyReroll(current, { free: true });
     setCurrent(next);
     setHistory((h) => [...h, next]);
@@ -58,9 +78,9 @@ export default function DiceRoller({
   }
 
   function doRerollPaid() {
-    if (!current) return;
-    if (!canSpendAdrenaline) return; // guard
-    onPaidReroll?.(); // tell parent to decrement resource
+    if (!current || hasRerolled) return;
+    // Normal (non-free) reroll: must have at least 1 success
+    if (!hasAnySuccess) return;
     const next = applyReroll(current, { free: false });
     setCurrent(next);
     setHistory((h) => [...h, next]);
@@ -68,7 +88,7 @@ export default function DiceRoller({
   }
 
   function doAllIn() {
-    if (!current) return;
+    if (!current || !canAllIn) return;
     const next = goAllIn(current);
     setCurrent(next);
     setHistory((h) => [...h, next]);
@@ -141,8 +161,8 @@ export default function DiceRoller({
         <Button
           color="sky"
           onClick={doRerollFree}
-          disabled={!current}
-          title="Free Re-roll (feat-based, allowed even with 0 success; never lose 1)"
+          disabled={!current || hasRerolled}
+          title="Free Re-roll (feat-based, allowed even with 0 successes; never lose 1)"
         >
           Free Re-roll
         </Button>
@@ -150,16 +170,16 @@ export default function DiceRoller({
         <Button
           color="amber"
           onClick={doRerollPaid}
-          disabled={!current || !canSpendAdrenaline}
+          disabled={!current || hasRerolled || !hasAnySuccess}
           title="Re-roll (requires ≥1 success; if not better, lose 1 success)"
         >
-          Re-roll (Spend 1 Adrenaline)
+          Re-roll
         </Button>
 
         <Button
           color="rose"
           onClick={doAllIn}
-          disabled={!current}
+          disabled={!canAllIn}
           title="All In: if not better, lose ALL previous successes"
         >
           Go All-In
