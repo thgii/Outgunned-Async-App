@@ -45,13 +45,16 @@ function asName(x: any): string {
 
 // Build "[Hero Name], the [Trope] [Role]" style tagline
 function buildHeroTagline(
-  name: string,
-  trope?: string,
-  role?: string
+  name?: string | null,
+  trope?: string | null,
+  role?: string | null
 ): string {
-  const safeName = name.trim();
+  const safeName = (name ?? "").trim();
   const safeTrope = (trope ?? "").trim();
-  const safeRole = (role ?? "").trim();
+
+  // Remove any leading "The " (case-insensitive)
+  let safeRole = (role ?? "").trim();
+  safeRole = safeRole.replace(/^the\s+/i, "");
 
   if (!safeName) return "";
 

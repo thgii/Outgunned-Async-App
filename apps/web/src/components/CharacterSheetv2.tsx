@@ -584,7 +584,10 @@ function buildHeroTagline(
 ): string {
   const safeName = (name ?? "").trim();
   const safeTrope = (trope ?? "").trim();
-  const safeRole = (role ?? "").trim();
+
+  // Remove any leading "The " (case-insensitive)
+  let safeRole = (role ?? "").trim();
+  safeRole = safeRole.replace(/^the\s+/i, "");
 
   if (!safeName) return "";
 
