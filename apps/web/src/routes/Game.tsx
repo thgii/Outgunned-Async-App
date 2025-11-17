@@ -294,6 +294,9 @@ export default function Game() {
         </div>
 
         <div className="space-y-4">
+          {/* 🖼 Current Setting: sits above Dice/Heat/SceneBoard */}
+          <SceneSettingPanel gameId={gameId} isDirector={isDirector} />
+
           {/* 🎲 Players only; uses CharacterDicePanel (no local selector needed) */}
           {!isDirector && dto && (
             <div>
@@ -370,9 +373,6 @@ export default function Game() {
               />
             </div>
           )}
-
-          {/* 🖼 Current Setting: sits above Heat/SceneBoard */}
-          <SceneSettingPanel gameId={gameId} isDirector={isDirector} />
 
           <SceneBoard
             gameId={gameId}

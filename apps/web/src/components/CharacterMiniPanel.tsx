@@ -283,6 +283,20 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
     }, 600);
   };
 
+  // 🔑 Key that only changes when the character changes OR conditions change
+  const sheetKey = useMemo(() => {
+    if (!active) return "none";
+    const conditions =
+      (active.conditions as unknown) ?? (active.resources?.conditions as unknown) ?? [];
+    const sig = Array.isArray(conditions) ? conditions.join("|") : String(conditions);
+    return `${active.id}:${sig}`;
+  }, [
+    active?.id,
+    JSON.stringify(
+      (active as any)?.conditions ?? (active as any)?.resources?.conditions ?? []
+    ),
+  ]);
+
   if (!visible.length) return null;
 
   return (
@@ -315,17 +329,6 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
           </button>
         ))}
       </div>
-      // Key that only changes when the character changes OR conditions change
-       const sheetKey = useMemo(() => {
-        if (!active) return "none";
-        const conditions =
-          (active.conditions as unknown) ??
-          (active.resources?.conditions as unknown) ??
-          [];
-        const sig = Array.isArray(conditions) ? conditions.join("|") : String(conditions);
-        return `${active.id}:${sig}`;
-      }, [active?.id, JSON.stringify(active?.conditions ?? active?.resources?.conditions ?? [])]);
-
       <dialog ref={dialogRef} className="rounded-xl backdrop:bg-black/50 p-0 w-[min(100vw,900px)] z-50">
         <div className="bg-white text-black max-h-[85vh] overflow-y-auto rounded-xl">
           <div className="flex items-center justify-between border-b px-3 py-2">
