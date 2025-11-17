@@ -59,7 +59,7 @@ export default function Header() {
         >
           <Film className="h-6 w-6 shrink-0" style={{ color: `rgb(var(--accent))` }} />
           <span className="text-xl font-bold tracking-wider drop-shadow-sm accent-text">
-            Action Thread
+            OCAP
           </span>
         </NavLink>
 
