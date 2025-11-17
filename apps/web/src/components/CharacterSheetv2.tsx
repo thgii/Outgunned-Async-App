@@ -237,6 +237,16 @@ export default function CharacterSheetV2({
   // Guard against the very first render while the route is still loading
   if (!value) return null;
 
+  // 🔹 Normalize Death Roulette from either top-level or resources
+  const deathRouletteRaw =
+    (value as any)?.deathRoulette ??
+    (value as any)?.resources?.deathRoulette;
+
+  const deathRoulette: [boolean, boolean, boolean, boolean, boolean, boolean] =
+    Array.isArray(deathRouletteRaw) && deathRouletteRaw.length === 6
+      ? (deathRouletteRaw.map(Boolean) as any)
+      : [false, false, false, false, false, false];
+
   // Hydrate safe defaults + mirror counters into resources for a consistent local view
   const safe: CharacterDTO = {
     ...value,
@@ -247,6 +257,8 @@ export default function CharacterSheetV2({
     cash: value.cash ?? (value as any)?.resources?.cash ?? 0,
     // If ride is only in resources (string), bubble it up for the input
     ride: value.ride ?? (value as any)?.resources?.ride ?? value.ride,
+    // 🔹 Always have a canonical top-level deathRoulette for the sheet
+    deathRoulette,
     resources: {
       ...((value as any)?.resources ?? {}),
       grit: (value as any)?.resources?.grit ?? (value.grit ?? { current: 0, max: 12 }),
@@ -257,6 +269,8 @@ export default function CharacterSheetV2({
       ride:
         (typeof value.ride === "string" ? value.ride : getMaybeName(value.ride)) ??
         (value as any)?.resources?.ride,
+      // 🔹 Mirror into resources so the API/worker sees it in the usual place
+      deathRoulette,
     },
   };
 
