@@ -7,6 +7,13 @@ type Props = {
   currentUserId: string | null;
   isDirector: boolean;
   onCharacterSaved?: () => void;
+  // 🔹 New: notify Game.tsx when Death Roulette is rolled
+  onDeathRouletteRoll?: (args: {
+    characterId: string;
+    bulletsBefore: number;
+    roll: number;
+    outcome: "narrowEscape" | "leftForDead";
+  }) => void;
 };
 
 type GritInfo = { current: number; max?: number };
@@ -33,6 +40,37 @@ function resolveGrit(character: any): GritInfo {
     max ??= rTake.max;
   }
   return { current: current ?? 0, max: max ?? undefined };
+}
+
+// 🔹 Adrenaline / Spotlight / Conditions resolvers for badges
+function resolveAdrenaline(character: any): number {
+  const c = character ?? {};
+  const r = c.resources ?? {};
+  const v = c.adrenaline ?? r.adrenaline ?? c.luck ?? r.luck ?? 0;
+  const n = Number(v);
+  return Number.isNaN(n) ? 0 : n;
+}
+
+function resolveSpotlight(character: any): number {
+  const c = character ?? {};
+  const r = c.resources ?? {};
+  const v = c.spotlight ?? r.spotlight ?? 0;
+  const n = Number(v);
+  return Number.isNaN(n) ? 0 : n;
+}
+
+function resolveConditions(character: any): string[] {
+  const c = character ?? {};
+  const fromTop = Array.isArray(c.conditions) ? c.conditions : undefined;
+  const fromRes = Array.isArray(c.resources?.conditions)
+    ? c.resources.conditions
+    : undefined;
+
+  const arr = (fromTop ?? fromRes ?? [])
+    .map((x: any) => String(x).trim())
+    .filter(Boolean);
+
+  return Array.from(new Set(arr));
 }
 
 function useDialog() {
@@ -104,6 +142,42 @@ function GritBadge({ character }: { character: any }) {
   );
 }
 
+function AdrenalineBadge({ character }: { character: any }) {
+  const value = resolveAdrenaline(character);
+  return (
+    <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 text-[11px]">
+      Adr: {value}
+    </span>
+  );
+}
+
+function SpotlightBadge({ character }: { character: any }) {
+  const value = resolveSpotlight(character);
+  return (
+    <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[11px]">
+      Spot: {value}
+    </span>
+  );
+}
+
+function ConditionsBadge({ character }: { character: any }) {
+  const list = resolveConditions(character);
+  if (!list.length) {
+    return (
+      <span className="px-2 py-0.5 rounded bg-slate-50 text-slate-500 border border-slate-200 text-[11px]">
+        Cond: —
+      </span>
+    );
+  }
+  const label =
+    list.length <= 2 ? list.join(", ") : `${list[0]}, ${list[1]} +${list.length - 2}`;
+  return (
+    <span className="px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 text-[11px]">
+      Cond: {label}
+    </span>
+  );
+}
+
 /** ---------- NEW: Normalizers so mini-modal always has UI fields ---------- */
 function deriveYouLookFromConditions(conditions?: unknown) {
   if (!Array.isArray(conditions)) return { youLookSelected: [] as string[], isBroken: false };
@@ -143,11 +217,7 @@ function normalizeActiveChar(char: any) {
     ? fromRes.youLookSelected ?? []
     : derived.youLookSelected;
 
-  const isBroken = haveTop
-    ? !!char.isBroken
-    : haveRes
-    ? !!fromRes.isBroken
-    : derived.isBroken;
+  const isBroken = haveTop ? !!char.isBroken : haveRes ? !!fromRes.isBroken : derived.isBroken;
 
   return {
     ...char,
@@ -161,7 +231,13 @@ function normalizeActiveChar(char: any) {
   };
 }
 
-export default function CharacterMiniPanel({ campaignId, currentUserId, isDirector, onCharacterSaved }: Props) {
+export default function CharacterMiniPanel({
+  campaignId,
+  currentUserId,
+  isDirector,
+  onCharacterSaved,
+  onDeathRouletteRoll,
+}: Props) {
   const [chars, setChars] = useState<any[]>([]);
   const [active, setActive] = useState<any | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -314,9 +390,13 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
           >
             <Portrait portraitUrl={c.portraitUrl} name={c.name} />
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
+              {/* 🔹 Name row with all badges */}
+              <div className="flex flex-wrap items-center gap-2">
                 <div className="font-medium text-zinc-900 truncate">{c.name}</div>
                 <GritBadge character={c} />
+                <AdrenalineBadge character={c} />
+                <SpotlightBadge character={c} />
+                <ConditionsBadge character={c} />
               </div>
               <div className="mt-1">
                 <AttrChips attributes={c.attributes} />
@@ -329,19 +409,38 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
           </button>
         ))}
       </div>
-      <dialog ref={dialogRef} className="rounded-xl backdrop:bg-black/50 p-0 w-[min(100vw,900px)] z-50">
+
+      <dialog
+        ref={dialogRef}
+        className="rounded-xl backdrop:bg-black/50 p-0 w-[min(100vw,900px)] z-50"
+        // 🔹 Close the mini panel when clicking outside the inner card
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            onClose();
+          }
+        }}
+      >
         <div className="bg-white text-black max-h-[85vh] overflow-y-auto rounded-xl">
           <div className="flex items-center justify-between border-b px-3 py-2">
             <div className="font-semibold text-zinc-800">{active?.name ?? "Character"}</div>
             <div className="flex items-center gap-2">
-              {saveState === "saving" && <span className="text-xs px-2 py-1 rounded bg-slate-200">Saving…</span>}
+              {saveState === "saving" && (
+                <span className="text-xs px-2 py-1 rounded bg-slate-200">Saving…</span>
+              )}
               {saveState === "saved" && (
-                <span className="text-xs px-2 py-1 rounded bg-emerald-100 text-emerald-700">Saved</span>
+                <span className="text-xs px-2 py-1 rounded bg-emerald-100 text-emerald-700">
+                  Saved
+                </span>
               )}
               {saveState === "error" && (
-                <span className="text-xs px-2 py-1 rounded bg-red-100 text-red-700">Error</span>
+                <span className="text-xs px-2 py-1 rounded bg-red-100 text-red-700">
+                  Error
+                </span>
               )}
-              <button onClick={onClose} className="text-zinc-500 hover:text-zinc-800 text-sm px-2 py-1 rounded">
+              <button
+                onClick={onClose}
+                className="text-zinc-500 hover:text-zinc-800 text-sm px-2 py-1 rounded"
+              >
                 Close
               </button>
             </div>
@@ -349,10 +448,17 @@ export default function CharacterMiniPanel({ campaignId, currentUserId, isDirect
           <div className="p-3">
             {active ? (
               <CharacterSheet
-                key={sheetKey}  // ⬅️ remount only when id or conditions change
+                key={sheetKey} // remount only when id or conditions change
                 value={active}
                 onChange={handleChange}
                 showDice={false}
+                onDeathRouletteRoll={(payload) => {
+                  if (!active) return;
+                  onDeathRouletteRoll?.({
+                    characterId: active.id,
+                    ...payload,
+                  });
+                }}
               />
             ) : (
               <div className="text-sm text-zinc-500">Loading…</div>

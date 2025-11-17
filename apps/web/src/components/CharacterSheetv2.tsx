@@ -229,10 +229,17 @@ export default function CharacterSheetV2({
   value,
   onChange,
   showDice = true,
+  onDeathRouletteRoll,
 }: {
   value: CharacterDTO | null | undefined; // accepts undefined during first render
   onChange: (c: CharacterDTO) => void;
   showDice?: boolean;
+  // 🔹 New: notify parent when Death Roulette is rolled
+  onDeathRouletteRoll?: (payload: {
+    bulletsBefore: number;
+    roll: number;
+    outcome: "narrowEscape" | "leftForDead";
+  }) => void;
 }) {
   // Guard against the very first render while the route is still loading
   if (!value) return null;
@@ -390,10 +397,22 @@ async function spendAdrenaline(amount = 1) {
       setDeathOutcome(
         `Rolled ${roll} vs ${bullets} Lethal Bullet${bullets === 1 ? "" : "s"}: narrow escape! Add 1 Lethal Bullet.`
       );
+
+      onDeathRouletteRoll?.({
+        bulletsBefore: bullets,
+        roll,
+        outcome: "narrowEscape",
+      });
     } else {
       setDeathOutcome(
         `Rolled ${roll} vs ${bullets} Lethal Bullet${bullets === 1 ? "" : "s"}: LEFT FOR DEAD (unless an ally spends a Spotlight).`
       );
+
+      onDeathRouletteRoll?.({
+        bulletsBefore: bullets,
+        roll,
+        outcome: "leftForDead",
+      });
     }
   };
 

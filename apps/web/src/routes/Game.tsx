@@ -185,6 +185,45 @@ export default function Game() {
     }
   };
 
+    const handleDeathRouletteRoll = async ({
+    characterId,
+    bulletsBefore,
+    roll,
+    outcome,
+  }: {
+    characterId: string;
+    bulletsBefore: number;
+    roll: number;
+    outcome: "narrowEscape" | "leftForDead";
+  }) => {
+    // Find hero row so we can get hero name + owner username
+    const hero =
+      heroes.find((h) => h.id === characterId || h.characterId === characterId) ?? null;
+
+    const heroName = hero?.name ?? "Unknown hero";
+    const playerName =
+      hero?.ownerName ??
+      hero?.owner?.name ??
+      "unknown player";
+
+    const bullets = bulletsBefore;
+
+    const outcomeText =
+      outcome === "narrowEscape"
+        ? "narrowly avoiding death and adding another bullet to their cylinder."
+        : "being left for dead (unless an ally spends a Spotlight to save them).";
+
+    const content = `${heroName} (${playerName}) rolled the death roulette. They had ${bullets} lethal bullet${
+      bullets === 1 ? "" : "s"
+    } in their cylinder and rolled a ${roll}, resulting in ${outcomeText}`;
+
+    try {
+      await api.post(`/games/${gameId}/messages`, { content });
+    } catch (err) {
+      console.error("Failed to post death roulette to chat", err);
+    }
+  };
+
   const handleDiceRollToChat = async (
     kind: "roll" | "freeReroll" | "paidReroll" | "allIn",
     result: RollResult
@@ -284,6 +323,7 @@ export default function Game() {
                 currentUserId={me?.id ?? null}
                 isDirector={isDirector}
                 onCharacterSaved={handleCharacterSaved}
+                onDeathRouletteRoll={handleDeathRouletteRoll}
               />
               <NPCsPanel
                 campaignId={game.campaignId}
