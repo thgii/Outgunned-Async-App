@@ -213,7 +213,7 @@ export default function Game() {
         ? "narrowly avoiding death and adding another bullet to their cylinder."
         : "being left for dead (unless an ally spends a Spotlight to save them).";
 
-    const content = `${heroName} (${playerName}) rolled the death roulette. They had ${bullets} lethal bullet${
+    const content = `${heroName} rolled the death roulette. They had ${bullets} lethal bullet${
       bullets === 1 ? "" : "s"
     } in their cylinder and rolled a ${roll}, resulting in ${outcomeText}`;
 
