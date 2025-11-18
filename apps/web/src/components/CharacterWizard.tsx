@@ -429,34 +429,71 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
     // prevent toggling away auto TYtD
     if (age === "Young" && f === "Too Young to Die") return;
 
+    const isRole = roleFeats.includes(f);
+    const isTrope = tropeFeats.includes(f);
+
     setSelectedFeats((prev) => {
-      const AUTO = "Too Young to Die";
       const have = new Set(prev);
 
-      // ----- REMOVE -----
-      // If already selected, remove it
+      // remove
       if (have.has(f)) {
         have.delete(f);
-        const arr = Array.from(have);
         return age === "Young"
-          ? [AUTO, ...arr.filter((x) => x !== AUTO)]
-          : arr;
+          ? [
+              "Too Young to Die",
+              ...Array.from(have).filter((x) => x !== "Too Young to Die"),
+            ]
+          : Array.from(have);
       }
 
-      // ----- ADD -----
-      const picksOnly = Array.from(have).filter((x) => x !== AUTO);
+      // add
+      const picksOnly = Array.from(have).filter((x) => x !== "Too Young to Die");
+      const roleCount = picksOnly.filter((x) => roleFeats.includes(x)).length;
+      const tropeCount = picksOnly.filter((x) => tropeFeats.includes(x))
+        .length;
 
-      // Cap by total allowed feats (special or not)
-      if (picksOnly.length >= featRule.total) {
-        return prev; // already at cap
+      // Special: only total matters (3)
+      if (specialRole) {
+        if (picksOnly.length >= featRule.total) return prev;
+        have.add(f);
+        return Array.from(have);
       }
 
+      // Young: exactly 1 Role + 1 Trope (auto TYtD handled separately)
+      if (age === "Young") {
+        // cap total user picks to featRule.total
+        if (picksOnly.length >= featRule.total) return prev;
+        // enforce per-source cap = min = 1 each (if trope available)
+        if (isRole) {
+          if (roleCount >= Math.max(1, featRule.roleMin)) return prev;
+        } else if (isTrope) {
+          if (featRule.tropeMin > 0 && tropeCount >= featRule.tropeMin)
+            return prev;
+        }
+        have.add(f);
+        return [
+          "Too Young to Die",
+          ...Array.from(have).filter((x) => x !== "Too Young to Die"),
+        ];
+      }
+
+      // Adult: exactly 2 Role + 1 Trope (or 3 Role if no trope feats)
+      if (age === "Adult") {
+        if (picksOnly.length >= featRule.total) return prev;
+        if (isRole) {
+          if (roleCount >= featRule.roleMin) return prev;
+        } else if (isTrope) {
+          if (featRule.tropeMin > 0 && tropeCount >= featRule.tropeMin)
+            return prev;
+        }
+        have.add(f);
+        return Array.from(have);
+      }
+
+      // Old: total 4; the 4th pick can be Role or Trope. No per-source caps here.
+      if (picksOnly.length >= featRule.total) return prev;
       have.add(f);
-      const arr = Array.from(have);
-
-      return age === "Young"
-        ? [AUTO, ...arr.filter((x) => x !== AUTO)]
-        : arr;
+      return Array.from(have);
     });
   }
 
