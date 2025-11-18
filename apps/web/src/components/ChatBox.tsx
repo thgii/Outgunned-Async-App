@@ -105,15 +105,27 @@ export default function ChatBox({ gameId, currentUserId, isDirector }: Props) {
           />
         ))}
       </div>
-      <div className="mt-3 flex gap-2">
-        <input
+
+      <div className="mt-3 flex gap-2 items-end">
+        <textarea
           value={content}
-          onChange={e=>setContent(e.target.value)}
-          onKeyDown={e=>{ if(e.key==="Enter") send(); }}
-          className="flex-1 border rounded px-3 py-2"
-          placeholder="Type a message…"
+          onChange={(e) => setContent(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault(); // stop adding a new line
+              send();
+            }
+          }}
+          rows={3}
+          className="flex-1 border rounded px-3 py-2 resize-none leading-relaxed"
+          placeholder="Type a message… (Enter to send, Shift+Enter for a new line)"
         />
-        <button onClick={send} className="px-4 py-2 bg-blue-600 text-white rounded">Send</button>
+        <button
+          onClick={send}
+          className="px-4 py-2 bg-blue-600 text-white rounded"
+        >
+          Send
+        </button>
       </div>
     </div>
   );
