@@ -314,10 +314,11 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
     if (tropeDef?.feats) tropeDef.feats.forEach((f: string) => t.add(f));
     if (tropeDef?.feat_options)
       tropeDef.feat_options.forEach((f: string) => t.add(f));
-    // Avoid duplicate display if a feat is already in the role list
-    roleFeats.forEach((f) => t.delete(f));
+
+    // IMPORTANT: do NOT delete overlaps here.
+    // If Parkour is in both Role and Trope, we want it in both lists.
     return Array.from(t);
-  }, [tropeDef, roleFeats]);
+  }, [tropeDef]);
 
   const featRule = useMemo(
     () => featRules(age, specialRole, roleFeats.length, tropeFeats.length),
