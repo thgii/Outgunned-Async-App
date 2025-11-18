@@ -6,9 +6,10 @@ import GMControls from "../components/GMControls";
 import { api, getCharacter } from "../lib/api";
 import CharacterMiniPanel from "../components/CharacterMiniPanel";
 import { NPCsPanel } from "../components/NPCsPanel";
-import CharacterDicePanel from "../components/CharacterDicePanel";
+import CharacterDicePanel, {
+  type CharacterRollEvent,
+} from "../components/CharacterDicePanel";
 import type { CharacterDTO } from "@action-thread/types";
-import type { RollResult } from "../lib/dice";
 import { SceneSettingPanel } from "../components/SceneSettingPanel";
 
 type GameRow = {
@@ -224,39 +225,44 @@ export default function Game() {
     }
   };
 
-  const handleDiceRollToChat = async (
-    kind: "roll" | "freeReroll" | "paidReroll" | "allIn",
-    result: RollResult
-  ) => {
+  const handleDiceRollToChat = async (ev: CharacterRollEvent) => {
     if (!dto) return;
 
-    const { jackpot, impossible, extreme, critical, basic, flags } = result;
+    const { kind, result, attrKey, skillKey, attribute, skill, modifier } = ev;
+    const {
+      jackpot,
+      impossible,
+      extreme,
+      critical,
+      basic,
+      flags,
+      breakdown,
+      poolSize,
+    } = result;
+
     const who = dto.name || "Unknown hero";
 
-    // 🔥 Special case: All-In bust
-    if (kind === "allIn" && flags?.allInBust) {
-      const content = `${who} went all-in and busted, losing all successes.`;
-      try {
-        await api.post(`/games/${gameId}/messages`, { content });
-      } catch (err) {
-        console.error("Failed to post dice roll to chat", err);
-      }
-      return;
-    }
+    const pretty = (s: string | null | undefined) =>
+      s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
 
-    // Choose prefix based on roll type
-    let prefix: string;
-    if (kind === "freeReroll") {
-      prefix = `${who} used a free re-roll and achieved`;
-    } else if (kind === "paidReroll") {
-      prefix = `${who} used a re-roll and achieved`;
-    } else if (kind === "allIn") {
-      prefix = `${who} went all-in and achieved`;
-    } else {
-      prefix = `${who} achieved`;
-    }
+    const attrLabel = pretty(attrKey);
+    const skillLabel = skillKey ? pretty(skillKey) : null;
 
-    // Helper for pluralization
+    // Describe the pool in terms of attribute + skill + modifier
+    const poolParts: string[] = [];
+    if (attrLabel) poolParts.push(`${attrLabel} ${attribute}`);
+    if (skillLabel && skill > 0) poolParts.push(`${skillLabel} ${skill}`);
+    if (modifier) {
+      poolParts.push(
+        `modifier ${modifier > 0 ? `+${modifier}` : modifier.toString()}`
+      );
+    }
+    const poolDesc = poolParts.join(" + ") || `${poolSize}d6`;
+
+    // Raw dice faces
+    const facesStr = breakdown.faces.join(" ");
+
+    // Helper for pluralizing success buckets
     const seg = (count: number, label: string) => {
       if (count <= 0) return null;
       const word = count === 1 ? "success" : "successes";
@@ -271,17 +277,37 @@ export default function Game() {
       seg(basic, "basic"),
     ].filter((x): x is string => Boolean(x));
 
-    let content: string;
+    const successesSummary =
+      parts.length === 0
+        ? "no successes"
+        : parts.length === 1
+        ? parts[0]
+        : `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
 
-    if (parts.length === 0) {
-      content = `${prefix} no successes.`;
-    } else if (parts.length === 1) {
-      content = `${prefix} ${parts[0]}.`;
-    } else {
-      const last = parts[parts.length - 1];
-      const rest = parts.slice(0, -1).join(", ");
-      content = `${prefix} ${rest} and ${last}.`;
+    // 🔥 Special case: All-In bust
+    if (kind === "allIn" && flags?.allInBust) {
+      const content = `${who} went all-in rolling ${poolDesc} (pool ${poolSize}d6) and got [${facesStr}], busting and losing all successes.`;
+      try {
+        await api.post(`/games/${gameId}/messages`, { content });
+      } catch (err) {
+        console.error("Failed to post dice roll to chat", err);
+      }
+      return;
     }
+
+    // Prefix based on roll type
+    let actionPrefix: string;
+    if (kind === "freeReroll") {
+      actionPrefix = "used a free re-roll on";
+    } else if (kind === "paidReroll") {
+      actionPrefix = "used a re-roll on";
+    } else if (kind === "allIn") {
+      actionPrefix = "went all-in rolling";
+    } else {
+      actionPrefix = "rolled";
+    }
+
+    const content = `${who} ${actionPrefix} ${poolDesc} (pool ${poolSize}d6) and got [${facesStr}], resulting in ${successesSummary}.`;
 
     try {
       await api.post(`/games/${gameId}/messages`, { content });
@@ -289,6 +315,7 @@ export default function Game() {
       console.error("Failed to post dice roll to chat", err);
     }
   };
+
 
   if (!game) return <div className="p-6">Loading…</div>;
 

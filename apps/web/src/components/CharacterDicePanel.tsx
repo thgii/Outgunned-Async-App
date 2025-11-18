@@ -4,6 +4,16 @@ import DiceRoller from "./DiceRoller";
 import { conditionPenaltyForAttribute } from "../lib/conditions";
 import type { RollResult } from "../lib/dice";
 
+export type CharacterRollEvent = {
+  kind: "roll" | "freeReroll" | "paidReroll" | "allIn";
+  result: RollResult;
+  attrKey: AttrKey;
+  skillKey: SkillKey | null;
+  attribute: number;
+  skill: number;
+  modifier: number;
+};
+
 type Props = {
   dto: CharacterDTO;
   onSpendAdrenaline?: (amount: number) => void;
@@ -190,8 +200,16 @@ export default function CharacterDicePanel({
           // 🔹 Track the most recent result in this roll chain
           setLastResult(result);
 
-          // Preserve existing behavior (chat logging, etc.)
-          onRollEvent?.(kind, result);
+          // 🔹 Bubble up with full context (attr/skill + modifier)
+          onRollEvent?.({
+            kind,
+            result,
+            attrKey: attr,
+            skillKey: skill || null,
+            attribute: attrVal,
+            skill: skillVal,
+            modifier,
+          });
         }}
       />
     </div>
