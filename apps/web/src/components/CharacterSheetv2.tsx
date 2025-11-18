@@ -488,28 +488,40 @@ async function onPortraitFile(e: React.ChangeEvent<HTMLInputElement>) {
   }
 }
 
-  const asStringArrayLocal = asStringArray;
+  // 🧰 Guns & Gear textarea: keep user formatting (including blank lines)
+  const gunsAndGearText = useMemo(() => {
+    // Prefer whatever is in local.gear (what the user last typed)
+    if (Array.isArray(local.gear) && local.gear.length > 0) {
+      return (local.gear as any[])
+        .map((it) => {
+          if (typeof it === "string") return it;
+          if (it && typeof it === "object" && "name" in it) return String((it as any).name ?? "");
+          return "";
+        })
+        .join("\n");
+    }
 
-  const gearNamesFromTop = asStringArrayLocal(local.gear);
-  const gearNamesFromStorage = asStringArrayLocal(effectiveStorage.gunsAndGear);
-  const mergedGearNames = useMemo(() => {
-    const set = new Set<string>([...gearNamesFromTop, ...gearNamesFromStorage]);
-    return Array.from(set);
-  }, [local.gear, effectiveStorage.gunsAndGear]);
-
-  const gunsAndGearText = mergedGearNames.join("\n");
+    // Fallback to storage.gunsAndGear on initial load
+    const fromStorage = ((effectiveStorage?.gunsAndGear ?? []) as any[]);
+    return fromStorage
+      .map((it) => {
+        if (typeof it === "string") return it;
+        if (it && typeof it === "object" && "name" in it) return String((it as any).name ?? "");
+        return "";
+      })
+      .join("\n");
+  }, [local.gear, effectiveStorage?.gunsAndGear]);
 
   const setGunsAndGearText = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     // Preserve spaces and blank lines so Enter “sticks”
     const lines = e.target.value.split(/\r?\n/);
+
     const nextStorage = {
       ...(effectiveStorage || {}),
       gunsAndGear: lines.map((name) => ({ name })),
     };
 
     update({
-      // If you *do* want to ignore totally empty gear entries in the DTO,
-      // you could do lines.filter(Boolean) here instead of lines.
       gear: lines,
       storage: nextStorage,
       resources: { ...(local.resources ?? {}), storage: nextStorage },
