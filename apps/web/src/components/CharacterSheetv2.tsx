@@ -500,12 +500,16 @@ async function onPortraitFile(e: React.ChangeEvent<HTMLInputElement>) {
   const gunsAndGearText = mergedGearNames.join("\n");
 
   const setGunsAndGearText = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    // Preserve spaces and blank lines so Enter “sticks”
     const lines = e.target.value.split(/\r?\n/);
     const nextStorage = {
       ...(effectiveStorage || {}),
       gunsAndGear: lines.map((name) => ({ name })),
     };
+
     update({
+      // If you *do* want to ignore totally empty gear entries in the DTO,
+      // you could do lines.filter(Boolean) here instead of lines.
       gear: lines,
       storage: nextStorage,
       resources: { ...(local.resources ?? {}), storage: nextStorage },
