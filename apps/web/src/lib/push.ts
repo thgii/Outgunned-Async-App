@@ -25,24 +25,24 @@ export async function enablePushNotifications() {
     throw new Error("Permission denied");
   }
 
-  // Ensure SW is ready (you already register it in main.tsx / index.html)
+  // Wait for the service worker to be ready
   const registration = await navigator.serviceWorker.ready;
 
-  // Create / refresh subscription
+  // Create or refresh the push subscription
   const subscription = await registration.pushManager.subscribe({
     userVisibleOnly: true,
     applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
   });
 
-  // 🔑 Convert to plain JSON so the Worker sees endpoint/keys
+  // Convert to plain JSON so the Worker sees endpoint/keys
   const subscriptionJson =
     typeof (subscription as any).toJSON === "function"
       ? (subscription as any).toJSON()
       : subscription;
 
-  // Send subscription to your backend using the shared API helper
+  // ✅ Correct: pass the payload directly as the second argument
   await api.post("/push/subscribe", {
-    json: { subscription: subscriptionJson },
+    subscription: subscriptionJson,
   });
 
   return subscription;
