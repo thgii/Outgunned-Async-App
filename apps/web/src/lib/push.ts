@@ -15,34 +15,65 @@ function urlBase64ToUint8Array(base64String: string) {
   return outputArray;
 }
 
-export async function enablePushNotifications() {
-  if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-    throw new Error("Push notifications not supported in this browser");
+// Check for an existing subscription (used on page load)
+export async function getExistingSubscription(): Promise<PushSubscription | null> {
+  if (
+    typeof window === "undefined" ||
+    typeof Notification === "undefined" ||
+    !("serviceWorker" in navigator) ||
+    !(window as any).PushManager
+  ) {
+    return null;
   }
 
-  const permission = await Notification.requestPermission();
+  const registration = await navigator.serviceWorker.ready;
+  return registration.pushManager.getSubscription();
+}
+
+// Main helper to enable push notifications
+export async function enablePushNotifications(): Promise<PushSubscription> {
+  if (typeof window === "undefined") {
+    throw new Error("Notifications can only be enabled in a browser.");
+  }
+
+  if (typeof Notification === "undefined") {
+    throw new Error("This browser does not support notifications.");
+  }
+
+  if (!("serviceWorker" in navigator) || !(window as any).PushManager) {
+    throw new Error("Push notifications are not supported in this browser.");
+  }
+
+  // Ask for permission if needed
+  let permission = Notification.permission;
+  if (permission === "default") {
+    permission = await Notification.requestPermission();
+  }
+
   if (permission !== "granted") {
-    throw new Error("Permission denied");
+    throw new Error("Notifications permission was not granted.");
   }
 
-  // Wait for the service worker to be ready
   const registration = await navigator.serviceWorker.ready;
 
-  // Create or refresh the push subscription
-  const subscription = await registration.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-  });
+  // Reuse existing subscription if present
+  let subscription = await registration.pushManager.getSubscription();
+  if (!subscription) {
+    const appServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+    subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: appServerKey,
+    });
+  }
 
-  // Convert to plain JSON so the Worker sees endpoint/keys
+  // Normalize for the Worker: endpoint + keys
   const subscriptionJson =
     typeof (subscription as any).toJSON === "function"
       ? (subscription as any).toJSON()
       : subscription;
 
-  // ✅ Correct: pass the payload directly as the second argument
   await api.post("/push/subscribe", {
-    subscription: subscriptionJson,
+    json: { subscription: subscriptionJson },
   });
 
   return subscription;
