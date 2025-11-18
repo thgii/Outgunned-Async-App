@@ -816,6 +816,18 @@ function buildHeroTagline(
               ))}
             </div>
           </Card>
+                    <Card>
+            <div className="flex items-center justify-between">
+              <SectionTitle>Description of Character</SectionTitle>
+            </div>
+            <div className="mt-3">
+              <TextArea
+                placeholder="Describe your character’s appearance, demeanor, background, quirks, etc."
+                value={local.notes || ""}
+                onChange={(e) => pathUpdate("notes", e.target.value)}
+              />
+            </div>
+          </Card>
         </div>
       </div>
 
