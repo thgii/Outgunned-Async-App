@@ -50,10 +50,11 @@ async function notifyGameSubscribers(
   const subs = await q<any>(
     c.env.DB,
     `SELECT ps.endpoint, ps.p256dh, ps.auth, u.name as userName
-       FROM push_subscriptions ps
-       JOIN memberships m ON m.userId = ps.userId
-       JOIN users u ON u.id = ps.userId
-      WHERE m.gameId = ? AND ps.userId != ?`,
+      FROM push_subscriptions ps
+      JOIN memberships m ON m.userId = ps.userId
+      JOIN games g ON g.campaignId = m.campaignId
+      JOIN users u ON u.id = ps.userId
+      WHERE g.id = ? AND ps.userId != ?`,
     [gameId, authorId]
   );
 
