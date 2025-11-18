@@ -73,7 +73,7 @@ export async function enablePushNotifications(): Promise<PushSubscription> {
       : subscription;
 
   await api.post("/push/subscribe", {
-    json: { subscription: subscriptionJson },
+    subscription: subscriptionJson,
   });
 
   return subscription;

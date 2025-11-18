@@ -62,7 +62,7 @@ async function notifyGameSubscribers(
     gameId,
     "authorId",
     authorId,
-    "subs",
+    "subscriber count",
     subs.length
   );
 
@@ -126,11 +126,13 @@ async function notifyGameSubscribers(
         }
       };
 
-      // Use waitUntil if present; otherwise just fire it inline
+      // Use waitUntil if present; otherwise just run inline
       if (c.executionCtx && typeof c.executionCtx.waitUntil === "function") {
         c.executionCtx.waitUntil(send());
       } else {
-        send().catch((err) => console.error("Push send failed (no executionCtx)", err));
+        send().catch((err) =>
+          console.error("Push send failed (no executionCtx)", err)
+        );
       }
     } catch (err) {
       console.error("Failed to build push request", err);
@@ -248,7 +250,6 @@ messages.patch("/messages/:id", async (c) => {
       if (c.executionCtx && typeof c.executionCtx.waitUntil === "function") {
         c.executionCtx.waitUntil(notifyGameSubscribers(c, gameId, user.id, row));
       } else {
-        // Fallback if executionCtx isn't available for some reason
         notifyGameSubscribers(c, gameId, user.id, row).catch((err: any) => {
           console.error("notifyGameSubscribers failed (no executionCtx)", err);
         });
