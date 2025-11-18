@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { FEAT_DESC } from "../data/wizard";
 import CharacterDicePanel from "./CharacterDicePanel";
+import { uploadImage } from "../lib/api";
 
 
 /** Types aligned to your DTO (kept permissive for safety) */
@@ -455,7 +456,7 @@ async function spendAdrenaline(amount = 1) {
   const resStorage = local.resources?.storage;
   const effectiveStorage = topStorage ?? resStorage ?? {};
 
-  // Character portrait (data URL)
+// Character portrait (URL string)
 const portrait =
   (effectiveStorage as any)?.portrait ??
   (local.storage as any)?.portrait ??
@@ -463,8 +464,8 @@ const portrait =
   null;
 
 // Helper to update portrait in both top-level storage and resources.storage
-function setPortrait(nextDataUrl: string | null) {
-  const nextStorage = { ...(effectiveStorage || {}), portrait: nextDataUrl ?? undefined };
+function setPortrait(nextUrl: string | null) {
+  const nextStorage = { ...(effectiveStorage || {}), portrait: nextUrl ?? undefined };
   update({
     storage: nextStorage,
     resources: { ...(local.resources ?? {}), storage: nextStorage },
@@ -472,14 +473,20 @@ function setPortrait(nextDataUrl: string | null) {
 }
 
 // File input handler for portrait replacement
-function onPortraitFile(e: React.ChangeEvent<HTMLInputElement>) {
+async function onPortraitFile(e: React.ChangeEvent<HTMLInputElement>) {
   const f = e.target.files?.[0];
   if (!f) return;
-  const reader = new FileReader();
-  reader.onload = () => setPortrait(String(reader.result || ""));
-  reader.readAsDataURL(f);
-}
 
+  try {
+    // Send file to your API -> R2
+    const { url } = await uploadImage(f);
+    // Store the returned URL in storage/resources.storage
+    setPortrait(url);
+  } catch (err) {
+    console.error("Failed to upload portrait", err);
+    // optional: show a toast or error message in UI
+  }
+}
 
   const asStringArrayLocal = asStringArray;
 
