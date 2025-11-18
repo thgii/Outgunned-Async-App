@@ -66,46 +66,6 @@ function buildHeroTagline(
   return `${safeName}, the ${parts.join(" ")}`;
 }
 
-function sanitizeFeats(
-  picks: string[],
-  roleFeats: string[],
-  tropeFeats: string[],
-  featRule: { total: number; roleMin: number; tropeMin: number; auto: string[] },
-  specialRole: boolean,
-  age: "Young" | "Adult" | "Old"
-) {
-  // Ignore auto feat when counting (display-only)
-  const AUTO = "Too Young to Die";
-  const base = picks.filter((f) => f !== AUTO);
-
-  if (specialRole) {
-    // Special roles: only total matters
-    const out = base.slice(0, Math.max(0, featRule.total));
-    return age === "Young" ? [AUTO, ...out] : out;
-  }
-
-  // Partition by source
-  const roleChosen = base.filter((f) => roleFeats.includes(f));
-  const tropeChosen = base.filter((f) => tropeFeats.includes(f));
-
-  // Enforce minimums first
-  let keptRole = roleChosen.slice(0, Math.max(0, featRule.roleMin));
-  let keptTrope = tropeChosen.slice(0, Math.max(0, featRule.tropeMin));
-
-  // Fill remaining capacity from whatever remains (prefers stability)
-  const remaining = base.filter(
-    (f) => !keptRole.includes(f) && !keptTrope.includes(f)
-  );
-  const capacity = Math.max(
-    0,
-    featRule.total - keptRole.length - keptTrope.length
-  );
-  const filler = remaining.slice(0, capacity);
-
-  const out = [...keptRole, ...keptTrope, ...filler];
-  return age === "Young" ? [AUTO, ...out] : out;
-}
-
 type Step =
   | "identity"
   | "roleTrope"
@@ -163,29 +123,15 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
     setPortraitDataUrl(objectUrl);
   }
 
-  const [selectedFeats, setSelectedFeats] = useState<string[]>([]);
-  useEffect(() => {
-    if (age === "Young") {
-      setSelectedFeats((prev) =>
-        prev.includes("Too Young to Die")
-          ? prev
-          : ["Too Young to Die", ...prev]
-      );
-    } else {
-      // remove TYtD when not Young
-      setSelectedFeats((prev) =>
-        prev.filter((f) => f !== "Too Young to Die")
-      );
-    }
-  }, [age]);
+  // Feat picks, tracked by source
+  const [selectedRoleFeats, setSelectedRoleFeats] = useState<string[]>([]);
+  const [selectedTropeFeats, setSelectedTropeFeats] = useState<string[]>([]);
 
   const [skillBumps, setSkillBumps] = useState<SkillKey[]>([]);
 
   const [jobOrBackground, setJob] = useState(initial?.jobOrBackground ?? "");
   const [flaw, setFlaw] = useState(initial?.flaw ?? "");
   const [catchphrase, setCatchphrase] = useState(initial?.catchphrase ?? "");
-
-  const [gearChosen, setGearChosen] = useState<string[]>([]);
 
   // Data derived from selections
   const roleDef = useMemo(() => (role ? findRole(role) : null), [role]);
@@ -212,11 +158,11 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
   // Freeform user-added items (strings)
   const [gearCustom, setGearCustom] = useState<string[]>([]);
 
-  // Reset grant selections and custom adds when Role or Trope change
+  // Reset grant selections and custom adds when grants change
   useEffect(() => {
     setSelectedByGrant(allGrants.map(() => []));
     setGearCustom([]);
-  }, [role, trope]);
+  }, [allGrants]);
 
   const specialRole = isSpecialRole(role);
   const npcSpecial =
@@ -256,12 +202,6 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
     }
   }, [specialRole, role]);
 
-  // --- NEW: reset gear selections when grants change ---
-  useEffect(() => {
-    setSelectedByGrant(allGrants.map(() => []));
-    setGearCustom([]);
-  }, [allGrants]);
-
   // Trope attribute needed when the trope exposes options AND role is not Special
   const tropeNeedsAttr = !!tropeAttrOptions.length && !specialRole;
 
@@ -276,7 +216,9 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
 
     // Special roles with array attributes: show both
     if (specialRole && Array.isArray(roleDef.attribute)) {
-      return roleDef.attribute.map((a: any) => normalizeAttr(String(a)) ?? String(a));
+      return roleDef.attribute.map(
+        (a: any) => normalizeAttr(String(a)) ?? String(a)
+      );
     }
 
     // Special: N.P.C. — show whatever the user has picked so far (if any)
@@ -314,17 +256,35 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
     if (tropeDef?.feats) tropeDef.feats.forEach((f: string) => t.add(f));
     if (tropeDef?.feat_options)
       tropeDef.feat_options.forEach((f: string) => t.add(f));
-    // Avoid duplicate display if a feat is already in the role list
-    roleFeats.forEach((f) => t.delete(f));
+
+    // IMPORTANT: keep overlaps so feats like Parkour can appear in both lists.
     return Array.from(t);
-  }, [tropeDef, roleFeats]);
+  }, [tropeDef]);
 
   const featRule = useMemo(
     () => featRules(age, specialRole, roleFeats.length, tropeFeats.length),
     [age, specialRole, roleFeats.length, tropeFeats.length]
   );
 
-  // Flat union (for DTO), include auto feats for display when Young
+  const selectedFeatNames = useMemo(() => {
+    const names = new Set<string>();
+
+    // Everything explicitly chosen from Role/Trope lists
+    selectedRoleFeats.forEach((f) => names.add(f));
+    selectedTropeFeats.forEach((f) => names.add(f));
+
+    // Auto feats from feat rules, if any (e.g. Too Young to Die)
+    featRule.auto.forEach((f) => names.add(f));
+
+    // Also ensure Too Young to Die is present for Young
+    if (age === "Young") {
+      names.add("Too Young to Die");
+    }
+
+    return Array.from(names);
+  }, [selectedRoleFeats, selectedTropeFeats, featRule.auto, age]);
+
+  // Flat union (for possible-feats display; currently unused but kept for future)
   const featsPool = useMemo(() => {
     const pool = new Set<string>();
     roleFeats.forEach((f) => pool.add(f));
@@ -337,6 +297,7 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
     switch (step) {
       case "identity":
         return name.trim().length > 0;
+
       case "roleTrope":
         return (
           !!role &&
@@ -345,18 +306,16 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
           (!tropeNeedsAttr || !!tropeAttribute) &&
           (!npcSpecial || specialAttrs.length === 2)
         );
+
       case "age":
         return age === "Young" || age === "Adult" || age === "Old";
-      case "feats": {
-        const picksOnly = selectedFeats.filter(
-          (f) => f !== "Too Young to Die"
-        );
-        const roleCount = picksOnly.filter((f) => roleFeats.includes(f)).length;
-        const tropeCount = picksOnly.filter((f) => tropeFeats.includes(f))
-          .length;
 
-        // Always require total and minimums; Special has mins = 0
-        const totalsOk = picksOnly.length >= featRule.total;
+      case "feats": {
+        const roleCount = selectedRoleFeats.length;
+        const tropeCount = selectedTropeFeats.length;
+        const total = roleCount + tropeCount;
+
+        const totalsOk = total >= featRule.total;
         const minsOk =
           roleCount >= featRule.roleMin && tropeCount >= featRule.tropeMin;
 
@@ -365,8 +324,10 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
 
       case "skillBumps":
         return skillBumps.length === (specialRole ? 6 : 2);
+
       case "jobEtc":
         return true; // free-form ok
+
       case "gear": {
         // All choose-grants must meet their pick count; credit/grant are free
         const allOk = allGrants.every((g, idx) => {
@@ -392,9 +353,8 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
     npcSpecial,
     specialAttrs,
     age,
-    selectedFeats,
-    roleFeats,
-    tropeFeats,
+    selectedRoleFeats,
+    selectedTropeFeats,
     featRule.total,
     featRule.roleMin,
     featRule.tropeMin,
@@ -414,6 +374,7 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
     else if (step === "jobEtc") setStep("gear");
     else if (step === "gear") setStep("review");
   }
+
   function back() {
     if (step === "roleTrope") setStep("identity");
     else if (step === "age") setStep("roleTrope");
@@ -424,82 +385,91 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
     else if (step === "review") setStep("gear");
   }
 
-  function toggleFeat(f: string) {
-    // prevent toggling away auto TYtD
-    if (age === "Young" && f === "Too Young to Die") return;
+  function toggleRoleFeat(f: string) {
+    setSelectedRoleFeats((prevRole) => {
+      const inRole = prevRole.includes(f);
+      const roleCount = prevRole.length;
+      const tropeCount = selectedTropeFeats.length;
+      const total = roleCount + tropeCount;
 
-    const isRole = roleFeats.includes(f);
-    const isTrope = tropeFeats.includes(f);
-
-    setSelectedFeats((prev) => {
-      const have = new Set(prev);
-
-      // remove
-      if (have.has(f)) {
-        have.delete(f);
-        return age === "Young"
-          ? [
-              "Too Young to Die",
-              ...Array.from(have).filter((x) => x !== "Too Young to Die"),
-            ]
-          : Array.from(have);
+      // Remove if already selected in Role
+      if (inRole) {
+        return prevRole.filter((x) => x !== f);
       }
 
-      // add
-      const picksOnly = Array.from(have).filter((x) => x !== "Too Young to Die");
-      const roleCount = picksOnly.filter((x) => roleFeats.includes(x)).length;
-      const tropeCount = picksOnly.filter((x) => tropeFeats.includes(x))
-        .length;
+      // Don't allow picking it here if it's already picked as a Trope feat
+      if (selectedTropeFeats.includes(f)) {
+        return prevRole;
+      }
 
-      // Special: only total matters (3)
+      // Age / special rules
       if (specialRole) {
-        if (picksOnly.length >= featRule.total) return prev;
-        have.add(f);
-        return Array.from(have);
+        // Special roles: only total matters
+        if (total >= featRule.total) return prevRole;
+        return [...prevRole, f];
       }
 
-      // Young: exactly 1 Role + 1 Trope (auto TYtD handled separately)
       if (age === "Young") {
-        // cap total user picks to featRule.total
-        if (picksOnly.length >= featRule.total) return prev;
-        // enforce per-source cap = min = 1 each (if trope available)
-        if (isRole) {
-          if (roleCount >= Math.max(1, featRule.roleMin)) return prev;
-        } else if (isTrope) {
-          if (featRule.tropeMin > 0 && tropeCount >= featRule.tropeMin)
-            return prev;
-        }
-        have.add(f);
-        return [
-          "Too Young to Die",
-          ...Array.from(have).filter((x) => x !== "Too Young to Die"),
-        ];
+        // Young: exactly 1 Role + 1 Trope (plus auto feat)
+        if (roleCount >= Math.max(1, featRule.roleMin)) return prevRole;
+        if (total >= featRule.total) return prevRole;
+        return [...prevRole, f];
       }
 
-      // Adult: exactly 2 Role + 1 Trope (or 3 Role if no trope feats)
       if (age === "Adult") {
-        if (picksOnly.length >= featRule.total) return prev;
-        if (isRole) {
-          if (roleCount >= featRule.roleMin) return prev;
-        } else if (isTrope) {
-          if (featRule.tropeMin > 0 && tropeCount >= featRule.tropeMin)
-            return prev;
-        }
-        have.add(f);
-        return Array.from(have);
+        // Adult: exactly roleMin Role feats (e.g. 2)
+        if (roleCount >= featRule.roleMin) return prevRole;
+        if (total >= featRule.total) return prevRole;
+        return [...prevRole, f];
       }
 
-      // Old: total 4; the 4th pick can be Role or Trope. No per-source caps here.
-      if (picksOnly.length >= featRule.total) return prev;
-      have.add(f);
-      return Array.from(have);
+      // Old: total 4, extra can be from either list
+      if (total >= featRule.total) return prevRole;
+      return [...prevRole, f];
     });
   }
 
-  function toggleGear(g: string) {
-    setGearChosen((prev) =>
-      prev.includes(g) ? prev.filter((x) => x !== g) : [...prev, g]
-    );
+  function toggleTropeFeat(f: string) {
+    setSelectedTropeFeats((prevTrope) => {
+      const inTrope = prevTrope.includes(f);
+      const tropeCount = prevTrope.length;
+      const roleCount = selectedRoleFeats.length;
+      const total = roleCount + tropeCount;
+
+      // Remove if already selected in Trope
+      if (inTrope) {
+        return prevTrope.filter((x) => x !== f);
+      }
+
+      // Don't allow picking it here if it's already picked as a Role feat
+      if (selectedRoleFeats.includes(f)) {
+        return prevTrope;
+      }
+
+      if (specialRole) {
+        if (total >= featRule.total) return prevTrope;
+        return [...prevTrope, f];
+      }
+
+      if (age === "Young") {
+        // Young: exactly 1 Trope feat (plus auto)
+        if (tropeCount >= Math.max(1, featRule.tropeMin)) return prevTrope;
+        if (total >= featRule.total) return prevTrope;
+        return [...prevTrope, f];
+      }
+
+      if (age === "Adult") {
+        // Adult: exactly tropeMin Trope feats (e.g. 1)
+        if (featRule.tropeMin > 0 && tropeCount >= featRule.tropeMin)
+          return prevTrope;
+        if (total >= featRule.total) return prevTrope;
+        return [...prevTrope, f];
+      }
+
+      // Old: total 4, extra can be from either list
+      if (total >= featRule.total) return prevTrope;
+      return [...prevTrope, f];
+    });
   }
 
   // Build human-readable names from grant selections
@@ -557,14 +527,7 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
   const reviewDTO = useMemo(() => {
     if (!canBuild) return null;
     try {
-      const safeFeats = sanitizeFeats(
-        selectedFeats,
-        roleFeats,
-        tropeFeats,
-        featRule,
-        specialRole,
-        age
-      );
+      const safeFeats = selectedFeatNames;
       return buildDerivedDTO({
         name: name.trim(),
         role,
@@ -592,7 +555,7 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
     roleAttribute,
     tropeAttribute,
     specialAttrs,
-    selectedFeats,
+    selectedFeatNames,
     skillBumps,
     jobOrBackground,
     flaw,
@@ -608,14 +571,7 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
   const preBumpDTO = useMemo(() => {
     if (!canBuild) return null;
     try {
-      const safeFeats = sanitizeFeats(
-        selectedFeats,
-        roleFeats,
-        tropeFeats,
-        featRule,
-        specialRole,
-        age
-      );
+      const safeFeats = selectedFeatNames;
       const dto = buildDerivedDTO({
         name: name.trim(),
         role,
@@ -645,7 +601,7 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
     roleAttribute,
     tropeAttribute,
     specialAttrs,
-    selectedFeats,
+    selectedFeatNames,
     jobOrBackground,
     flaw,
     catchphrase,
@@ -662,14 +618,7 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
   const preTropeDTO = useMemo(() => {
     if (!canBuild) return null;
     try {
-      const safeFeats = sanitizeFeats(
-        selectedFeats,
-        roleFeats,
-        tropeFeats,
-        featRule,
-        specialRole,
-        age
-      );
+      const safeFeats = selectedFeatNames;
       const dto = buildDerivedDTO({
         name: name.trim(),
         role,
@@ -698,7 +647,7 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
     age,
     roleAttribute,
     specialAttrs,
-    selectedFeats,
+    selectedFeatNames,
     jobOrBackground,
     flaw,
     catchphrase,
@@ -713,14 +662,7 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
 
   async function save() {
     try {
-      const safeFeats = sanitizeFeats(
-        selectedFeats,
-        roleFeats,
-        tropeFeats,
-        featRule,
-        specialRole,
-        age
-      );
+      const safeFeats = selectedFeatNames;
       const dto = buildDerivedDTO({
         name,
         role,
@@ -768,9 +710,7 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
     <div className="max-w-3xl mx-auto p-6 space-y-4">
       <h1 className="text-2xl font-bold">Create Hero</h1>
 
-      {tagline && (
-        <p className="text-sm text-zinc-300">{tagline}</p>
-      )}
+      {tagline && <p className="text-sm text-zinc-300">{tagline}</p>}
 
       {step === "identity" && (
         <Card title="Identity">
@@ -828,9 +768,7 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
             <Select
               label="Role Attribute *"
               value={roleAttribute ?? ""}
-              onChange={(v) =>
-                setRoleAttribute((v || undefined) as AttrKey)
-              }
+              onChange={(v) => setRoleAttribute((v || undefined) as AttrKey)}
               options={["", ...roleAttrOptions]}
             />
           )}
@@ -838,7 +776,8 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
           {roleDef && (
             <p className="text-sm mt-1 italic text-muted-foreground">
               {"Role: " +
-                (roleDef.description || "No description available for this role.")}
+                (roleDef.description ||
+                  "No description available for this role.")}
             </p>
           )}
           {tropeDef && (
@@ -908,10 +847,10 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
 
                       return lost ? (
                         <div className="text-xs text-amber-600 mt-1">
-                          This choice would push{" "}
-                          <b>{labelize(attr)}</b> above the cap of 3 because
-                          your Role already brought it to 3. The extra point
-                          from your Trope will be <b>lost</b>.
+                          This choice would push <b>{labelize(attr)}</b> above
+                          the cap of 3 because your Role already brought it to
+                          3. The extra point from your Trope will be <b>lost</b>
+                          .
                         </div>
                       ) : null;
                     })()}
@@ -944,9 +883,7 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
                       label="Special Attribute #1 *"
                       value={specialAttrs[0] ?? ""}
                       onChange={(v) => {
-                        const a = (v || undefined) as
-                          | AttrKey
-                          | undefined;
+                        const a = (v || undefined) as AttrKey | undefined;
                         setSpecialAttrs((prev) => {
                           const second =
                             prev[1] && prev[1] !== a
@@ -977,9 +914,7 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
                       label="Special Attribute #2 *"
                       value={specialAttrs[1] ?? ""}
                       onChange={(v) => {
-                        const b = (v || undefined) as
-                          | AttrKey
-                          | undefined;
+                        const b = (v || undefined) as AttrKey | undefined;
                         setSpecialAttrs((prev) => {
                           const first =
                             prev[0] && prev[0] !== b
@@ -1112,12 +1047,17 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
               <div className="grid gap-2">
                 {roleFeats.map((f) => {
                   const desc = describeFeat(f);
+                  const checked = selectedRoleFeats.includes(f);
+                  const disabledBecauseTrope = selectedTropeFeats.includes(f);
+
                   return (
                     <label
                       key={`role-${f}`}
                       className={`border rounded px-3 py-2 text-sm cursor-pointer transition-colors ${
-                        selectedFeats.includes(f)
+                        checked
                           ? "bg-black text-white border-black"
+                          : disabledBecauseTrope
+                          ? "opacity-50 cursor-not-allowed"
                           : "hover:bg-zinc-800 hover:text-white"
                       }`}
                     >
@@ -1125,12 +1065,9 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
                         <input
                           type="checkbox"
                           className="mr-2"
-                          checked={
-                            selectedFeats.includes(f) ||
-                            (age === "Young" && f === "Too Young to Die")
-                          }
-                          onChange={() => toggleFeat(f)}
-                          disabled={age === "Young" && f === "Too Young to Die"}
+                          checked={checked}
+                          onChange={() => toggleRoleFeat(f)}
+                          disabled={disabledBecauseTrope}
                         />
                         <span>{f}</span>
                         <span className="ml-auto text-[10px] uppercase tracking-wide opacity-60">
@@ -1159,12 +1096,17 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
                 {tropeFeats.length ? (
                   tropeFeats.map((f) => {
                     const desc = describeFeat(f);
+                    const checked = selectedTropeFeats.includes(f);
+                    const disabledBecauseRole = selectedRoleFeats.includes(f);
+
                     return (
                       <label
                         key={`trope-${f}`}
                         className={`border rounded px-3 py-2 text-sm cursor-pointer transition-colors ${
-                          selectedFeats.includes(f)
+                          checked
                             ? "bg-black text-white border-black"
+                            : disabledBecauseRole
+                            ? "opacity-50 cursor-not-allowed"
                             : "hover:bg-zinc-800 hover:text-white"
                         }`}
                       >
@@ -1172,8 +1114,9 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
                           <input
                             type="checkbox"
                             className="mr-2"
-                            checked={selectedFeats.includes(f)}
-                            onChange={() => toggleFeat(f)}
+                            checked={checked}
+                            onChange={() => toggleTropeFeat(f)}
+                            disabled={disabledBecauseRole}
                           />
                           <span>{f}</span>
                           <span className="ml-auto text-[10px] uppercase tracking-wide opacity-60">
@@ -1619,7 +1562,8 @@ function AddLine({
       <button
         className="border rounded px-3 py-1"
         onClick={() => {
-          onAdd(txt.trim());
+          const trimmed = txt.trim();
+          if (trimmed) onAdd(trimmed);
           setTxt("");
         }}
       >
@@ -1787,9 +1731,7 @@ function Preview({ dto }: { dto: CharacterDTO }) {
                 <span>
                   {attrKey.charAt(0).toUpperCase() + attrKey.slice(1)}
                 </span>
-                <span>
-                  {dto.attributes?.[attrKey as AttrKey] ?? 0}
-                </span>
+                <span>{dto.attributes?.[attrKey as AttrKey] ?? 0}</span>
               </div>
 
               {/* Skills list under that attribute */}
