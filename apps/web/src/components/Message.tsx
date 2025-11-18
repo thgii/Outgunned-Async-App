@@ -7,19 +7,14 @@ export default function Message({
   currentUserId,
   isDirector,
   onEdited,
-}: {
-  msg: any;
-  currentUserId: string | null;
-  isDirector: boolean;
-  onEdited: (m: any) => void;
 }) {
   const [editing, setEditing] = useState(false);
 
-  // Same permission logic you already had
+  // SAME PERMISSIONS YOU ALREADY HAVE
   const canEdit =
     isDirector || (currentUserId && msg.authorId === currentUserId);
 
-  // Prefer character name, then fall back to player username, then "Unknown"
+  // LABELS (CHARACTER → PLAYER)
   const label = msg.characterName || msg.authorName || "Unknown";
   const byline =
     msg.characterName &&
@@ -28,29 +23,29 @@ export default function Message({
       ? `(${msg.authorName})`
       : "";
 
-  // Is this my message? (for alignment)
   const isMine = currentUserId && msg.authorId === currentUserId;
 
-  // Simple deterministic color per author
-  const COLORS = [
-    "#e57373", // red
-    "#64b5f6", // blue
-    "#81c784", // green
-    "#ffd54f", // yellow
-    "#ba68c8", // purple
-    "#4dd0e1", // teal
-  ];
+  // ---------- 🎨 CHARACTER-BASED COLOR KEY ----------
+  // Character always wins → fall back to author → fall back to name.
+  const colorKey =
+    msg.characterId ||
+    msg.characterName ||
+    msg.authorId ||
+    msg.authorName ||
+    "unknown";
 
-  const colorForUser = (id: string | null | undefined) => {
-    if (!id) return "#e0e0e0";
+  // Stable hash → HSL color (Hundreds of unique colors, stable)
+  function colorForKey(key) {
     let hash = 0;
-    for (let i = 0; i < id.length; i++) {
-      hash = (hash + id.charCodeAt(i)) % COLORS.length;
+    for (let i = 0; i < key.length; i++) {
+      hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
     }
-    return COLORS[hash];
-  };
+    const hue = hash % 360; // 0–359 unique hues
+    return `hsl(${hue}deg, 70%, 85%)`;
+  }
 
-  const bubbleColor = colorForUser(msg.authorId);
+  const bubbleColor = colorForKey(colorKey);
+  // ---------------------------------------------------
 
   return (
     <div
@@ -64,14 +59,14 @@ export default function Message({
           backgroundColor: bubbleColor,
           color: "black",
           borderRadius: isMine
-            ? "16px 16px 0px 16px" // my messages: tail on left
-            : "16px 16px 16px 0px", // others: tail on right
+            ? "16px 16px 0px 16px"
+            : "16px 16px 16px 0px",
           padding: "0.5rem 0.75rem",
         }}
       >
         {!editing ? (
           <>
-            {/* Header: name + byline + timestamp */}
+            {/* Header */}
             <div className="flex items-baseline justify-between gap-2">
               <div className="text-xs font-semibold">
                 {label}{" "}
@@ -86,12 +81,12 @@ export default function Message({
               </div>
             </div>
 
-            {/* Message content */}
+            {/* Content */}
             <div className="mt-1 whitespace-pre-wrap text-sm">
               {msg.content}
             </div>
 
-            {/* Edit button (if allowed) */}
+            {/* Edit */}
             {canEdit && (
               <div className="mt-1 text-right">
                 <button
