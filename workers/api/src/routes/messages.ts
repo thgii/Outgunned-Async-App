@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { q, one } from "../utils/db";
 import type { AuthedUser } from "../utils/auth";
 import { getCampaignMembershipByGame } from "../utils/auth";
+import { buildPushHTTPRequest } from "@pushforge/builder";
 
 export const messages = new Hono<{ Bindings: { DB: D1Database } }>();
 
@@ -23,6 +24,84 @@ messages.get("/games/:id/messages", async (c) => {
   const rows = await q(c.env.DB, sql, params);
   return c.json(rows);
 });
+
+async function notifyGameSubscribers(
+  c: any,
+  gameId: string,
+  authorId: string,
+  messageRow: any
+) {
+  const privateJWK = (c.env as any).VAPID_PRIVATE_KEY as string | undefined;
+  if (!privateJWK) return;
+
+  // Find all users in this game who have push subscriptions, excluding the author
+  const subs = await q<any>(
+    c.env.DB,
+    `SELECT ps.endpoint, ps.p256dh, ps.auth, u.name as userName
+       FROM push_subscriptions ps
+       JOIN memberships m ON m.userId = ps.userId
+       JOIN users u ON u.id = ps.userId
+      WHERE m.gameId = ? AND ps.userId != ?`,
+    [gameId, authorId]
+  );
+
+  if (!subs.length) return;
+
+  const title =
+    messageRow?.authorName && messageRow?.characterName
+      ? `${messageRow.characterName} (${messageRow.authorName})`
+      : messageRow?.authorName
+      ? `${messageRow.authorName} posted in chat`
+      : "New message in your game";
+
+  const body = (messageRow?.content ?? "").slice(0, 140);
+
+  const payload = {
+    title,
+    body,
+    icon: "/icons/icon-192.png",
+    clickUrl: `/games/${gameId}`,
+  };
+
+  for (const sub of subs) {
+    const subscription = {
+      endpoint: sub.endpoint,
+      keys: {
+        p256dh: sub.p256dh,
+        auth: sub.auth,
+      },
+    };
+
+    try {
+      const { endpoint, headers, body: encodedBody } = await buildPushHTTPRequest({
+        privateJWK,
+        subscription,
+        message: {
+          payload,
+          options: {
+            ttl: 3600,
+            urgency: "normal",
+            topic: `game-${gameId}`,
+          },
+          adminContact: "mailto:you@example.com",
+        },
+      });
+
+      // Fire-and-forget
+      c.executionCtx?.waitUntil?.(
+        fetch(endpoint, {
+          method: "POST",
+          headers,
+          body: encodedBody,
+        }).catch((err) => {
+          console.error("Push send failed", err);
+        })
+      );
+    } catch (err) {
+      console.error("Failed to build push request", err);
+    }
+  }
+}
 
 messages.post("/games/:id/messages", async (c) => {
   const gameId = c.req.param("id");
@@ -62,6 +141,18 @@ messages.post("/games/:id/messages", async (c) => {
       WHERE m.id = ?`,
     [id]
   );
+
+  // 🔔 Kick off push notifications (fire-and-forget)
+  if (user?.id && row) {
+    try {
+      c.executionCtx?.waitUntil?.(
+        notifyGameSubscribers(c, gameId, user.id, row)
+      );
+    } catch (err) {
+      console.error("Failed to schedule push notification", err);
+    }
+  }
+
   return c.json(row);
 });
 

@@ -14,4 +14,4 @@ bucket_name = "outgunned-assets"
 preview_bucket_name = "outgunned-assets"
 
 [vars]
-# Add any default vars here
+VAPID_PUBLIC_KEY = "BMNlNzEvTId3LNLLMuYYqk4-XSTgUtzDzZzPbUWnkT7A9T0kUvoL4oOEq5f8CW8j9U88u2ehpgMwwKKU7dJDGKA"

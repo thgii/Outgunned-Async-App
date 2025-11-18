@@ -11,6 +11,7 @@ import CharacterDicePanel, {
 } from "../components/CharacterDicePanel";
 import type { CharacterDTO } from "@action-thread/types";
 import { SceneSettingPanel } from "../components/SceneSettingPanel";
+import { EnableNotificationsButton } from "../components/EnableNotificationsButton"; 
 
 type GameRow = {
   id: string;
@@ -327,12 +328,19 @@ export default function Game() {
     <div className="p-4 space-y-4">
       {/* 🔹 Header above both columns */}
       <header className="mb-2">
-        <h1 className="text-2xl font-bold text-white drop-shadow">
-          {campaignName}: {actName}
-        </h1>
-        {game.summary && (
-          <p className="text-sm text-white/80 mt-1">{game.summary}</p>
-        )}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div>
+            <h1 className="text-2xl font-bold text-white drop-shadow">
+              {campaignName}: {actName}
+            </h1>
+            {game.summary && (
+              <p className="text-sm text-white/80 mt-1">{game.summary}</p>
+            )}
+          </div>
+
+          {/* 🔔 Push notification toggle */}
+          <EnableNotificationsButton />
+        </div>
       </header>
 
       {/* 🔹 Main layout */}

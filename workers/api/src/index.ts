@@ -11,10 +11,14 @@ import { npcs } from './routes/npcs';
 import { uploads } from "./routes/uploads";
 import notes from "./routes/notes";
 import assets from "./routes/assets"; 
+import { push } from "./routes/push";
+
 
 type Env = {
   DB: D1Database;
   ASSETS: R2Bucket;
+  VAPID_PRIVATE_KEY: string;
+  VAPID_PUBLIC_KEY: string;
 };
 
 
@@ -45,5 +49,6 @@ app.route("/", rolls);        // also uses absolute path /games/:id/rolls
 app.route('/', npcs);
 app.route("/", uploads);
 app.route("/", notes); // notes registers /games/:id/notes...
+app.route("/", push);
 
 export default app;
