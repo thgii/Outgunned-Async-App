@@ -31,8 +31,20 @@ async function notifyGameSubscribers(
   authorId: string,
   messageRow: any
 ) {
-  const privateJWK = (c.env as any).VAPID_PRIVATE_KEY as string | undefined;
-  if (!privateJWK) return;
+  const raw = (c.env as any).VAPID_PRIVATE_KEY as any;
+  if (!raw) {
+    console.error("notifyGameSubscribers: VAPID_PRIVATE_KEY is missing");
+    return;
+  }
+
+  // Your secret is a JSON JWK string; parse it into an object
+  let privateJWK: any;
+  try {
+    privateJWK = typeof raw === "string" ? JSON.parse(raw) : raw;
+  } catch (err) {
+    console.error("notifyGameSubscribers: invalid VAPID_PRIVATE_KEY format", err);
+    return;
+  }
 
   // Find all users in this game who have push subscriptions, excluding the author
   const subs = await q<any>(
@@ -41,8 +53,17 @@ async function notifyGameSubscribers(
        FROM push_subscriptions ps
        JOIN memberships m ON m.userId = ps.userId
        JOIN users u ON u.id = ps.userId
-      WHERE m.gameId = ? AND ps.userId != ?`,
+      WHERE m.gameId = ?`,
     [gameId, authorId]
+  );
+
+  console.log(
+    "notifyGameSubscribers: gameId",
+    gameId,
+    "authorId",
+    authorId,
+    "subscriber count",
+    subs.length
   );
 
   if (!subs.length) return;
@@ -87,14 +108,25 @@ async function notifyGameSubscribers(
         },
       });
 
-      // Fire-and-forget
       c.executionCtx?.waitUntil?.(
-        fetch(endpoint, {
-          method: "POST",
-          headers,
-          body: encodedBody,
-        }).catch((err) => {
-          console.error("Push send failed", err);
+        (async () => {
+          const resp = await fetch(endpoint, {
+            method: "POST",
+            headers,
+            body: encodedBody,
+          });
+
+          if (!resp.ok) {
+            console.error(
+              "Push send failed",
+              resp.status,
+              await resp.text().catch(() => "")
+            );
+          } else {
+            console.log("Push sent OK to", endpoint);
+          }
+        })().catch((err) => {
+          console.error("Push send failed (network error)", err);
         })
       );
     } catch (err) {
