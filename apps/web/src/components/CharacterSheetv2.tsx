@@ -500,8 +500,11 @@ async function onPortraitFile(e: React.ChangeEvent<HTMLInputElement>) {
   const gunsAndGearText = mergedGearNames.join("\n");
 
   const setGunsAndGearText = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const lines = e.target.value.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
-    const nextStorage = { ...(effectiveStorage || {}), gunsAndGear: lines.map((name) => ({ name })) };
+    const lines = e.target.value.split(/\r?\n/);
+    const nextStorage = {
+      ...(effectiveStorage || {}),
+      gunsAndGear: lines.map((name) => ({ name })),
+    };
     update({
       gear: lines,
       storage: nextStorage,
@@ -511,7 +514,7 @@ async function onPortraitFile(e: React.ChangeEvent<HTMLInputElement>) {
 
   const offPersonText = ((effectiveStorage?.bag ?? []) as string[]).join("\n");
   const setOffPersonText = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const lines = e.target.value.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+    const lines = e.target.value.split(/\r?\n/);
     const nextStorage = { ...(effectiveStorage || {}), bag: lines };
     update({
       storage: nextStorage,
@@ -521,7 +524,7 @@ async function onPortraitFile(e: React.ChangeEvent<HTMLInputElement>) {
 
   const backpackText = ((effectiveStorage?.backpack ?? []) as string[]).join("\n");
   const setBackpackText = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const lines = e.target.value.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+    const lines = e.target.value.split(/\r?\n/);
     const nextStorage = { ...(effectiveStorage || {}), backpack: lines };
     update({
       storage: nextStorage,
