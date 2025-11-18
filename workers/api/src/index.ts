@@ -10,8 +10,13 @@ import { requireUser } from "./utils/auth";
 import { npcs } from './routes/npcs';
 import { uploads } from "./routes/uploads";
 import notes from "./routes/notes";
+import assets from "./routes/assets"; 
 
-type Env = { DB: D1Database };
+type Env = {
+  DB: D1Database;
+  ASSETS: R2Bucket;
+};
+
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -28,6 +33,7 @@ app.use(
   })
 );
 
+app.route("/", assets);
 app.route("/auth", auth);
 app.use("*", requireUser);
 app.route("/campaigns", campaigns);

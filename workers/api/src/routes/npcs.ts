@@ -16,7 +16,8 @@ const CreateBase = z.object({
   // accept http(s) OR data: URLs
   portraitUrl: z
     .string()
-    .regex(/^(https?:\/\/|data:)/, 'Must be http(s) or data: URL')
+    .url("Must be a valid URL")
+    .max(2048)
     .optional()
     .nullable(),
 });

@@ -7,5 +7,11 @@ binding = "DB"
 database_name = "action-thread-db"
 database_id = "c62ecc8e-151f-4f7f-ae8c-51eeda20fec0"
 
+# 👉 NEW: R2 binding
+[[r2_buckets]]
+binding = "ASSETS"
+bucket_name = "outgunned-assets"
+preview_bucket_name = "outgunned-assets"
+
 [vars]
 # Add any default vars here
