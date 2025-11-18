@@ -206,5 +206,18 @@ messages.patch("/messages/:id", async (c) => {
       WHERE m.id = ?`,
     [id]
   );
+
+  // 🔔 Kick off push notifications (fire-and-forget)
+  if (user?.id && row) {
+    try {
+      c.executionCtx?.waitUntil?.(
+        notifyGameSubscribers(c, gameId, user.id, row)
+      );
+    } catch (err) {
+      console.error("Failed to schedule push notification", err);
+    }
+  }
+
   return c.json(row);
 });
+

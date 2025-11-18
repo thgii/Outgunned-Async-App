@@ -1,4 +1,5 @@
 // apps/web/src/lib/push.ts
+import { api } from "./api";
 
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY!;
 
@@ -19,7 +20,6 @@ export async function enablePushNotifications() {
     throw new Error("Push notifications not supported in this browser");
   }
 
-  // Ask for permission
   const permission = await Notification.requestPermission();
   if (permission !== "granted") {
     throw new Error("Permission denied");
@@ -27,20 +27,14 @@ export async function enablePushNotifications() {
 
   const registration = await navigator.serviceWorker.ready;
 
-  // Subscribe to the push service
   const subscription = await registration.pushManager.subscribe({
     userVisibleOnly: true,
     applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
   });
 
-  // Send subscription to your backend
-  await fetch(`${import.meta.env.VITE_API_BASE_URL}/push/subscribe`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-    },
-    body: JSON.stringify({ subscription }),
+  // Send subscription to your backend using the shared API helper
+  await api.post("/push/subscribe", {
+    json: { subscription },
   });
 
   return subscription;
