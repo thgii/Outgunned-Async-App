@@ -6340,7 +6340,7 @@
       "description": "You notice hidden details other people miss.\n[Quick Action] Ask the Director to give you a clue or suggestion, or find the Weak Spot of an Enemy."
     },
     {
-      "name": "I’ll Make a Phone Call",
+      "name": "I'll Make a Phone Call",
       "source": "OG",
       "requires_meter": true,
       "description": "You have a contact, a friend, or a favor you can call in. It’s just a phone call away.\n[Full Turn] You call one of your contacts asking for a piece of information, a favor, a ride, or up to 3 Cash. You gain whatever you asked for during the next Time-Out."
