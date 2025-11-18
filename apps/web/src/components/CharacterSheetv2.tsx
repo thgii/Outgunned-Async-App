@@ -454,7 +454,35 @@ async function spendAdrenaline(amount = 1) {
   /** ---------- Storage ---------- */
   const topStorage = local.storage;
   const resStorage = local.resources?.storage;
-  const effectiveStorage = topStorage ?? resStorage ?? {};
+
+  // Some rows store the storage object inside `gear` instead of `storage`.
+  // If storage is missing but `gear` looks like { gunsAndGear, backpack, bag },
+  // treat that as our effective storage.
+  const legacyStorageFromGear =
+    !topStorage &&
+    !resStorage &&
+    local.gear &&
+    typeof local.gear === "object" &&
+    !Array.isArray(local.gear) &&
+    (("gunsAndGear" in (local.gear as any)) ||
+      ("backpack" in (local.gear as any)) ||
+      ("bag" in (local.gear as any)))
+      ? {
+          gunsAndGear: Array.isArray((local.gear as any).gunsAndGear)
+            ? (local.gear as any).gunsAndGear
+            : [],
+          backpack: Array.isArray((local.gear as any).backpack)
+            ? (local.gear as any).backpack
+            : [],
+          bag: Array.isArray((local.gear as any).bag)
+            ? (local.gear as any).bag
+            : [],
+        }
+      : undefined;
+
+  const effectiveStorage =
+    topStorage ?? resStorage ?? legacyStorageFromGear ?? {};
+
 
 // Character portrait (URL string)
 const portrait =
