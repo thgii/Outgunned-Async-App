@@ -12,8 +12,7 @@
     "@action-thread/types": "workspace:*",
     "@pushforge/builder": "^1.1.2",
     "hono": "^4.6.7",
-    "zod": "^4.1.12",
-    "@pushforge/builder": "^1.1.0"
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241022.0",
