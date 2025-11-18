@@ -2,6 +2,23 @@ import { useState } from "react";
 import MessageEditor from "./MessageEditor";
 import { api } from "../lib/api";
 
+const colorRegistry = new Map<string, string>();
+let nextHueIndex = 0;
+
+function getColorForKey(key: string): string {
+  // Already seen? Reuse color
+  const existing = colorRegistry.get(key);
+  if (existing) return existing;
+
+  // New character → assign a new hue
+  const hue = (nextHueIndex * 137) % 360; // 137° jumps spread colors nicely
+  nextHueIndex += 1;
+
+  const color = `hsl(${hue}deg, 70%, 85%)`;
+  colorRegistry.set(key, color);
+  return color;
+}
+
 export default function Message({
   msg,
   currentUserId,
@@ -34,17 +51,7 @@ export default function Message({
     msg.authorName ||
     "unknown";
 
-  // Stable hash → HSL color (Hundreds of unique colors, stable)
-  function colorForKey(key) {
-    let hash = 0;
-    for (let i = 0; i < key.length; i++) {
-      hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
-    }
-    const hue = hash % 360; // 0–359 unique hues
-    return `hsl(${hue}deg, 70%, 85%)`;
-  }
-
-  const bubbleColor = colorForKey(colorKey);
+  const bubbleColor = getColorForKey(colorKey);
   // ---------------------------------------------------
 
   return (
