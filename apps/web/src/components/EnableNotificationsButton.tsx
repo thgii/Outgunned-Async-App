@@ -60,6 +60,11 @@ export function EnableNotificationsButton() {
 
   const disabled = status === "working" || status === "enabled" || status === "unsupported";
 
+  // If already enabled, hide the whole component
+if (status === "enabled") {
+  return null;
+}
+
   return (
     <div className="flex flex-col gap-1">
       <button
