@@ -32,15 +32,9 @@ export async function enablePushNotifications() {
     applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
   });
 
-  // 🔑 Convert to plain JSON so the Worker sees endpoint/keys
-  const subscriptionJson =
-    typeof (subscription as any).toJSON === "function"
-      ? (subscription as any).toJSON()
-      : subscription;
-
   // Send subscription to your backend using the shared API helper
   await api.post("/push/subscribe", {
-    json: { subscription: subscriptionJson },
+    json: { subscription },
   });
 
   return subscription;
