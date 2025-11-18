@@ -1036,7 +1036,8 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
             </p>
           )}
 
-          <div className="grid grid-cols-2 gap-4 mt-3">
+          {/* MOBILE-FRIENDLY GRID: single column on small, two on md+ */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
             <div>
               <h4 className="font-semibold text-sm mb-1">
                 Role Feats
@@ -1069,8 +1070,8 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
                           onChange={() => toggleRoleFeat(f)}
                           disabled={disabledBecauseTrope}
                         />
-                        <span>{f}</span>
-                        <span className="ml-auto text-[10px] uppercase tracking-wide opacity-60">
+                        <span className="flex-1">{f}</span>
+                        <span className="ml-2 text-[10px] uppercase tracking-wide opacity-60">
                           Role
                         </span>
                       </div>
@@ -1118,8 +1119,8 @@ export default function CharacterWizard({ initial, onComplete }: Props) {
                             onChange={() => toggleTropeFeat(f)}
                             disabled={disabledBecauseRole}
                           />
-                          <span>{f}</span>
-                          <span className="ml-auto text-[10px] uppercase tracking-wide opacity-60">
+                          <span className="flex-1">{f}</span>
+                          <span className="ml-2 text-[10px] uppercase tracking-wide opacity-60">
                             Trope
                           </span>
                         </div>
