@@ -91,4 +91,17 @@ CREATE TABLE IF NOT EXISTS clocks (
   value INTEGER NOT NULL
 );
 
+-- Push subscriptions
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id TEXT PRIMARY KEY,
+  userId TEXT NOT NULL,
+  endpoint TEXT NOT NULL UNIQUE,
+  p256dh TEXT NOT NULL,
+  auth TEXT NOT NULL,
+  createdAt TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user
+  ON push_subscriptions (userId);
+
 CREATE INDEX IF NOT EXISTS idx_messages_game_time ON messages (gameId, createdAt);

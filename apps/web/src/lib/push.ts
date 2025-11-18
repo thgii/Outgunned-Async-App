@@ -25,8 +25,10 @@ export async function enablePushNotifications() {
     throw new Error("Permission denied");
   }
 
+  // Ensure SW is ready (you already register it in main.tsx / index.html)
   const registration = await navigator.serviceWorker.ready;
 
+  // Create / refresh subscription
   const subscription = await registration.pushManager.subscribe({
     userVisibleOnly: true,
     applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
