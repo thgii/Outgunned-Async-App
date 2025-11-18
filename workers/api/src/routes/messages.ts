@@ -53,7 +53,7 @@ async function notifyGameSubscribers(
        FROM push_subscriptions ps
        JOIN memberships m ON m.userId = ps.userId
        JOIN users u ON u.id = ps.userId
-      WHERE m.gameId = ?`,
+      WHERE m.gameId = ? AND ps.userId != ?`,
     [gameId, authorId]
   );
 
@@ -62,7 +62,7 @@ async function notifyGameSubscribers(
     gameId,
     "authorId",
     authorId,
-    "subscriber count",
+    "subs",
     subs.length
   );
 
@@ -108,27 +108,30 @@ async function notifyGameSubscribers(
         },
       });
 
-      c.executionCtx?.waitUntil?.(
-        (async () => {
-          const resp = await fetch(endpoint, {
-            method: "POST",
-            headers,
-            body: encodedBody,
-          });
+      const send = async () => {
+        const resp = await fetch(endpoint, {
+          method: "POST",
+          headers,
+          body: encodedBody,
+        });
 
-          if (!resp.ok) {
-            console.error(
-              "Push send failed",
-              resp.status,
-              await resp.text().catch(() => "")
-            );
-          } else {
-            console.log("Push sent OK to", endpoint);
-          }
-        })().catch((err) => {
-          console.error("Push send failed (network error)", err);
-        })
-      );
+        if (!resp.ok) {
+          console.error(
+            "Push send failed",
+            resp.status,
+            await resp.text().catch(() => "")
+          );
+        } else {
+          console.log("Push sent OK to", endpoint);
+        }
+      };
+
+      // Use waitUntil if present; otherwise just fire it inline
+      if (c.executionCtx && typeof c.executionCtx.waitUntil === "function") {
+        c.executionCtx.waitUntil(send());
+      } else {
+        send().catch((err) => console.error("Push send failed (no executionCtx)", err));
+      }
     } catch (err) {
       console.error("Failed to build push request", err);
     }
@@ -239,12 +242,17 @@ messages.patch("/messages/:id", async (c) => {
     [id]
   );
 
-  // 🔔 Kick off push notifications (fire-and-forget)
+  // 🔔 Kick off push notifications
   if (user?.id && row) {
     try {
-      c.executionCtx?.waitUntil?.(
-        notifyGameSubscribers(c, gameId, user.id, row)
-      );
+      if (c.executionCtx && typeof c.executionCtx.waitUntil === "function") {
+        c.executionCtx.waitUntil(notifyGameSubscribers(c, gameId, user.id, row));
+      } else {
+        // Fallback if executionCtx isn't available for some reason
+        notifyGameSubscribers(c, gameId, user.id, row).catch((err: any) => {
+          console.error("notifyGameSubscribers failed (no executionCtx)", err);
+        });
+      }
     } catch (err) {
       console.error("Failed to schedule push notification", err);
     }
