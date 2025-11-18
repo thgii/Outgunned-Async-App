@@ -822,6 +822,7 @@ function buildHeroTagline(
             </div>
             <div className="mt-3">
               <TextArea
+                className="w-full"
                 placeholder="Describe your character’s appearance, demeanor, background, quirks, etc."
                 value={local.notes || ""}
                 onChange={(e) => pathUpdate("notes", e.target.value)}
