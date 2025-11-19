@@ -283,7 +283,12 @@ export default function CharacterSheetV2({
   };
 
   const [local, setLocal] = useState<CharacterDTO>(safe);
-  useEffect(() => setLocal(safe), [value?.id]);
+
+  // Re-sync whenever the incoming character object changes
+  useEffect(() => {
+    setLocal(safe);
+  }, [value]);
+
   // Ensure canonical `conditions` exists/aligns on initial load
   useEffect(() => {
     const arr = Array.from(new Set(local.youLookSelected ?? []));
