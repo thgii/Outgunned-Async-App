@@ -911,7 +911,7 @@ function buildHeroTagline(
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <Card>
           <div className="flex items-center">
-            <SectionTitle>Adrenaline/Luck</SectionTitle>
+            <SectionTitle>Adrenaline/Luck ⚡</SectionTitle>
             <InfoTooltip className="ml-2" text={"Push your luck/resource. Spend pips to boost rolls (+1 each) or fuel powerful Feats. Spend 6 to TAKE THE SPOTLIGHT."} />
           </div>
           <div className="mt-3">
