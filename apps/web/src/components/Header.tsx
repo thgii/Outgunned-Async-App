@@ -93,15 +93,6 @@ export default function Header() {
           </NavLink>
 
           <NavLink
-            to="/messages"
-            className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}
-          >
-            <span className="inline-flex items-center gap-2">
-              <MessageSquare className="h-4 w-4" /> Messages
-            </span>
-          </NavLink>
-
-          <NavLink
             to="/settings"
             className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}
           >
@@ -183,18 +174,6 @@ export default function Header() {
               >
                 <span className="inline-flex items-center gap-2">
                   <Clapperboard className="h-5 w-5" /> Director&apos;s Toolkit
-                </span>
-              </NavLink>
-
-              <NavLink
-                to="/messages"
-                className={({ isActive }) =>
-                  `${mobileLinkBase} ${isActive ? mobileActive : mobileInactive}`
-                }
-                onClick={onNav}
-              >
-                <span className="inline-flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5" /> Messages
                 </span>
               </NavLink>
 
