@@ -1,15 +1,16 @@
-const CACHE_NAME = "outgunned-cache-v1";
-const OFFLINE_URLS = ["/", "/index.html"];
+const CACHE_NAME = "outgunned-cache-v2";
+const OFFLINE_URL = "/";
 
-// Install + cache basic shell
+// Install: cache a basic offline shell
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(OFFLINE_URLS))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll([OFFLINE_URL]))
   );
+  // Take over immediately
   self.skipWaiting();
 });
 
-// Activate + cleanup old caches
+// Activate: clean up old caches & take control of existing clients
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -23,21 +24,57 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Cache-first fetch
+// Fetch handler:
+// - HTML / navigations -> NETWORK FIRST (always try the newest build)
+// - Other assets -> cache-first with background fill
 self.addEventListener("fetch", (event) => {
   const request = event.request;
 
   if (request.method !== "GET") return;
 
+  const accept = request.headers.get("accept") || "";
+
+  // Treat navigations / HTML specially: NETWORK FIRST
+  if (request.mode === "navigate" || accept.includes("text/html")) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          // Update offline fallback
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(OFFLINE_URL, copy);
+          });
+          return response;
+        })
+        .catch(() => caches.match(OFFLINE_URL))
+    );
+    return;
+  }
+
+  // Everything else: cache-first, then network, and cache result
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached;
 
-      return fetch(request).catch(() => {
-        if (request.mode === "navigate") {
-          return caches.match("/");
-        }
-      });
+      return fetch(request)
+        .then((response) => {
+          // Only cache valid responses
+          if (
+            !response ||
+            response.status !== 200 ||
+            response.type === "opaque"
+          ) {
+            return response;
+          }
+
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, copy);
+          });
+
+          return response;
+        })
+        .catch(() => cached) // if network fails and nothing cached, just propagate error
     })
   );
 });
