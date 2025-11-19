@@ -82,7 +82,7 @@ export default function DirectorsToolkit_EnemyResources() {
           accumulated Adrenaline on a Special Action, you just lose that
           Adrenaline.
         </p>
-        <p className="text-xs text-amber-900">
+        <p className="text-xs text-white-900">
           <span className="font-semibold">Exception:</span> if the Enemy&apos;s{" "}
           <span className="font-semibold">last</span> Grit box is a{" "}
           <span className="font-semibold">HOT BOX</span>, you may choose to spend
