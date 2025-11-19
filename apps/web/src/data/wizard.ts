@@ -52,7 +52,13 @@ type TropeDef = {
   feat_options?: string[];
 };
 
-type FeatCat = { name: string; description?: string };
+type FeatCat = { name: string; description?: string; requires_meter?: boolean };
+
+export const FEATS_CATALOG: FeatCat[] = RAW_FEATS.map((f: any) => ({
+  name: String(f?.name ?? "").trim(),
+  description: String(f?.description ?? "").trim() || undefined,
+  requires_meter: !!f?.requires_meter, // <-- pull through the JSON flag
+}));
 
 /* ===============================
  * Data exposure + optional catalog
