@@ -17,8 +17,4 @@ preview_bucket_name = "outgunned-assets"
 VAPID_PUBLIC_KEY = "BMNlNzEvTId3LNLLMuYYqk4-XSTgUtzDzZzPbUWnkT7A9T0kUvoL4oOEq5f8CW8j9U88u2ehpgMwwKKU7dJDGKA"
 
 [observability]
-[observability.logs]
-enabled = true
-head_sampling_rate = 1
-invocation_logs = true
-persist = true
+enabled = false
