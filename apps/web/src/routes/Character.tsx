@@ -96,7 +96,15 @@ function normalizeForSheet(c: any): Character {
       ? c.resources[k]
       : c?.[k] ?? fallback);
 
-  // ...
+  // Prefer job, then background, stringify MaybeNamed
+  const jobOrBackgroundRaw =
+    c.job ??
+    c.background ??
+    c.jobOrBackground ??
+    c?.resources?.job ??
+    c?.resources?.background;
+
+  const jobOrBackground = getMaybeName(jobOrBackgroundRaw) ?? "";
 
   // Ride: keep a top-level string for UI, but store under resources in DB
   const ride = getMaybeName(c?.resources?.ride ?? c?.ride);
@@ -114,9 +122,6 @@ function normalizeForSheet(c: any): Character {
   const adrenaline = Math.max(adrenalineRaw, luckRaw); // unified pool
   const spotlight = asNumber(fromResources("spotlight", 0), 0);
   const luck = adrenaline;
-  // ...
-}
-
 
   const cash = asNumber(fromResources("cash", 0), 0);
 
