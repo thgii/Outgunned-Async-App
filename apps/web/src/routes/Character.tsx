@@ -264,8 +264,22 @@ export default function CharacterRoute() {
       setError(null);
       try {
         const c = await api(`/characters/${id}`);
+
+        // 🔍 DEBUG: see exactly what the worker returns
+        console.log("RAW CHARACTER FROM API", c);
+
         if (cancel) return;
         const normalized = normalizeForSheet(c);
+
+        // 🔍 DEBUG: see what normalizeForSheet does to resources/counters
+        console.log("NORMALIZED CHARACTER FOR SHEET", {
+          grit: normalized.grit,
+          adrenaline: normalized.adrenaline,
+          spotlight: normalized.spotlight,
+          deathRoulette: normalized.deathRoulette,
+          resources: normalized.resources,
+        });
+
         setCharacter(normalized);
         latestRef.current = normalized;
         isDirtyRef.current = false;
@@ -276,6 +290,7 @@ export default function CharacterRoute() {
         setSaving("error");
       }
     }
+
 
     if (id) load();
     return () => {
