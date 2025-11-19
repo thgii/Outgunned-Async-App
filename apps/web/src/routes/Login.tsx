@@ -4,7 +4,7 @@ import { useAuth } from "../lib/store";
 import { api } from "../lib/api";
 
 export default function Login() {
-  const [name, setName] = useState("Player One");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [passcode, setPasscode] = useState("");
   const [busy, setBusy] = useState(false);
