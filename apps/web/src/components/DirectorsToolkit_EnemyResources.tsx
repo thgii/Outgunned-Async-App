@@ -76,8 +76,8 @@ export default function DirectorsToolkit_EnemyResources() {
 
       {/* Final Blow rule */}
       <section className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-2">
-        <h3 className="text-sm font-semibold text-amber-900">Final Blow (Hot Box Last Grit Box)</h3>
-        <p className="text-xs text-amber-900">
+        <h3 className="text-sm font-semibold text-white-900">Final Blow (Hot Box Last Grit Box)</h3>
+        <p className="text-xs text-white-900">
           Normally, if a Hero defeats an Enemy before you can spend the
           accumulated Adrenaline on a Special Action, you just lose that
           Adrenaline.
