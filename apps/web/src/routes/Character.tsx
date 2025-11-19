@@ -90,27 +90,22 @@ function sanitizeStorage(s: any) {
 
 /** Normalize server payload -> shape the sheet expects (top-level fields). */
 function normalizeForSheet(c: any): Character {
+  // Prefer the resources blob; fall back to any legacy top-level fields
   const fromResources = (k: string, fallback?: any) =>
-    c?.[k] ?? c?.resources?.[k] ?? fallback;
+    (c?.resources && c.resources[k] !== undefined
+      ? c.resources[k]
+      : c?.[k] ?? fallback);
 
-  // Prefer job, then background, stringify MaybeNamed
-  const jobOrBackgroundRaw =
-    c.job ??
-    c.background ??
-    c.jobOrBackground ??
-    c?.resources?.job ??
-    c?.resources?.background;
-
-  const jobOrBackground = getMaybeName(jobOrBackgroundRaw) ?? "";
+  // ...
 
   // Ride: keep a top-level string for UI, but store under resources in DB
-  const ride = getMaybeName(c?.ride ?? c?.resources?.ride);
+  const ride = getMaybeName(c?.resources?.ride ?? c?.ride);
 
   // Grit may be on top-level or inside resources (as a meter)
-  const gritObj = c?.grit ?? c?.resources?.grit ?? {};
+  const gritObj = c?.resources?.grit ?? c?.grit ?? {};
   const grit: Meter = {
-    current: clamp(asNumber(gritObj.current, 0), 0, 12),
-    max: clamp(asNumber(gritObj.max, 12), 1, 12),
+    current: clamp(asNumber((gritObj as any).current, 0), 0, 12),
+    max: clamp(asNumber((gritObj as any).max, 12), 1, 12),
   };
 
   // Numbers commonly stored under resources
@@ -118,7 +113,10 @@ function normalizeForSheet(c: any): Character {
   const luckRaw = asNumber(fromResources("luck", 0), 0);
   const adrenaline = Math.max(adrenalineRaw, luckRaw); // unified pool
   const spotlight = asNumber(fromResources("spotlight", 0), 0);
-  const luck = adrenaline; // keep mirror equal
+  const luck = adrenaline;
+  // ...
+}
+
 
   const cash = asNumber(fromResources("cash", 0), 0);
 
