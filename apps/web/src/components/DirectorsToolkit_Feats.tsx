@@ -43,6 +43,9 @@ export default function DirectorsToolkit_Feats() {
       <div className="p-6 border-b border-gray-200">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-xl font-semibold text-gray-900">Feats Reference</h2>
+          <p className="mt-1 text-xs text-gray-500">
+            ⚡ = Requires Adrenaline / Luck
+          </p>
           <div className="flex items-center gap-3">
             <input
               value={query}
@@ -70,7 +73,10 @@ export default function DirectorsToolkit_Feats() {
               <ul className="divide-y divide-gray-200 rounded-xl border border-gray-200 overflow-hidden">
                 {items.map((f) => (
                   <li key={f.name} className="p-4 sm:p-5 bg-white">
-                    <div className="text-base font-semibold text-gray-900">{f.name}</div>
+                    <div className="text-base font-semibold text-gray-900">
+                      {f.name}
+                      {(f.requires_meter) && " ⚡"}
+                    </div>
                     {f.description ? (
                       <p className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">
                         {f.description}
