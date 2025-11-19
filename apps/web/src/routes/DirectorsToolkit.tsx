@@ -4,10 +4,12 @@ import DirectorsToolkit_Gear from "../components/DirectorsToolkit_Gear";
 import DirectorsToolkit_Feats from "../components/DirectorsToolkit_Feats";
 import DirectorsDiceRoller from "../components/DirectorsToolkit_DiceRoller";
 import RulesReference from "../components/DirectorsToolkit_RulesReference";
-
+import DirectorsToolkit_EnemyResources from "../components/DirectorsToolkit_EnemyResources";
 
 export default function DirectorsToolkit() {
-  const [tab, setTab] = useState<"attributes" | "gear" | "resources" | "feats" | "diceroller" | "rulesreference">("attributes");
+  const [tab, setTab] = useState<
+    "attributes" | "gear" | "enemyresources" | "feats" | "diceroller" | "rulesreference"
+  >("attributes");
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-8 text-gray-900 bg-gray-100 min-h-screen">
@@ -81,16 +83,15 @@ export default function DirectorsToolkit() {
         </button>
 
         <button
-          onClick={() => setTab("resources")}
+          onClick={() => setTab("enemyresources")}
           className={`px-4 py-2 rounded-full border font-medium ${
-            tab === "resources"
+            tab === "enemyresources"
               ? "bg-blue-600 text-white border-blue-700"
               : "bg-white text-gray-800 border-gray-300 hover:bg-gray-50"
           }`}
         >
           Resources
         </button>
-
       </div>
 
       {/* Content panes */}
@@ -98,22 +99,14 @@ export default function DirectorsToolkit() {
         {tab === "attributes" && <DirectorsToolkit_AttributesAndSkills />}
 
         {tab === "gear" && <DirectorsToolkit_Gear />}
-        
-        {tab === "resources" && (
-          <div className="w-full max-w-4xl mx-auto rounded-2xl border border-gray-300 shadow bg-white p-6">
-            <h2 className="text-xl font-semibold mb-2 text-gray-900">Resources</h2>
-            <p className="text-gray-700">
-              Coming soon: Adrenaline/Luck, Grit, Lethal Bullets, etc.
-            </p>
-          </div>
-        )}
 
-       {tab === "feats" && <DirectorsToolkit_Feats />}
+        {tab === "enemyresources" && <DirectorsToolkit_EnemyResources />}
 
-       {tab === "diceroller" && <DirectorsDiceRoller />}
+        {tab === "feats" && <DirectorsToolkit_Feats />}
 
-       {tab === "rulesreference" && <RulesReference />}
+        {tab === "diceroller" && <DirectorsDiceRoller />}
 
+        {tab === "rulesreference" && <RulesReference />}
       </div>
     </div>
   );
