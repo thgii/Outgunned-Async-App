@@ -1,4 +1,4 @@
-const CACHE_NAME = "outgunned-cache-v2";
+const CACHE_NAME = "outgunned-cache-v3"; // bump version
 const OFFLINE_URL = "/";
 
 // Install: cache a basic offline shell
@@ -25,16 +25,29 @@ self.addEventListener("activate", (event) => {
 });
 
 // Fetch handler:
-// - HTML / navigations -> NETWORK FIRST (always try the newest build)
-// - Other assets -> cache-first with background fill
+// - BYPASS dynamic API/data requests (games, push, JSON)
+// - HTML / navigations -> NETWORK FIRST
+// - Static assets (css/js/images) -> cache-first
 self.addEventListener("fetch", (event) => {
   const request = event.request;
 
   if (request.method !== "GET") return;
 
+  const url = new URL(request.url);
   const accept = request.headers.get("accept") || "";
 
-  // Treat navigations / HTML specially: NETWORK FIRST
+  // 🚫 1) BYPASS API / dynamic JSON endpoints completely
+  if (
+    url.pathname.startsWith("/games/") ||
+    url.pathname.startsWith("/push/") ||
+    url.pathname.startsWith("/api/") ||
+    accept.includes("application/json")
+  ) {
+    // Let the browser hit the network normally; no caching here
+    return;
+  }
+
+  // ✅ 2) Navigations / HTML: NETWORK FIRST
   if (request.mode === "navigate" || accept.includes("text/html")) {
     event.respondWith(
       fetch(request)
@@ -51,14 +64,13 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Everything else: cache-first, then network, and cache result
+  // ✅ 3) Static assets (css/js/images/etc): cache-first
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached;
 
       return fetch(request)
         .then((response) => {
-          // Only cache valid responses
           if (
             !response ||
             response.status !== 200 ||
@@ -74,7 +86,7 @@ self.addEventListener("fetch", (event) => {
 
           return response;
         })
-        .catch(() => cached) // if network fails and nothing cached, just propagate error
+        .catch(() => cached)
     })
   );
 });
@@ -107,15 +119,17 @@ self.addEventListener("notificationclick", (event) => {
   const url = event.notification.data?.url || "/";
 
   event.waitUntil(
-    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        if ("focus" in client && client.url.includes(self.location.origin)) {
-          return client.focus();
+    clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clientList) => {
+        for (const client of clientList) {
+          if ("focus" in client && client.url.includes(self.location.origin)) {
+            return client.focus();
+          }
         }
-      }
-      if (clients.openWindow) {
-        return clients.openWindow(url);
-      }
-    })
+        if (clients.openWindow) {
+          return clients.openWindow(url);
+        }
+      })
   );
 });
