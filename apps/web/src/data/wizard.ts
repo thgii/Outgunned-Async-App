@@ -64,22 +64,35 @@ export const DATA = {
 };
 
 // ===== Feats catalog / descriptions =====
-export const FEATS_CATALOG: { name: string; description?: string }[] = (() => {
+
+// Keep a raw feats array around so we can expose extra metadata like `requires_meter`
+const RAW_FEATS: any[] = (() => {
   // Accept either `feats_catalog` or `feats` from the JSON
   const rawFeats =
     Array.isArray((raw as any).feats_catalog) && (raw as any).feats_catalog.length
       ? (raw as any).feats_catalog
       : (Array.isArray((raw as any).feats) ? (raw as any).feats : []);
 
-  // Normalize to the minimal shape we need
-  return rawFeats.map((f: any) => ({
-    name: String(f?.name ?? "").trim(),
-    description: String(f?.description ?? "").trim() || undefined,
-  }));
+  return rawFeats;
 })();
+
+export const FEATS_CATALOG: { name: string; description?: string }[] = RAW_FEATS.map((f: any) => ({
+  name: String(f?.name ?? "").trim(),
+  description: String(f?.description ?? "").trim() || undefined,
+}));
 
 export const FEAT_DESC: Record<string, string> =
   Object.fromEntries(FEATS_CATALOG.map((f) => [f.name, f.description || ""])) || {};
+
+// Minimal feat metadata: right now we only care about requires_meter,
+// which is true for feats that cost Adrenaline/Spotlight/etc.
+export const FEAT_META: Record<string, { requires_meter: boolean }> =
+  Object.fromEntries(
+    RAW_FEATS.map((f: any) => [
+      String(f?.name ?? "").trim(),
+      { requires_meter: !!f?.requires_meter },
+    ])
+  );
 
 /** Special Role helper */
 export function isSpecialRole(name?: string | null) {

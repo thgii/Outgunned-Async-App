@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { FEAT_DESC } from "../data/wizard";
+import { FEAT_DESC, FEAT_META } from "../data/wizard";
 import CharacterDicePanel from "./CharacterDicePanel";
 import { uploadImage } from "../lib/api";
 
@@ -599,15 +599,23 @@ async function onPortraitFile(e: React.ChangeEvent<HTMLInputElement>) {
     });
   };
 
-  // Feats already include descriptions in the DTO
+  // Feats: pull description from FEAT_DESC and requires_meter from FEAT_META
   const feats = (local.feats ?? []).map((f) => {
     if (typeof f === "string") {
       const name = f;
-      return { name, description: FEAT_DESC[name] || "" };
+      const description = FEAT_DESC[name] || "";
+      const requires_meter = FEAT_META[name]?.requires_meter ?? false;
+      return { name, description, requires_meter };
     }
+
     const name = (f as any).name;
     const description = (f as any).description || FEAT_DESC[name] || "";
-    return { name, description };
+    const requires_meter =
+      (f as any).requires_meter ??
+      FEAT_META[name]?.requires_meter ??
+      false;
+
+    return { name, description, requires_meter };
   });
 
 function normalizeYouLookKeyToName(k: string): string | null {
@@ -853,22 +861,31 @@ function buildHeroTagline(
               </div>
             </div>
             <div className="mt-3 space-y-2">
-              {(feats.length ? feats : [{ name: "—" }]).map((f, i) => {
-                const featName = (f as any).name;
-                const desc = (f as any).description || "";
-                const requires = (FEAT_DESC[featName]?.requires_meter === true);
+              {(feats.length ? feats : [{ name: "—", requires_meter: false }]).map((f, i) => {
+                const name = (f as any).name as string;
+                const requiresMeter = !!(f as any).requires_meter;
 
                 return (
-                  <div key={`${featName}-${i}`} className="rounded-lg border border-zinc-200 p-3">
+                  <div
+                    key={`${name}-${i}`}
+                    className="rounded-lg border border-zinc-200 p-3"
+                  >
                     <div className="font-medium text-zinc-800">
-                      {featName}
-                      {requires && " ⚡"}
+                      {name}
+                      {requiresMeter && (
+                        <span
+                          className="ml-1"
+                          title="This feat costs Adrenaline/Spotlight to use."
+                        >
+                          ⚡
+                        </span>
+                      )}
                     </div>
-                    {desc && (
+                    {(f as any).description ? (
                       <div className="mt-1 whitespace-pre-line text-sm text-zinc-600">
-                        {desc}
+                        {(f as any).description}
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 );
               })}
