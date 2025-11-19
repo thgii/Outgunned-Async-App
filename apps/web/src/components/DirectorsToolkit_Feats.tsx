@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { FEATS_CATALOG } from "../data/wizard";
 
+type Feat = (typeof FEATS_CATALOG)[number];
+
 /**
  * Director's Toolkit — Feats
  * Pulls feat names + descriptions from FEATS_CATALOG (backed by outgunned_data.json).
@@ -10,7 +12,7 @@ import { FEATS_CATALOG } from "../data/wizard";
 export default function DirectorsToolkit_Feats() {
   const [query, setQuery] = useState("");
 
-  const feats = FEATS_CATALOG; // [{ name, description? }]
+const feats: Feat[] = FEATS_CATALOG;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -75,7 +77,7 @@ export default function DirectorsToolkit_Feats() {
                   <li key={f.name} className="p-4 sm:p-5 bg-white">
                     <div className="text-base font-semibold text-gray-900">
                       {f.name}
-                      {(f.requires_meter) && " ⚡"}
+                      {f.requires_meter && " ⚡"}
                     </div>
                     {f.description ? (
                       <p className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">
