@@ -853,14 +853,25 @@ function buildHeroTagline(
               </div>
             </div>
             <div className="mt-3 space-y-2">
-              {(feats.length ? feats : [{ name: "—" }]).map((f, i) => (
-                <div key={`${(f as any).name}-${i}`} className="rounded-lg border border-zinc-200 p-3">
-                  <div className="font-medium text-zinc-800">{(f as any).name}</div>
-                  {(f as any).description ? (
-                    <div className="mt-1 whitespace-pre-line text-sm text-zinc-600">{(f as any).description}</div>
-                  ) : null}
-                </div>
-              ))}
+              {(feats.length ? feats : [{ name: "—" }]).map((f, i) => {
+                const featName = (f as any).name;
+                const desc = (f as any).description || "";
+                const requires = (FEAT_DESC[featName]?.requires_meter === true);
+
+                return (
+                  <div key={`${featName}-${i}`} className="rounded-lg border border-zinc-200 p-3">
+                    <div className="font-medium text-zinc-800">
+                      {featName}
+                      {requires && " ⚡"}
+                    </div>
+                    {desc && (
+                      <div className="mt-1 whitespace-pre-line text-sm text-zinc-600">
+                        {desc}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </Card>
                     <Card>
