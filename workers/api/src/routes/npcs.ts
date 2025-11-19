@@ -43,6 +43,7 @@ const CreateEnemy = CreateBase.extend({
   defenseLevel: Level3,
   weakSpot: z.string().min(1),
   weakSpotDiscovered: z.boolean().default(false),
+  enemyActiveFeats: z.string().optional().nullable(),
 });
 
 const CreateNpc = z.discriminatedUnion('side', [CreateAlly, CreateEnemy]);
@@ -69,6 +70,7 @@ const UpdateNpc = z.object({
   defenseLevel: Level3.optional(),
   weakSpot: z.string().optional(),
   weakSpotDiscovered: z.boolean().optional(),
+  enemyActiveFeats: z.string().optional().nullable(),
 }).refine(o => Object.keys(o).length > 0, 'Nothing to update');
 
 async function isDirector(DB: D1Database, campaignId: string, userId: string) {
@@ -127,21 +129,45 @@ npcs.post('/campaigns/:cid/supporting-characters', async (c) => {
 
   await c.env.DB.prepare(`
     INSERT INTO npcs (
-      id, campaignId, name, side, portraitUrl,
-      brawn, nerves, smooth, focus, crime, allyGrit,
-      enemyType, enemyGritMax, enemyGrit, attackLevel, defenseLevel, weakSpot, weakSpotDiscovered, featPoints,
-      created_at, updated_at, help, flaw
-    ) VALUES (?,?,?,?,?,
-              ?,?,?,?,?,?,
-              ?,?,?,?,?,?,?,?, ?,?,?,?)
+      id,
+      campaignId,
+      name,
+      side,
+      portraitUrl,
+      brawn,
+      nerves,
+      smooth,
+      focus,
+      crime,
+      allyGrit,
+      enemyType,
+      enemyGritMax,
+      enemyGrit,
+      attackLevel,
+      defenseLevel,
+      weakSpot,
+      weakSpotDiscovered,
+      featPoints,
+      enemyActiveFeats,
+      created_at,
+      updated_at,
+      help,
+      flaw
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `).bind(
-    id, cid, parsed.name, parsed.side, parsed.portraitUrl ?? null,
+    id,
+    cid,
+    parsed.name,
+    parsed.side,
+    parsed.portraitUrl ?? null,
+    // allies
     parsed.side === 'ally' ? parsed.brawn : null,
     parsed.side === 'ally' ? parsed.nerves : null,
     parsed.side === 'ally' ? parsed.smooth : null,
     parsed.side === 'ally' ? parsed.focus : null,
     parsed.side === 'ally' ? parsed.crime : null,
     parsed.side === 'ally' ? parsed.allyGrit : null,
+    // enemies
     parsed.side === 'enemy' ? parsed.enemyType : null,
     parsed.side === 'enemy' ? parsed.enemyGritMax : null,
     parsed.side === 'enemy' ? parsed.enemyGrit : null,
@@ -150,8 +176,11 @@ npcs.post('/campaigns/:cid/supporting-characters', async (c) => {
     parsed.side === 'enemy' ? parsed.weakSpot : null,
     parsed.side === 'enemy' ? (parsed.weakSpotDiscovered ? 1 : 0) : 0,
     featPoints,
-    now, now,
-    parsed.side === 'ally' ? (parsed.help ?? null) : null,   
+    parsed.side === 'enemy' ? (parsed.enemyActiveFeats ?? null) : null,
+    now,
+    now,
+    // ally notes
+    parsed.side === 'ally' ? (parsed.help ?? null) : null,
     parsed.side === 'ally' ? (parsed.flaw ?? null) : null
   ).run();
 

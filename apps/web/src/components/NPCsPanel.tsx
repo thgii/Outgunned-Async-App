@@ -31,6 +31,9 @@ type Npc = {
   weakSpot?: string | null;
   weakSpotDiscovered?: boolean;
   featPoints?: number | null;
+
+  /** Optional notes for spent feat points, e.g. "Hard to Kill, Gunslinger" */
+  enemyActiveFeats?: string | null;
 };
 
 export function NPCsPanel({
@@ -113,6 +116,12 @@ export function NPCsPanel({
               await updateNpc(campaignId, n.id, { weakSpotDiscovered: v });
               refresh();
             }}
+            onActiveFeatsChange={async (text) => {
+              // store trimmed text, or null if empty
+              const value = text.trim() === "" ? null : text.trim();
+              await updateNpc(campaignId, n.id, { enemyActiveFeats: value });
+              refresh();
+            }}
             onDelete={async () => {
               if (!confirm(`Delete ${n.name}?`)) return;
               await deleteNpc(campaignId, n.id);
@@ -134,17 +143,30 @@ export function NPCsPanel({
 }
 
 function NpcCard({
-  npc, isDirector, onGritChange, onToggleDiscovered, onDelete
+  npc,
+  isDirector,
+  onGritChange,
+  onToggleDiscovered,
+  onActiveFeatsChange,
+  onDelete
 }: {
   npc: Npc;
   isDirector: boolean;
   onGritChange: (v: number) => void;
   onToggleDiscovered: (v: boolean) => void;
+  onActiveFeatsChange?: (text: string) => void;
   onDelete: () => void;
 }) {
   const isAlly = npc.side === 'ally';
   const gritMax = isAlly ? 3 : (npc.enemyGritMax ?? 0);
   const gritVal = isAlly ? (npc.allyGrit ?? 0) : (npc.enemyGrit ?? 0);
+
+  // Local draft state for the active feats textarea so typing is smooth
+  const [activeFeatsDraft, setActiveFeatsDraft] = useState<string>(npc.enemyActiveFeats ?? "");
+
+  useEffect(() => {
+    setActiveFeatsDraft(npc.enemyActiveFeats ?? "");
+  }, [npc.enemyActiveFeats, npc.id]);
 
   return (
     <div className="rounded border p-3 bg-white/60">
@@ -217,10 +239,34 @@ function NpcCard({
           </div>
         </>
       ) : (
-        <div className="mt-3 space-y-1 text-sm">
+        <div className="mt-3 space-y-2 text-sm">
           <div>Attack: <strong>{npc.attackLevel}</strong></div>
           <div>Defense: <strong>{npc.defenseLevel}</strong></div>
           <div>Feat Points: <strong>{npc.featPoints ?? '-'}</strong></div>
+
+          {/* Active Feats notes */}
+          <div>
+            <div className="font-medium">Active Feats</div>
+            {isDirector ? (
+              <textarea
+                className="mt-1 w-full border rounded px-2 py-1 text-xs"
+                rows={2}
+                value={activeFeatsDraft}
+                onChange={(e) => setActiveFeatsDraft(e.target.value)}
+                onBlur={() => {
+                  if (onActiveFeatsChange) {
+                    onActiveFeatsChange(activeFeatsDraft);
+                  }
+                }}
+                placeholder="Note any Enemy Feats this NPC is currently using"
+              />
+            ) : (
+              <div className="mt-1 text-slate-700 whitespace-pre-wrap">
+                {npc.enemyActiveFeats?.trim() || <span className="text-slate-500">—</span>}
+              </div>
+            )}
+          </div>
+
           <div className="flex items-center gap-2">
             <span>Weak Spot:</span>
             <span className="italic">
@@ -273,8 +319,8 @@ function NpcWizardModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function NumberPicker({ label, value, set, min, max }:{
-    label:string; value:number; set:(n:number)=>void; min:number; max:number;
+  function NumberPicker({ label, value, set, min, max }: {
+    label: string; value: number; set: (n: number) => void; min: number; max: number;
   }) {
     return (
       <label className="flex items-center justify-between gap-3 text-black">
@@ -351,11 +397,11 @@ function NpcWizardModal({
 
           {side === 'ally' ? (
             <div className="space-y-2" >
-              <NumberPicker label="Brawn"  value={brawn}  set={setBrawn}  min={3} max={5} />
+              <NumberPicker label="Brawn" value={brawn} set={setBrawn} min={3} max={5} />
               <NumberPicker label="Nerves" value={nerves} set={setNerves} min={3} max={5} />
               <NumberPicker label="Smooth" value={smooth} set={setSmooth} min={3} max={5} />
-              <NumberPicker label="Focus"  value={focus}  set={setFocus}  min={3} max={5} />
-              <NumberPicker label="Crime"  value={crime}  set={setCrime}  min={3} max={5} />
+              <NumberPicker label="Focus" value={focus} set={setFocus} min={3} max={5} />
+              <NumberPicker label="Crime" value={crime} set={setCrime} min={3} max={5} />
 
               {/* Help */}
               <label className="block">
