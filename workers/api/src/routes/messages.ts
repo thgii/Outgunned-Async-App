@@ -18,7 +18,7 @@ messages.get("/games/:id/messages", async (c) => {
 
   const sql = since
     ? `${baseSql} AND m.createdAt > ? ORDER BY m.createdAt`
-    : `${baseSql} ORDER BY m.createdAt LIMIT 100`;
+    : `${baseSql} ORDER BY m.createdAt LIMIT 1000`;
 
   const params = since ? [gameId, since] : [gameId];
   const rows = await q(c.env.DB, sql, params);

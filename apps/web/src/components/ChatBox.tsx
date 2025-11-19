@@ -42,10 +42,10 @@ export default function ChatBox({ gameId, currentUserId, isDirector }: Props) {
           setMessages((m) => [...m, ...fresh]);
           sinceRef.current = delta[delta.length - 1].createdAt;
         }
-        interval = 2000; // reset on activity
+        interval = 1000; // reset on activity
       } else {
         // gentle idle backoff (max 30s)
-        interval = Math.min(interval + 2000, 30000);
+        interval = Math.min(interval + 1000, 30000);
       }
     } catch {
       // network hiccup: back off more aggressively
