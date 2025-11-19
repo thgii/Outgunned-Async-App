@@ -90,7 +90,7 @@ export default function DirectorsToolkit() {
               : "bg-white text-gray-800 border-gray-300 hover:bg-gray-50"
           }`}
         >
-          Resources
+          Enemy Resources
         </button>
       </div>
 
