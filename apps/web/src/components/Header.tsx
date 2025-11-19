@@ -92,14 +92,6 @@ export default function Header() {
             </span>
           </NavLink>
 
-          <NavLink
-            to="/settings"
-            className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}
-          >
-            <span className="inline-flex items-center gap-2">
-              <Settings className="h-4 w-4" /> Settings
-            </span>
-          </NavLink>
         </nav>
 
         {/* Auth controls (desktop & mobile) */}
@@ -177,17 +169,7 @@ export default function Header() {
                 </span>
               </NavLink>
 
-              <NavLink
-                to="/settings"
-                className={({ isActive }) =>
-                  `${mobileLinkBase} ${isActive ? mobileActive : mobileInactive}`
-                }
-                onClick={onNav}
-              >
-                <span className="inline-flex items-center gap-2">
-                  <Settings className="h-5 w-5" /> Settings
-                </span>
-              </NavLink>
+
               {/* Auth controls (mobile) */}
               <div className="border-t border-slate-800/60 mt-2 pt-2">
                 {user ? (
