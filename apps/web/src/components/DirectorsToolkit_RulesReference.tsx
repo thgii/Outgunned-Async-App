@@ -99,32 +99,39 @@ export default function RulesReference() {
           <p className="text-sm mb-3">Chance of achieving each success level with and without rerolls.</p>
 
           <div className="overflow-x-auto rounded-lg ring-1 ring-gray-200 dark:ring-gray-800">
-            <table className="w-full min-w-[700px] text-sm">
+            <table className="w-full min-w-[800px] text-sm">
               <thead className="bg-gray-50 text-gray-700 dark:bg-zinc-800 dark:text-gray-200">
                 <tr>
                   <th className="px-3 py-2">Dice</th>
-                  <th className="px-3 py-2">Critical</th>
+                  <th className="px-3 py-2">Basic (Roll)</th>
+                  <th className="px-3 py-2">Critical (Roll)</th>
                   <th className="px-3 py-2">Critical (Re-roll)</th>
-                  <th className="px-3 py-2">Extreme</th>
+                  <th className="px-3 py-2">Extreme (Roll)</th>
                   <th className="px-3 py-2">Extreme (Re-roll)</th>
-                  <th className="px-3 py-2">Impossible</th>
+                  <th className="px-3 py-2">Impossible (Roll)</th>
                   <th className="px-3 py-2">Impossible (Re-roll)</th>
                 </tr>
               </thead>
               <tbody className="align-top divide-y divide-gray-200 dark:divide-zinc-800 text-black">
                 {[
-                  ["2", "17%", "–", "–", "–", "–", "–"],
-                  ["3", "45%", "3%", "5%", "–", "–", "–"],
-                  ["4", "72%", "10%", "21%", "0.5%", "1.5%", "–"],
+                  // Dice, Basic, Crit, Crit RR, Ext, Ext RR, Imp, Imp RR
+                  ["2", "17%", "–", "–", "–", "–", "–", "–"],
+                  ["3", "45%", "3%", "5%", "–", "–", "–", "–"],
+                  ["4", "72%", "10%", "21%", "0.5%", "1.5%", "–", "–"],
                   ["5", "91%", "21%", "47%", "2%", "9%", "0.1%", "0.5%"],
                   ["6", "99%", "37%", "75%", "5%", "26%", "0.5%", "3.5%"],
                   ["7", "100%", "54%", "89%", "11%", "51%", "1%", "13%"],
                   ["8", "100%", "70%", "99%", "18%", "75%", "3%", "32%"],
                   ["9", "100%", "84%", "99%", "28%", "90%", "5%", "57%"],
                 ].map((row, i) => (
-                  <tr key={i} className={i % 2 ? "bg-gray-50 dark:bg-zinc-950/50" : "bg-white dark:bg-zinc-900"}>
+                  <tr
+                    key={i}
+                    className={i % 2 ? "bg-gray-50 dark:bg-zinc-950/50" : "bg-white dark:bg-zinc-900"}
+                  >
                     {row.map((cell, j) => (
-                      <td key={j} className="px-3 py-2">{cell}</td>
+                      <td key={j} className="px-3 py-2">
+                        {cell}
+                      </td>
                     ))}
                   </tr>
                 ))}
