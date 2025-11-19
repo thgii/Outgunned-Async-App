@@ -54,12 +54,6 @@ type TropeDef = {
 
 type FeatCat = { name: string; description?: string; requires_meter?: boolean };
 
-export const FEATS_CATALOG: FeatCat[] = RAW_FEATS.map((f: any) => ({
-  name: String(f?.name ?? "").trim(),
-  description: String(f?.description ?? "").trim() || undefined,
-  requires_meter: !!f?.requires_meter, // <-- pull through the JSON flag
-}));
-
 /* ===============================
  * Data exposure + optional catalog
  * =============================== */
@@ -82,9 +76,10 @@ const RAW_FEATS: any[] = (() => {
   return rawFeats;
 })();
 
-export const FEATS_CATALOG: { name: string; description?: string }[] = RAW_FEATS.map((f: any) => ({
+export const FEATS_CATALOG: FeatCat[] = RAW_FEATS.map((f: any) => ({
   name: String(f?.name ?? "").trim(),
   description: String(f?.description ?? "").trim() || undefined,
+  requires_meter: !!f?.requires_meter, // <-- pull through the JSON flag
 }));
 
 export const FEAT_DESC: Record<string, string> =
