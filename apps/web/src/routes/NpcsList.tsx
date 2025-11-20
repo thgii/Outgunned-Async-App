@@ -165,7 +165,7 @@ export default function NpcsList() {
           {/* Name + Side */}
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1">
-              <label className="block text-sm mb-1">Name</label>
+              <label className="block text-sm mb-1">Name*</label>
               <input
                 className="w-full rounded border border-slate-600 bg-slate-800 px-3 py-2 text-sm"
                 value={form.name}
@@ -175,7 +175,7 @@ export default function NpcsList() {
             </div>
 
             <div className="w-full sm:w-40">
-              <label className="block text-sm mb-1">Side</label>
+              <label className="block text-sm mb-1">Side*</label>
               <select
                 className="w-full rounded border border-slate-600 bg-slate-800 px-3 py-2 text-white text-sm"
                 value={form.side}
@@ -183,8 +183,12 @@ export default function NpcsList() {
                   update("side", e.target.value as Side)
                 }
               >
-                <option value="ally">Ally</option>
-                <option value="enemy">Enemy</option>
+                <option value="ally" className="text-white bg-slate-800">
+                  Ally
+                </option>
+                <option value="enemy" className="text-white bg-slate-800">
+                  Enemy
+                </option>
               </select>
             </div>
           </div>
@@ -204,7 +208,7 @@ export default function NpcsList() {
           {form.side === "ally" && (
             <div className="space-y-3">
               <div>
-                <label className="block text-sm mb-1">Attributes (3–5)</label>
+                <label className="block text-sm mb-1">Attributes (3–5)*</label>
                 <div className="grid grid-cols-5 gap-2">
                   {(["brawn", "nerves", "smooth", "focus", "crime"] as const).map(
                     (key) => (
@@ -231,7 +235,7 @@ export default function NpcsList() {
 
               <div className="flex gap-3 items-end">
                 <div>
-                  <label className="block text-sm mb-1">Grit (0–3)</label>
+                  <label className="block text-sm mb-1">Grit (0–3)*</label>
                   <input
                     type="number"
                     min={0}
@@ -273,7 +277,7 @@ export default function NpcsList() {
             <div className="space-y-3">
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="w-full sm:w-40">
-                  <label className="block text-sm mb-1">Enemy Type</label>
+                  <label className="block text-sm mb-1">Enemy Type*</label>
                   <select
                     className="w-full rounded border border-slate-600 bg-slate-800 px-3 py-2 text-white text-sm"
                     value={form.enemyType}
@@ -281,14 +285,19 @@ export default function NpcsList() {
                       update("enemyType", e.target.value as EnemyType)
                     }
                   >
-                    <option value="goon">Goon</option>
-                    <option value="bad_guy">Bad Guy</option>
-                    <option value="boss">Boss</option>
+                    <option value="goon" className="text-white bg-slate-800">
+                      Goon
+                    </option>
+                    <option value="bad_guy" className="text-white bg-slate-800">
+                      Bad Guy
+                    </option>
+                    <option value="boss" className="text-white bg-slate-800">
+                      Boss
+                    </option>
                   </select>
                 </div>
-
                 <div>
-                  <label className="block text-sm mb-1">Grit Max</label>
+                  <label className="block text-sm mb-1">Grit Max*</label>
                   <input
                     type="number"
                     min={1}
@@ -303,7 +312,7 @@ export default function NpcsList() {
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="w-full sm:w-40">
-                  <label className="block text-sm mb-1">Attack Level</label>
+                  <label className="block text-sm mb-1">Attack Level*</label>
                   <select
                     className="w-full rounded border border-slate-600 bg-slate-800 px-3 py-2 text-white text-sm"
                     value={form.attackLevel}
@@ -311,14 +320,19 @@ export default function NpcsList() {
                       update("attackLevel", e.target.value as Level3)
                     }
                   >
-                    <option value="Basic">Basic</option>
-                    <option value="Critical">Critical</option>
-                    <option value="Extreme">Extreme</option>
+                    <option value="Basic" className="text-white bg-slate-800">
+                      Basic
+                    </option>
+                    <option value="Critical" className="text-white bg-slate-800">
+                      Critical
+                    </option><option value="Extreme" className="text-white bg-slate-800">
+                      Extreme
+                    </option>
                   </select>
                 </div>
 
                 <div className="w-full sm:w-40">
-                  <label className="block text-sm mb-1">Defense Level</label>
+                  <label className="block text-sm mb-1">Defense Level*</label>
                   <select
                     className="w-full rounded border border-slate-600 bg-slate-800 px-3 py-2 text-white text-sm"
                     value={form.defenseLevel}
@@ -326,16 +340,21 @@ export default function NpcsList() {
                       update("defenseLevel", e.target.value as Level3)
                     }
                   >
-                    <option value="Basic">Basic</option>
-                    <option value="Critical">Critical</option>
-                    <option value="Extreme">Extreme</option>
+                    <option value="Basic" className="text-white bg-slate-800">
+                      Basic
+                    </option>
+                    <option value="Critical" className="text-white bg-slate-800">
+                      Critical
+                    </option><option value="Extreme" className="text-white bg-slate-800">
+                      Extreme
+                    </option>
                   </select>
                 </div>
               </div>
 
               <div>
                 <label className="block text-sm mb-1">
-                  Weak Spot (optional for templates)
+                  Weak Spot*
                 </label>
                 <input
                   className="w-full rounded border border-slate-600 bg-slate-800 px-3 py-2 text-sm"
