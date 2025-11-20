@@ -74,16 +74,6 @@ export default function Header() {
             </span>
           </NavLink>
 
-          {/* NEW: NPCs nav */}
-          <NavLink
-            to="/npcs"
-            className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}
-          >
-            <span className="inline-flex items-center gap-2">
-              <MessageSquare className="h-4 w-4" /> NPCs
-            </span>
-          </NavLink>
-
           <NavLink
             to="/campaigns"
             className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}
@@ -101,6 +91,7 @@ export default function Header() {
               <Clapperboard className="h-4 w-4" /> Director&apos;s Toolkit
             </span>
           </NavLink>
+
         </nav>
 
         {/* Auth controls (desktop & mobile) */}
@@ -154,19 +145,6 @@ export default function Header() {
                 </span>
               </NavLink>
 
-              {/* NEW: NPCs nav (mobile) */}
-              <NavLink
-                to="/npcs"
-                className={({ isActive }) =>
-                  `${mobileLinkBase} ${isActive ? mobileActive : mobileInactive}`
-                }
-                onClick={onNav}
-              >
-                <span className="inline-flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5" /> NPCs
-                </span>
-              </NavLink>
-
               <NavLink
                 to="/campaigns"
                 className={({ isActive }) =>
@@ -190,6 +168,7 @@ export default function Header() {
                   <Clapperboard className="h-5 w-5" /> Director&apos;s Toolkit
                 </span>
               </NavLink>
+
 
               {/* Auth controls (mobile) */}
               <div className="border-t border-slate-800/60 mt-2 pt-2">

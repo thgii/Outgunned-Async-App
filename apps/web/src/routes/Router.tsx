@@ -14,7 +14,6 @@ import GameAdmin from "./GameAdmin";
 import CampaignAdmin from "./CampaignAdmin";
 import Campaigns from "./Campaigns";
 import CampaignCreate from "./CampaignCreate";
-import NpcsList from "./NpcsList";
 
 
 function RequireAuth({ children }: { children: JSX.Element }) {
@@ -47,7 +46,6 @@ export const Router = () => (
           <Route path="/campaigns/new" element={<RequireAuth><CampaignCreate /></RequireAuth>} />
           <Route path="/act/:id" element={<RequireAuth><Game /></RequireAuth>} />
           <Route path="/act/:id/admin" element={<RequireAuth><GameAdmin /></RequireAuth>} />
-          <Route path="/npcs" element={<NpcsList />} />
 
         </Routes>
       </div>

@@ -149,15 +149,6 @@ export function deleteNpc(campaignId: string, id: string) {
   return api.delete(`/campaigns/${campaignId}/supporting-characters/${id}`);
 }
 
-// NPC template helpers
-export function listNpcTemplates() {
-  return api.get("/npc-templates") as Promise<any[]>;
-}
-
-export function addNpcFromTemplate(campaignId: string, templateId: string) {
-  return api.post(`/campaigns/${campaignId}/npcs`, { templateId });
-}
-
 /**
  * Image upload helper.
  * Expects your backend at POST /upload/image to accept multipart/form-data
