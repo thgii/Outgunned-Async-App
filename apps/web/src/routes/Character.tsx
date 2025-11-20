@@ -88,7 +88,14 @@ function sanitizeStorage(s: any) {
   return out;
 }
 
+/** Normalize server payload -> shape the sheet expects (top-level fields). */
 function normalizeForSheet(c: any): Character {
+  // Prefer the resources blob; fall back to any legacy top-level fields
+  const fromResources = (k: string, fallback?: any) =>
+    (c?.resources && c.resources[k] !== undefined
+      ? c.resources[k]
+      : c?.[k] ?? fallback);
+
   // Prefer job, then background, stringify MaybeNamed
   const jobOrBackgroundRaw =
     c.job ??
@@ -101,6 +108,22 @@ function normalizeForSheet(c: any): Character {
 
   // Ride: keep a top-level string for UI, but store under resources in DB
   const ride = getMaybeName(c?.resources?.ride ?? c?.ride);
+
+  // Grit may be on top-level or inside resources (as a meter)
+  const gritObj = c?.resources?.grit ?? c?.grit ?? {};
+  const grit: Meter = {
+    current: clamp(asNumber((gritObj as any).current, 0), 0, 12),
+    max: clamp(asNumber((gritObj as any).max, 12), 1, 12),
+  };
+
+  // Numbers commonly stored under resources
+  const adrenalineRaw = asNumber(fromResources("adrenaline", 0), 0);
+  const luckRaw = asNumber(fromResources("luck", 0), 0);
+  const adrenaline = Math.max(adrenalineRaw, luckRaw); // unified pool
+  const spotlight = asNumber(fromResources("spotlight", 0), 0);
+  const luck = adrenaline;
+
+  const cash = asNumber(fromResources("cash", 0), 0);
 
   // Storage: accept top-level, resources.storage, or fall back to gear list
   const storage = sanitizeStorage(
@@ -130,26 +153,34 @@ function normalizeForSheet(c: any): Character {
       ? c.resources.isBroken
       : youLookSelected.length >= 3;
 
-  // --- Build resources, but DO NOT recompute grit/adrenaline/etc here ---
+  // Ensure resources exists and mirror normalized fields into it
   const resources: any = { ...(c?.resources ?? {}) };
-
+  resources.grit = { current: grit.current ?? 0, max: grit.max ?? 12 };
+  resources.adrenaline = adrenaline;
+  resources.spotlight = spotlight;
+  resources.luck = adrenaline;
+  resources.cash = cash;
   if (storage !== undefined) resources.storage = storage;
   resources.youLookSelected = youLookSelected;
   resources.deathRoulette = deathRoulette;
   resources.isBroken = isBroken;
   if (ride !== undefined) resources.ride = ride;
 
-  // Return the character; let CharacterSheetV2 handle grit/adrenaline/spotlight from resources.
   return {
     ...(c ?? {}),
     jobOrBackground,
     ride,
+    grit,
+    adrenaline,
+    spotlight,
+    luck,
+    cash,
     storage,
     resources,
     youLookSelected,
     deathRoulette,
     isBroken,
-  } as Character;
+  };
 }
 
 /** Map sheet state -> server payload (put meters/numbers under resources). */
