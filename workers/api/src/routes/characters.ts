@@ -194,7 +194,11 @@ characters.get("/", async (c) => {
       )) as CharRow[];
 
   for (const row of rows) parseJsonFields(row);
-  return c.json(rows);
+  return c.json(rows, 200, {
+    "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+    Pragma: "no-cache",
+    Expires: "0",
+  });
 });
 
 characters.get("/:id", async (c) => {
@@ -266,7 +270,11 @@ characters.get("/:id", async (c) => {
     resourcesGrit: dto.resources.grit,
   });
 
-  return c.json(dto);
+  return c.json(dto, 200, {
+    "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+    Pragma: "no-cache",
+    Expires: "0",
+  });
 });
 
 // CREATE (schema-first)
