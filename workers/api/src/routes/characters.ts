@@ -207,60 +207,57 @@ characters.get("/:id", async (c) => {
   )) as CharRow | null;
   if (!row) return c.notFound();
 
-  // Parse JSON fields (attributes, skills, resources, feats, gear, conditions)
+  // Parse JSON columns (attributes, skills, resources, feats, gear, conditions)
   parseJsonFields(row);
 
-  const resources =
+  const rawResources =
     row.resources && typeof row.resources === "object" ? row.resources : {};
 
-  // Derive sheet-friendly resource fields from the JSON blob,
-  // falling back to any legacy top-level columns if they exist.
+  // Grit: keep meter shape exactly as stored, fall back to legacy column if needed
   const grit =
-    resources.grit ??
-    row.grit ?? { current: 0, max: 12 };
+    (rawResources as any).grit ??
+    row.grit ??
+    { current: 0, max: 12 };
 
-  const adrenalineRaw =
-    resources.adrenaline ??
+  // Unified adrenaline/luck pool derived from resources first
+  const adrenalineSource =
+    (rawResources as any).adrenaline ??
     row.adrenaline ??
-    resources.luck ??
+    (rawResources as any).luck ??
     row.luck ??
     0;
-
-  const vPool = Number(adrenalineRaw) || 0;
+  const vPool = Number(adrenalineSource) || 0;
 
   const spotlight =
-    resources.spotlight ??
+    (rawResources as any).spotlight ??
     row.spotlight ??
     0;
 
-  const luck = vPool;
   const cash =
-    resources.cash ??
+    (rawResources as any).cash ??
     row.cash ??
     0;
 
   const youLookSelected =
-    resources.youLookSelected ??
+    (rawResources as any).youLookSelected ??
     row.youLookSelected ??
     [];
 
   const isBroken =
-    typeof resources.isBroken === "boolean"
-      ? resources.isBroken
+    typeof (rawResources as any).isBroken === "boolean"
+      ? (rawResources as any).isBroken
       : typeof row.isBroken === "boolean"
       ? row.isBroken
       : false;
 
   const deathRoulette =
-    typeof resources.deathRoulette === "number"
-      ? resources.deathRoulette
-      : typeof row.deathRoulette === "number"
-      ? row.deathRoulette
-      : 0;
+    (rawResources as any).deathRoulette ??
+    row.deathRoulette ??
+    [false, false, false, false, false, false];
 
-  // Ensure the resources blob also reflects the unified adrenaline/luck pool
+  // Normalize resources blob so it always reflects the unified pool + you-look flags
   const nextResources = {
-    ...resources,
+    ...rawResources,
     grit,
     adrenaline: vPool,
     luck: vPool,
@@ -276,7 +273,7 @@ characters.get("/:id", async (c) => {
     grit,
     adrenaline: vPool,
     spotlight,
-    luck,
+    luck: vPool,
     cash,
     youLookSelected,
     isBroken,
