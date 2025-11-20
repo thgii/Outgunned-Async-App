@@ -197,7 +197,6 @@ characters.get("/", async (c) => {
   return c.json(rows);
 });
 
-// GET one
 characters.get("/:id", async (c) => {
   const id = c.req.param("id");
   const row = (await one(
@@ -205,80 +204,53 @@ characters.get("/:id", async (c) => {
     "SELECT * FROM characters WHERE id = ?",
     [id]
   )) as CharRow | null;
+
   if (!row) return c.notFound();
 
-  // Parse JSON columns (attributes, skills, resources, feats, gear, conditions)
+  // Parse JSON columns
   parseJsonFields(row);
 
-  const rawResources =
-    row.resources && typeof row.resources === "object" ? row.resources : {};
+  const r = typeof row.resources === "object" && row.resources ? row.resources : {};
 
-  // Grit: keep meter shape exactly as stored, fall back to legacy column if needed
-  const grit =
-    (rawResources as any).grit ??
-    row.grit ??
-    { current: 0, max: 12 };
+  // Always derive these from resources, never from legacy columns
+  const grit = r.grit ?? { current: 0, max: 12 };
+  const adrenaline = Number(r.adrenaline ?? r.luck ?? 0) || 0;
+  const spotlight = r.spotlight ?? 0;
+  const luck = adrenaline;
+  const cash = r.cash ?? 0;
+  const youLookSelected = r.youLookSelected ?? [];
+  const isBroken = r.isBroken ?? false;
+  const deathRoulette = r.deathRoulette ?? [false, false, false, false, false, false];
+  const ride = r.ride ?? "";
 
-  // Unified adrenaline/luck pool derived from resources first
-  const adrenalineSource =
-    (rawResources as any).adrenaline ??
-    row.adrenaline ??
-    (rawResources as any).luck ??
-    row.luck ??
-    0;
-  const vPool = Number(adrenalineSource) || 0;
-
-  const spotlight =
-    (rawResources as any).spotlight ??
-    row.spotlight ??
-    0;
-
-  const cash =
-    (rawResources as any).cash ??
-    row.cash ??
-    0;
-
-  const youLookSelected =
-    (rawResources as any).youLookSelected ??
-    row.youLookSelected ??
-    [];
-
-  const isBroken =
-    typeof (rawResources as any).isBroken === "boolean"
-      ? (rawResources as any).isBroken
-      : typeof row.isBroken === "boolean"
-      ? row.isBroken
-      : false;
-
-  const deathRoulette =
-    (rawResources as any).deathRoulette ??
-    row.deathRoulette ??
-    [false, false, false, false, false, false];
-
-  // Normalize resources blob so it always reflects the unified pool + you-look flags
-  const nextResources = {
-    ...rawResources,
+  // Clean, normalized resources blob
+  const cleanedResources = {
+    ...r,
     grit,
-    adrenaline: vPool,
-    luck: vPool,
+    adrenaline,
+    luck,
     spotlight,
     cash,
     youLookSelected,
     isBroken,
     deathRoulette,
+    ride,
   };
 
+  // Build outbound DTO with NO stale top-level resource fields
   const dto = {
     ...row,
+    // override any legacy top-level fields:
     grit,
-    adrenaline: vPool,
+    adrenaline,
     spotlight,
-    luck: vPool,
+    luck,
     cash,
     youLookSelected,
     isBroken,
     deathRoulette,
-    resources: nextResources,
+    ride,
+    resources: cleanedResources,
   };
 
   return c.json(dto);
