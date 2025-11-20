@@ -187,7 +187,8 @@ function normalizeForSheet(c: any): Character {
 function mapToServerPayload(next: Character): any {
   const payload: any = { ...next };
 
-  // --- Ensure backend gets `job` explicitly (keep your existing logic) ---
+  // --- NEW: ensure backend gets `job` explicitly ---
+  // Accept strings or {name,label,value} and coerce to a plain string.
   const coerceName = (v: any): string | null => {
     if (v == null) return null;
     if (typeof v === "object") return (v.name ?? v.label ?? v.value ?? "").toString() || null;
@@ -198,32 +199,37 @@ function mapToServerPayload(next: Character): any {
     payload.job = coerceName(next.jobOrBackground);
   }
 
-  // --- Treat resources as the single source of truth ---
-  // CharacterSheetV2 already keeps resources.* in sync when you change grit/adrenaline/etc.
-  const res: any = { ...(next.resources ?? {}) };
+  // Ensure resources exists
+  payload.resources = { ...(payload.resources ?? {}) };
+
+  // Move resource-like fields under resources (grit 0–12)
+  const cur = clamp(asNumber(next.grit?.current, 0), 0, 12);
+  const max = clamp(asNumber(next.grit?.max, 12), 1, 12);
+  payload.resources.grit = { current: cur, max };
+
+  payload.resources.adrenaline = asNumber(next.adrenaline, 0);
+  payload.resources.spotlight = asNumber(next.spotlight, 0);
+  payload.resources.luck = asNumber(next.luck, 0);
+  payload.resources.cash = asNumber(next.cash, 0);
 
   // Ride: keep top-level for UI but store as string under resources
   const rideStr =
     (typeof next.ride === "string" ? next.ride : next.ride?.name) ??
-    (typeof res.ride === "string" ? res.ride : res.ride?.name) ??
+    (typeof next.resources?.ride === "string" ? next.resources.ride : next.resources?.ride?.name) ??
     null;
-  if (rideStr != null) res.ride = rideStr;
+  if (rideStr != null) payload.resources.ride = rideStr;
 
   // Gear / storage normalization passthrough if present
   if (next.storage) {
-    res.storage = next.storage;
-  } else if (res.storage) {
-    res.storage = res.storage;
+    payload.resources.storage = next.storage;
+  } else if (next.resources?.storage) {
+    payload.resources.storage = next.resources.storage;
   }
 
-  // You Look / Broken / Death Roulette / Conditions: keep whatever the sheet set
-  if (Array.isArray(next.youLookSelected)) res.youLookSelected = next.youLookSelected;
-  if (typeof next.isBroken === "boolean") res.isBroken = next.isBroken;
-  if (Array.isArray(next.deathRoulette)) res.deathRoulette = next.deathRoulette;
-  if ((next as any).conditions) res.conditions = (next as any).conditions;
-
-  // Write resources back onto the payload
-  payload.resources = res;
+  // You Look / Broken / Death Roulette: keep whatever the sheet set
+  if (Array.isArray(next.youLookSelected)) payload.resources.youLookSelected = next.youLookSelected;
+  if (typeof next.isBroken === "boolean") payload.resources.isBroken = next.isBroken;
+  if (Array.isArray(next.deathRoulette)) payload.resources.deathRoulette = next.deathRoulette;
 
   // Clean top-level duplicates that are mirrored under resources
   delete payload.grit;
@@ -231,7 +237,6 @@ function mapToServerPayload(next: Character): any {
   delete payload.spotlight;
   delete payload.luck;
   delete payload.cash;
-  delete payload.storage;
 
   return payload;
 }
