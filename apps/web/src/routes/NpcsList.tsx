@@ -177,7 +177,7 @@ export default function NpcsList() {
             <div className="w-full sm:w-40">
               <label className="block text-sm mb-1">Side</label>
               <select
-                className="w-full rounded border border-slate-600 bg-slate-800 px-3 py-2 text-white-800 text-sm"
+                className="w-full rounded border border-slate-600 bg-slate-800 px-3 py-2 text-white text-sm"
                 value={form.side}
                 onChange={(e) =>
                   update("side", e.target.value as Side)
@@ -275,7 +275,7 @@ export default function NpcsList() {
                 <div className="w-full sm:w-40">
                   <label className="block text-sm mb-1">Enemy Type</label>
                   <select
-                    className="w-full rounded border border-slate-600 bg-slate-800 px-3 py-2 text-white-800 text-sm"
+                    className="w-full rounded border border-slate-600 bg-slate-800 px-3 py-2 text-white text-sm"
                     value={form.enemyType}
                     onChange={(e) =>
                       update("enemyType", e.target.value as EnemyType)
@@ -305,7 +305,7 @@ export default function NpcsList() {
                 <div className="w-full sm:w-40">
                   <label className="block text-sm mb-1">Attack Level</label>
                   <select
-                    className="w-full rounded border border-slate-600 bg-slate-800 px-3 py-2 text-white-800 text-sm"
+                    className="w-full rounded border border-slate-600 bg-slate-800 px-3 py-2 text-white text-sm"
                     value={form.attackLevel}
                     onChange={(e) =>
                       update("attackLevel", e.target.value as Level3)
@@ -320,7 +320,7 @@ export default function NpcsList() {
                 <div className="w-full sm:w-40">
                   <label className="block text-sm mb-1">Defense Level</label>
                   <select
-                    className="w-full rounded border border-slate-600 bg-slate-800 px-3 py-2 text-white-800 text-sm"
+                    className="w-full rounded border border-slate-600 bg-slate-800 px-3 py-2 text-white text-sm"
                     value={form.defenseLevel}
                     onChange={(e) =>
                       update("defenseLevel", e.target.value as Level3)
