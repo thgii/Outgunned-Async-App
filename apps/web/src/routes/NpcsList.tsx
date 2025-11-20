@@ -1,5 +1,5 @@
 // apps/web/src/routes/NpcsList.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { api, uploadImage } from "../lib/api";
 
 type NpcTemplate = {
@@ -62,6 +62,8 @@ export default function NpcsList() {
   const [form, setForm] = useState<NewNpcForm>(defaultForm);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
 
   // portrait upload
   const [portraitFile, setPortraitFile] = useState<File | null>(null);
@@ -108,11 +110,15 @@ export default function NpcsList() {
 
   async function onCreateTemplate(e: React.FormEvent) {
     e.preventDefault();
+
+    if (saving) return; // prevent double-submit
+    setSaving(true);
     setFormError(null);
 
     const name = form.name.trim();
     if (!name) {
       setFormError("Name is required.");
+      setSaving(false);
       return;
     }
 
@@ -121,36 +127,30 @@ export default function NpcsList() {
       side: form.side,
     };
 
-    // Upload portrait if present
-    if (portraitFile) {
-      try {
+    try {
+      // Upload portrait if present
+      if (portraitFile) {
         const { url } = await uploadImage(portraitFile);
         payload.portraitUrl = url;
-      } catch (e: any) {
-        setFormError(e?.message || "Failed to upload portrait image.");
-        return;
       }
-    }
 
-    if (form.side === "ally") {
-      payload.brawn = Number(form.brawn);
-      payload.nerves = Number(form.nerves);
-      payload.smooth = Number(form.smooth);
-      payload.focus = Number(form.focus);
-      payload.crime = Number(form.crime);
-      payload.allyGrit = Number(form.allyGrit);
-      if (form.help.trim()) payload.help = form.help.trim();
-      if (form.flaw.trim()) payload.flaw = form.flaw.trim();
-    } else {
-      payload.enemyType = form.enemyType;
-      payload.enemyGritMax = Number(form.enemyGritMax);
-      payload.attackLevel = form.attackLevel;
-      payload.defenseLevel = form.defenseLevel;
-      if (form.weakSpot.trim()) payload.weakSpot = form.weakSpot.trim();
-    }
+      if (form.side === "ally") {
+        payload.brawn = Number(form.brawn);
+        payload.nerves = Number(form.nerves);
+        payload.smooth = Number(form.smooth);
+        payload.focus = Number(form.focus);
+        payload.crime = Number(form.crime);
+        payload.allyGrit = Number(form.allyGrit);
+        if (form.help.trim()) payload.help = form.help.trim();
+        if (form.flaw.trim()) payload.flaw = form.flaw.trim();
+      } else {
+        payload.enemyType = form.enemyType;
+        payload.enemyGritMax = Number(form.enemyGritMax);
+        payload.attackLevel = form.attackLevel;
+        payload.defenseLevel = form.defenseLevel;
+        if (form.weakSpot.trim()) payload.weakSpot = form.weakSpot.trim();
+      }
 
-    setSaving(true);
-    try {
       const created = await api("/npc-templates", {
         method: "POST",
         json: payload,
@@ -169,8 +169,17 @@ export default function NpcsList() {
 
       setTemplates((prev) => [...prev, tpl]);
       setForm(defaultForm);
+      // clear portrait state
+      if (portraitPreview) {
+        URL.revokeObjectURL(portraitPreview);
+      }
+      setPortraitFile(null);
+      setPortraitPreview(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
 
-    // clear portrait state
+      // clear portrait state
       if (portraitPreview) {
         URL.revokeObjectURL(portraitPreview);
       }
@@ -249,6 +258,7 @@ export default function NpcsList() {
                 type="file"
                 accept="image/*"
                 onChange={onPortraitChange}
+                ref={fileInputRef}
                 className="text-sm"
               />
               {portraitPreview && (
@@ -433,7 +443,7 @@ export default function NpcsList() {
             disabled={saving}
             className="inline-flex items-center rounded bg-blue-600 px-4 py-2 text-sm font-semibold hover:bg-blue-500 disabled:opacity-60"
           >
-            {saving ? "Saving…" : "Create NPC Template"}
+            {saving ? "Saving…" : "Create NPC"}
           </button>
         </form>
       </div>
