@@ -25,8 +25,7 @@ export default function Campaign() {
   const [npcTemplates, setNpcTemplates] = useState<any[]>([]);
   const [selectedNpcTemplateId, setSelectedNpcTemplateId] = useState("");
   const [addingNpc, setAddingNpc] = useState(false);
-
-  
+    
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -48,6 +47,8 @@ export default function Campaign() {
   >({});
 
   const [isDirector, setIsDirector] = useState(false);
+
+  const [npcPanelRefreshKey, setNpcPanelRefreshKey] = useState(0);
 
   useEffect(() => {
     let alive = true;
@@ -262,9 +263,9 @@ async function onAddNpcFromTemplate() {
       json: { templateId: selectedNpcTemplateId },
     });
     setSelectedNpcTemplateId("");
-    // NPCsPanel reads from /campaigns/:cid/supporting-characters,
-    // so we can just let it refresh, or you can force a refresh via a prop
-    // (for now, simplest is to reload the page or rely on panel's manual refresh button, if any).
+
+    // 🔥 force NPCsPanel to remount and refetch
+    setNpcPanelRefreshKey((k) => k + 1);
   } catch (e: any) {
     alert(e?.message || "Failed to add NPC");
   } finally {
@@ -449,7 +450,11 @@ function resetDraft(gameId: string) {
 
       {/* NPCs Panel (already role-aware via prop) */}
       <div className="mb-4">
-        <NPCsPanel campaignId={id!} isDirector={isDirector} />
+        <NPCsPanel
+          key={npcPanelRefreshKey}
+          campaignId={id!}
+          isDirector={isDirector}
+        />
       </div>
 
         {/* Acts section; button is Director-only */}
