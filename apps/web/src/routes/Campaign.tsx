@@ -14,8 +14,19 @@ type HeroRow = {
   campaignId?: string;
   portraitUrl?: string | null;
 };
+type NpcTemplate = {
+  id: string;
+  name: string;
+  side: "ally" | "enemy";
+  enemyType?: "goon" | "bad_guy" | "boss" | null;
+};
 
 export default function Campaign() {
+  const [npcTemplates, setNpcTemplates] = useState<any[]>([]);
+  const [selectedNpcTemplateId, setSelectedNpcTemplateId] = useState("");
+  const [addingNpc, setAddingNpc] = useState(false);
+
+  
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -37,6 +48,23 @@ export default function Campaign() {
   >({});
 
   const [isDirector, setIsDirector] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const res = await api("/npc-templates");
+        if (!alive) return;
+        const arr: any[] = Array.isArray(res) ? res : res?.results ?? [];
+        setNpcTemplates(arr);
+      } catch {
+        /* non-fatal */
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   // Load campaign + games
   useEffect(() => {
@@ -221,6 +249,29 @@ useEffect(() => {
   }
 }
 
+async function onAddNpcFromTemplate() {
+  if (!id || !selectedNpcTemplateId) return;
+  if (!isDirector) {
+    alert("Directors only.");
+    return;
+  }
+  setAddingNpc(true);
+  try {
+    await api(`/campaigns/${id}/npcs`, {
+      method: "POST",
+      json: { templateId: selectedNpcTemplateId },
+    });
+    setSelectedNpcTemplateId("");
+    // NPCsPanel reads from /campaigns/:cid/supporting-characters,
+    // so we can just let it refresh, or you can force a refresh via a prop
+    // (for now, simplest is to reload the page or rely on panel's manual refresh button, if any).
+  } catch (e: any) {
+    alert(e?.message || "Failed to add NPC");
+  } finally {
+    setAddingNpc(false);
+  }
+}
+
 function resetDraft(gameId: string) {
   const current = games.find((g) => g.id === gameId);
   setGameDrafts((d) => ({ ...d, [gameId]: (current?.summary ?? "").trim() }));
@@ -355,6 +406,33 @@ function resetDraft(gameId: string) {
           >
             {adding ? "Adding…" : "Add Hero to Campaign"}
           </button>
+        </div>
+      )}
+
+      {isDirector && npcTemplates.length > 0 && (
+        <div className="mt-8 mb-4 border rounded p-3 bg-white">
+          <h2 className="font-semibold mb-2 text-black">Add Existing NPC</h2>
+          <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+            <select
+              className="border rounded px-2 py-1 min-w-[200px]"
+              value={selectedNpcTemplateId}
+              onChange={(e) => setSelectedNpcTemplateId(e.target.value)}
+            >
+              <option value="">Choose an NPC…</option>
+              {npcTemplates.map((n) => (
+                <option key={n.id} value={n.id}>
+                  {n.name} {n.side === "enemy" && n.enemyType ? `— ${n.enemyType}` : ""}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={onAddNpcFromTemplate}
+              disabled={!selectedNpcTemplateId || addingNpc}
+              className="rounded bg-white px-3 py-2 text-black disabled:opacity-60"
+            >
+              {addingNpc ? "Adding…" : "Add NPC to Campaign"}
+            </button>
+          </div>
         </div>
       )}
 
