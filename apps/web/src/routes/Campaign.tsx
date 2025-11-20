@@ -412,23 +412,34 @@ function resetDraft(gameId: string) {
       {isDirector && npcTemplates.length > 0 && (
         <div className="mt-8 mb-4 border rounded p-3 bg-white">
           <h2 className="font-semibold mb-2 text-black">Add Existing NPC</h2>
+
           <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+
+            {/* Dropdown */}
             <select
-              className="border rounded px-2 py-1 text-white min-w-[200px]"
+              className="border rounded px-2 py-1 min-w-[200px] bg-slate-700 text-white"
               value={selectedNpcTemplateId}
               onChange={(e) => setSelectedNpcTemplateId(e.target.value)}
             >
-              <option value="">Choose an NPC…</option>
+              <option className="text-white bg-slate-700" value="">
+                Choose an NPC…
+              </option>
               {npcTemplates.map((n) => (
-                <option key={n.id} value={n.id}>
-                  {n.name} {n.side === "enemy" && n.enemyType ? `— ${n.enemyType}` : ""}
+                <option
+                  key={n.id}
+                  value={n.id}
+                  className="text-white bg-slate-700"
+                >
+                  {n.name}{" "}
+                  {n.side === "enemy" && n.enemyType ? `— ${n.enemyType}` : ""}
                 </option>
               ))}
             </select>
+            {/* Blue Button */}
             <button
               onClick={onAddNpcFromTemplate}
               disabled={!selectedNpcTemplateId || addingNpc}
-              className="rounded bg-blue px-3 py-2 text-white disabled:opacity-60"
+              className="rounded bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-semibold disabled:opacity-50"
             >
               {addingNpc ? "Adding…" : "+ Add NPC to Campaign"}
             </button>
