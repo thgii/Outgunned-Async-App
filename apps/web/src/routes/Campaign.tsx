@@ -38,6 +38,11 @@ export default function Campaign() {
 
   const [isDirector, setIsDirector] = useState(false);
 
+    // NPC templates (global library)
+  const [npcTemplates, setNpcTemplates] = useState<any[]>([]);
+  const [selectedNpcTemplateId, setSelectedNpcTemplateId] = useState("");
+  const [addingNpc, setAddingNpc] = useState(false);
+
   // Load campaign + games
   useEffect(() => {
     let alive = true;
@@ -101,6 +106,24 @@ export default function Campaign() {
         if (alive) setAllHeroes(arr);
       } catch {
         /* non-fatal */
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+    // Load NPC templates (global NPC library)
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const res = await api("/npc-templates");
+        if (!alive) return;
+        const arr: any[] = Array.isArray(res) ? res : res?.results ?? [];
+        setNpcTemplates(arr);
+      } catch {
+        // non-fatal; NPC library is optional
       }
     })();
     return () => {
@@ -185,6 +208,28 @@ useEffect(() => {
       alert(e?.message || "Failed to add hero");
     } finally {
       setAdding(false);
+    }
+  }
+
+    async function onAddNpcFromTemplate() {
+    if (!id || !selectedNpcTemplateId) return;
+    if (!isDirector) {
+      alert("Directors only.");
+      return;
+    }
+    setAddingNpc(true);
+    try {
+      await api(`/campaigns/${id}/npcs`, {
+        method: "POST",
+        json: { templateId: selectedNpcTemplateId },
+      });
+      setSelectedNpcTemplateId("");
+      // NPCsPanel will read updated NPCs from the API; if needed we can
+      // later pass a "refresh" signal via props.
+    } catch (e: any) {
+      alert(e?.message || "Failed to add NPC");
+    } finally {
+      setAddingNpc(false);
     }
   }
 
@@ -355,6 +400,34 @@ function resetDraft(gameId: string) {
           >
             {adding ? "Adding…" : "Add Hero to Campaign"}
           </button>
+        </div>
+      )}
+      {/* Add NPC from Library (Director-only) */}
+      {isDirector && npcTemplates.length > 0 && (
+        <div className="mb-4 rounded border border-slate-200 bg-white p-4">
+          <h2 className="font-semibold mb-2 text-black">Add NPC from Library</h2>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+            <select
+              className="rounded border border-slate-300 bg-white px-3 py-2 text-sm text-black min-w-[220px]"
+              value={selectedNpcTemplateId}
+              onChange={(e) => setSelectedNpcTemplateId(e.target.value)}
+            >
+              <option value="">Select an NPC…</option>
+              {npcTemplates.map((n: any) => (
+                <option key={n.id} value={n.id}>
+                  {n.name}
+                  {n.side === "enemy" && n.enemyType ? ` — ${n.enemyType}` : ""}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={onAddNpcFromTemplate}
+              disabled={!selectedNpcTemplateId || addingNpc}
+              className="rounded bg-white px-3 py-2 text-black disabled:opacity-60"
+            >
+              {addingNpc ? "Adding…" : "Add NPC to Campaign"}
+            </button>
+          </div>
         </div>
       )}
 
