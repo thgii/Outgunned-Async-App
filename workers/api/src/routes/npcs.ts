@@ -418,14 +418,14 @@ npcs.post('/campaigns/:cid/npcs', async (c) => {
     tpl.side === 'ally' ? tpl.smooth ?? null : null,
     tpl.side === 'ally' ? tpl.focus ?? null : null,
     tpl.side === 'ally' ? tpl.crime ?? null : null,
-    // start allyGrit at their template "max"
-    tpl.side === 'ally' ? tpl.allyGrit ?? 0 : null,
+    // runtime ally starts at 0 grit
+    tpl.side === 'ally' ? 0 : null,
 
     // enemies
     tpl.side === 'enemy' ? tpl.enemyType ?? null : null,
-    tpl.side === 'enemy' ? tpl.enemyGritMax ?? 1 : null,
-    // current enemyGrit starts at max
-    tpl.side === 'enemy' ? tpl.enemyGritMax ?? 1 : null,
+    tpl.side === 'enemy' ? tpl.enemyGritMax ?? 6 : null,
+    // runtime enemy also starts at 0
+    tpl.side === 'enemy' ? 0 : null,
     tpl.side === 'enemy' ? tpl.attackLevel ?? null : null,
     tpl.side === 'enemy' ? tpl.defenseLevel ?? null : null,
     tpl.side === 'enemy' ? tpl.weakSpot ?? null : null,
