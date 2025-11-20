@@ -414,7 +414,7 @@ function resetDraft(gameId: string) {
           <h2 className="font-semibold mb-2 text-black">Add Existing NPC</h2>
           <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
             <select
-              className="border rounded px-2 py-1 min-w-[200px]"
+              className="border rounded px-2 py-1 text-white min-w-[200px]"
               value={selectedNpcTemplateId}
               onChange={(e) => setSelectedNpcTemplateId(e.target.value)}
             >
@@ -428,9 +428,9 @@ function resetDraft(gameId: string) {
             <button
               onClick={onAddNpcFromTemplate}
               disabled={!selectedNpcTemplateId || addingNpc}
-              className="rounded bg-white px-3 py-2 text-black disabled:opacity-60"
+              className="rounded bg-blue px-3 py-2 text-white disabled:opacity-60"
             >
-              {addingNpc ? "Adding…" : "Add NPC to Campaign"}
+              {addingNpc ? "Adding…" : "+ Add NPC to Campaign"}
             </button>
           </div>
         </div>
