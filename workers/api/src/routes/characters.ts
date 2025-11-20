@@ -113,7 +113,7 @@ function pickTopLevelResourceOverrides(body: any) {
 
 
 // 🔎 quick ping
-characters.get("/__ping", (c) => c.text("OK: characters router mounted"));
+characters.get("/__ping", (c) => c.text("OK: characters v3"));
 // SPEND resources (e.g. adrenaline/luck)
 characters.post("/:id/spend", async (c) => {
   const id = c.req.param("id");
@@ -207,10 +207,17 @@ characters.get("/:id", async (c) => {
 
   if (!row) return c.notFound();
 
-  // Parse JSON columns
+   // Parse JSON columns
   parseJsonFields(row);
 
-  const r = typeof row.resources === "object" && row.resources ? row.resources : {};
+  // 🔍 DEBUG: see exactly what we got back from D1 after parsing
+  console.log("CHAR_GET_RAW", {
+    id,
+    rawResources: row.resources,
+  });
+
+  const r =
+    row.resources && typeof row.resources === "object" ? row.resources : {};
 
   // Always derive these from resources, never from legacy columns
   const grit = r.grit ?? { current: 0, max: 12 };
@@ -220,7 +227,8 @@ characters.get("/:id", async (c) => {
   const cash = r.cash ?? 0;
   const youLookSelected = r.youLookSelected ?? [];
   const isBroken = r.isBroken ?? false;
-  const deathRoulette = r.deathRoulette ?? [false, false, false, false, false, false];
+  const deathRoulette =
+    r.deathRoulette ?? [false, false, false, false, false, false];
   const ride = r.ride ?? "";
 
   // Clean, normalized resources blob
@@ -237,10 +245,8 @@ characters.get("/:id", async (c) => {
     ride,
   };
 
-  // Build outbound DTO with NO stale top-level resource fields
   const dto = {
     ...row,
-    // override any legacy top-level fields:
     grit,
     adrenaline,
     spotlight,
@@ -252,6 +258,13 @@ characters.get("/:id", async (c) => {
     ride,
     resources: cleanedResources,
   };
+
+  // 🔍 DEBUG: what we are actually sending back
+  console.log("CHAR_GET_DTO", {
+    id,
+    grit: dto.grit,
+    resourcesGrit: dto.resources.grit,
+  });
 
   return c.json(dto);
 });
