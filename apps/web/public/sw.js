@@ -1,4 +1,5 @@
-const CACHE_NAME = "outgunned-cache-v3"; // bump version
+// sw.js
+const CACHE_NAME = "outgunned-cache-v3"; // bump the version to drop old entries
 const OFFLINE_URL = "/";
 
 // Install: cache a basic offline shell
@@ -6,7 +7,6 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll([OFFLINE_URL]))
   );
-  // Take over immediately
   self.skipWaiting();
 });
 
@@ -25,68 +25,41 @@ self.addEventListener("activate", (event) => {
 });
 
 // Fetch handler:
-// - BYPASS dynamic API/data requests (games, push, JSON)
-// - HTML / navigations -> NETWORK FIRST
-// - Static assets (css/js/images) -> cache-first
+// - Ignore cross-origin requests (like workers.dev API) → let browser handle them
+// - HTML / navigations (same-origin) → NETWORK FIRST
+// - Other same-origin assets → cache-first with background refresh
 self.addEventListener("fetch", (event) => {
   const request = event.request;
 
+  // Only touch GET requests
   if (request.method !== "GET") return;
 
   const url = new URL(request.url);
-  const accept = request.headers.get("accept") || "";
 
-  // 🚫 1) BYPASS API / dynamic JSON endpoints completely
-  if (
-    url.pathname.startsWith("/games/") ||
-    url.pathname.startsWith("/push/") ||
-    url.pathname.startsWith("/api/") ||
-    accept.includes("application/json")
-  ) {
-    // Let the browser hit the network normally; no caching here
-    return;
+  // 🔴 IMPORTANT: do NOT intercept cross-origin requests (e.g. action-thread-api.workers.dev)
+  if (url.origin !== self.location.origin) {
+    return; // just let the browser go to the network
   }
 
-  // ✅ 2) Navigations / HTML: NETWORK FIRST
-  if (request.mode === "navigate" || accept.includes("text/html")) {
+  // Navigations → network first, fallback to offline shell
+  if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // Update offline fallback
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(OFFLINE_URL, copy);
-          });
-          return response;
-        })
-        .catch(() => caches.match(OFFLINE_URL))
+      fetch(request).catch(() => caches.match(OFFLINE_URL))
     );
     return;
   }
 
-  // ✅ 3) Static assets (css/js/images/etc): cache-first
+  // Other same-origin stuff (JS, CSS, images) → cache-first
   event.respondWith(
     caches.match(request).then((cached) => {
-      if (cached) return cached;
+      const networkFetch = fetch(request).then((response) => {
+        // Update cache in the background
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+        return response;
+      });
 
-      return fetch(request)
-        .then((response) => {
-          if (
-            !response ||
-            response.status !== 200 ||
-            response.type === "opaque"
-          ) {
-            return response;
-          }
-
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, copy);
-          });
-
-          return response;
-        })
-        .catch(() => cached)
+      return cached || networkFetch;
     })
   );
 });
