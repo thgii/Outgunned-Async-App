@@ -83,7 +83,7 @@ export default function Header() {
           </NavLink>
 
           <NavLink
-            to="/npc-templates"
+            to="/npcs"
             className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}
           >
             <span className="inline-flex items-center gap-2">
@@ -169,7 +169,7 @@ export default function Header() {
               </NavLink>
 
               <NavLink
-                to="/npc-templates"
+                to="/npcs"
                 className={({ isActive }) =>
                   `${mobileLinkBase} ${isActive ? mobileActive : mobileInactive}`
                 }

@@ -453,7 +453,7 @@ function NpcWizardModal({
                 </select>
               </label>
               <label className="block">
-                <div className="text-sm mb-1 text-black">Weak Spot</div>
+                <div className="text-sm mb-1 text-black">Weak Spot*</div>
                 <input className="w-full border rounded px-3 py-2" value={weakSpot} onChange={e => setWeakSpot(e.target.value)} />
               </label>
               <div className="text-xs text-slate-600">Feat Points will auto-set by type (1/3/5).</div>
