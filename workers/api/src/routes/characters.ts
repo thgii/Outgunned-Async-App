@@ -206,8 +206,85 @@ characters.get("/:id", async (c) => {
     [id]
   )) as CharRow | null;
   if (!row) return c.notFound();
+
+  // Parse JSON fields (attributes, skills, resources, feats, gear, conditions)
   parseJsonFields(row);
-  return c.json(row);
+
+  const resources =
+    row.resources && typeof row.resources === "object" ? row.resources : {};
+
+  // Derive sheet-friendly resource fields from the JSON blob,
+  // falling back to any legacy top-level columns if they exist.
+  const grit =
+    resources.grit ??
+    row.grit ?? { current: 0, max: 12 };
+
+  const adrenalineRaw =
+    resources.adrenaline ??
+    row.adrenaline ??
+    resources.luck ??
+    row.luck ??
+    0;
+
+  const vPool = Number(adrenalineRaw) || 0;
+
+  const spotlight =
+    resources.spotlight ??
+    row.spotlight ??
+    0;
+
+  const luck = vPool;
+  const cash =
+    resources.cash ??
+    row.cash ??
+    0;
+
+  const youLookSelected =
+    resources.youLookSelected ??
+    row.youLookSelected ??
+    [];
+
+  const isBroken =
+    typeof resources.isBroken === "boolean"
+      ? resources.isBroken
+      : typeof row.isBroken === "boolean"
+      ? row.isBroken
+      : false;
+
+  const deathRoulette =
+    typeof resources.deathRoulette === "number"
+      ? resources.deathRoulette
+      : typeof row.deathRoulette === "number"
+      ? row.deathRoulette
+      : 0;
+
+  // Ensure the resources blob also reflects the unified adrenaline/luck pool
+  const nextResources = {
+    ...resources,
+    grit,
+    adrenaline: vPool,
+    luck: vPool,
+    spotlight,
+    cash,
+    youLookSelected,
+    isBroken,
+    deathRoulette,
+  };
+
+  const dto = {
+    ...row,
+    grit,
+    adrenaline: vPool,
+    spotlight,
+    luck,
+    cash,
+    youLookSelected,
+    isBroken,
+    deathRoulette,
+    resources: nextResources,
+  };
+
+  return c.json(dto);
 });
 
 // CREATE (schema-first)
