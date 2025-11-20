@@ -1,6 +1,6 @@
 // apps/web/src/routes/NpcsList.tsx
 import { useEffect, useState } from "react";
-import { api } from "../lib/api";
+import { api, uploadImage } from "../lib/api";
 
 type NpcTemplate = {
   id: string;
@@ -17,7 +17,6 @@ type Level3 = "Basic" | "Critical" | "Extreme";
 type NewNpcForm = {
   name: string;
   side: Side;
-  portraitUrl: string;
 
   // Ally fields
   brawn: number;
@@ -40,7 +39,6 @@ type NewNpcForm = {
 const defaultForm: NewNpcForm = {
   name: "",
   side: "enemy",
-  portraitUrl: "",
 
   brawn: 3,
   nerves: 3,
@@ -52,7 +50,7 @@ const defaultForm: NewNpcForm = {
   flaw: "",
 
   enemyType: "goon",
-  enemyGritMax: 1,
+  enemyGritMax: 6,
   attackLevel: "Basic",
   defenseLevel: "Basic",
   weakSpot: "",
@@ -64,6 +62,10 @@ export default function NpcsList() {
   const [form, setForm] = useState<NewNpcForm>(defaultForm);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // portrait upload
+  const [portraitFile, setPortraitFile] = useState<File | null>(null);
+  const [portraitPreview, setPortraitPreview] = useState<string | null>(null);
 
   // Load existing templates
   useEffect(() => {
@@ -88,6 +90,22 @@ export default function NpcsList() {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  function onPortraitChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] || null;
+    setPortraitFile(file);
+
+    if (portraitPreview) {
+      URL.revokeObjectURL(portraitPreview);
+    }
+
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setPortraitPreview(url);
+    } else {
+      setPortraitPreview(null);
+    }
+  }
+
   async function onCreateTemplate(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
@@ -103,8 +121,15 @@ export default function NpcsList() {
       side: form.side,
     };
 
-    if (form.portraitUrl.trim()) {
-      payload.portraitUrl = form.portraitUrl.trim();
+    // Upload portrait if present
+    if (portraitFile) {
+      try {
+        const { url } = await uploadImage(portraitFile);
+        payload.portraitUrl = url;
+      } catch (e: any) {
+        setFormError(e?.message || "Failed to upload portrait image.");
+        return;
+      }
     }
 
     if (form.side === "ally") {
@@ -144,10 +169,33 @@ export default function NpcsList() {
 
       setTemplates((prev) => [...prev, tpl]);
       setForm(defaultForm);
+
+    // clear portrait state
+      if (portraitPreview) {
+        URL.revokeObjectURL(portraitPreview);
+      }
+      setPortraitFile(null);
+      setPortraitPreview(null);
     } catch (e: any) {
       setFormError(e?.message || "Failed to create NPC template.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function onDeleteTemplate(id: string) {
+    const tpl = templates.find((t) => t.id === id);
+    const name = tpl?.name ?? "this NPC";
+
+    if (!confirm(`Delete "${name}" from your NPC Library? This cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await api(`/npc-templates/${id}`, { method: "DELETE" });
+      setTemplates((prev) => prev.filter((t) => t.id !== id));
+    } catch (e: any) {
+      alert(e?.message || "Failed to delete NPC template.");
     }
   }
 
@@ -159,7 +207,7 @@ export default function NpcsList() {
 
       {/* Create NPC Template */}
       <div className="mb-6 rounded-lg border border-slate-700 bg-slate-900/70 p-4">
-        <h2 className="text-xl font-semibold mb-3">Create NPC Template</h2>
+        <h2 className="text-xl font-semibold mb-3">Create NPC</h2>
 
         <form onSubmit={onCreateTemplate} className="space-y-3">
           {/* Name + Side */}
@@ -193,15 +241,26 @@ export default function NpcsList() {
             </div>
           </div>
 
-          {/* Portrait URL */}
+          {/* Portrait upload */}
           <div>
-            <label className="block text-sm mb-1">Portrait URL (optional)</label>
-            <input
-              className="w-full rounded border border-slate-600 bg-slate-800 px-3 py-2 text-sm"
-              placeholder="https://example.com/portrait.png"
-              value={form.portraitUrl}
-              onChange={(e) => update("portraitUrl", e.target.value)}
-            />
+            <label className="block text-sm mb-1">Portrait (optional)</label>
+            <div className="flex items-center gap-3">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={onPortraitChange}
+                className="text-sm"
+              />
+              {portraitPreview && (
+                <div className="w-12 h-12 rounded overflow-hidden border border-slate-600">
+                  <img
+                    src={portraitPreview}
+                    alt="Portrait preview"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Ally fields */}
@@ -384,7 +443,7 @@ export default function NpcsList() {
       {/* Existing templates */}
       {!templates.length ? (
         <div className="text-center opacity-70">
-          <p>No NPC templates yet.</p>
+          <p>No NPCs yet.</p>
           <p className="mt-2 text-sm">
             Use the form above to create reusable allies and enemies you can drop into campaigns.
           </p>
@@ -414,6 +473,12 @@ export default function NpcsList() {
                   {t.enemyType ? ` — ${t.enemyType.replace("_", " ")}` : ""}
                 </div>
               </div>
+              <button
+                onClick={() => onDeleteTemplate(t.id)}
+                className="text-xs px-2 py-1 rounded bg-red-600 hover:bg-red-700 text-white"
+              >
+                Delete
+              </button>
             </div>
           ))}
         </div>
