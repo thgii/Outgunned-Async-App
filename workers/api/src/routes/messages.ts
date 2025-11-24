@@ -102,7 +102,7 @@ async function notifyGameSubscribers(
           payload,
           options: {
             ttl: 3600,
-            urgency: "normal",
+            urgency: "high",
             topic: `game-${gameId}`,
           },
           adminContact: "mailto:you@example.com",
