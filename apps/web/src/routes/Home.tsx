@@ -26,6 +26,12 @@ export default function Home() {
           </button>
         </Link>
 
+        <Link to="/game/46f67d83-8998-4f59-91f7-54becc2bf315">
+          <button className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded">
+            Go to Current Act
+          </button>
+        </Link>
+
       </div>
     </div>
   );
