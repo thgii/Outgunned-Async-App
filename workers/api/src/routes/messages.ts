@@ -26,87 +26,54 @@ messages.get("/games/:id/messages", async (c) => {
     : `${baseSql} ORDER BY m.createdAt LIMIT 1000`;
 
   const params = since ? [gameId, since] : [gameId];
-
-  // 1) Load all messages
   const rows = await q<any>(c.env.DB, sql, params);
 
-  if (!rows.length) {
-    return c.json(rows);
-  }
+  const results: any[] = [];
 
-  const messageIds = rows.map((m) => m.id);
-
-  // Build placeholders for IN (...)
-  const placeholders = messageIds.map(() => "?").join(",");
-
-  // 2) Load reaction counts for ALL messages in one query
-  const countRows = await q<{
-    messageId: string;
-    type: ReactionType;
-    count: number;
-  }>(
-    c.env.DB,
-    `SELECT messageId, type, COUNT(*) as count
-       FROM message_reactions
-      WHERE messageId IN (${placeholders})
-      GROUP BY messageId, type`,
-    messageIds
-  );
-
-  // Map: messageId -> { like, laugh, wow }
-  const countsByMessage = new Map<
-    string,
-    { like: number; laugh: number; wow: number }
-  >();
-
-  for (const r of countRows) {
-    let entry = countsByMessage.get(r.messageId);
-    if (!entry) {
-      entry = { like: 0, laugh: 0, wow: 0 };
-      countsByMessage.set(r.messageId, entry);
-    }
-    const n = Number(r.count);
-    if (r.type === "like") entry.like = n;
-    if (r.type === "laugh") entry.laugh = n;
-    if (r.type === "wow") entry.wow = n;
-  }
-
-  // 3) Load *my* reactions for ALL messages in one query
-  let mineByMessage = new Map<string, ReactionType>();
-
-  if (userId) {
-    const myRows = await q<{
-      messageId: string;
-      type: ReactionType;
-    }>(
+  for (const m of rows) {
+    // aggregate counts for this message
+    const counts = await q<{ type: ReactionType; count: number }>(
       c.env.DB,
-      `SELECT messageId, type
+      `SELECT type, COUNT(*) as count
          FROM message_reactions
-        WHERE messageId IN (${placeholders}) AND userId = ?`,
-      [...messageIds, userId]
+        WHERE messageId = ?
+        GROUP BY type`,
+      [m.id]
     );
 
-    mineByMessage = new Map(
-      myRows.map((r) => [r.messageId, r.type] as const)
-    );
-  }
+    let like = 0;
+    let laugh = 0;
+    let wow = 0;
 
-  // 4) Attach reactions to each message
-  const results = rows.map((m) => {
-    const counts =
-      countsByMessage.get(m.id) ?? { like: 0, laugh: 0, wow: 0 };
-    const myReaction = mineByMessage.get(m.id) ?? null;
+    for (const r of counts) {
+      if (r.type === "like") like = Number(r.count);
+      if (r.type === "laugh") laugh = Number(r.count);
+      if (r.type === "wow") wow = Number(r.count);
+    }
 
-    return {
+    let myReaction: ReactionType | null = null;
+
+    if (userId) {
+      const mine = await one<{ type: ReactionType }>(
+        c.env.DB,
+        `SELECT type
+           FROM message_reactions
+          WHERE messageId = ? AND userId = ?`,
+        [m.id, userId]
+      );
+      myReaction = mine?.type ?? null;
+    }
+
+    results.push({
       ...m,
       reactions: {
-        like: counts.like,
-        laugh: counts.laugh,
-        wow: counts.wow,
+        like,
+        laugh,
+        wow,
         myReaction,
       },
-    };
-  });
+    });
+  }
 
   return c.json(results);
 });
