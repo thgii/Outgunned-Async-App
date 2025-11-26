@@ -67,24 +67,6 @@ CREATE TABLE IF NOT EXISTS messages (
   createdAt TEXT NOT NULL
 );
 
--- Message reactions
-CREATE TABLE IF NOT EXISTS message_reactions (
-  id TEXT PRIMARY KEY,
-  messageId TEXT NOT NULL,
-  userId TEXT NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('like','laugh','wow')),
-  createdAt TEXT NOT NULL
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS idx_message_reactions_unique
-  ON message_reactions (messageId, userId);
-
-CREATE INDEX IF NOT EXISTS idx_message_reactions_message
-  ON message_reactions (messageId);
-
-CREATE INDEX IF NOT EXISTS idx_message_reactions_user
-  ON message_reactions (userId);
-
 -- Rolls
 CREATE TABLE IF NOT EXISTS rolls (
   id TEXT PRIMARY KEY,

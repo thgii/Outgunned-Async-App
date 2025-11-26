@@ -2,14 +2,6 @@ import { useState } from "react";
 import MessageEditor from "./MessageEditor";
 import { api } from "../lib/api";
 
-type ReactionType = "like" | "laugh" | "wow";
-
-const REACTIONS: { type: ReactionType; icon: string; label: string }[] = [
-  { type: "like", icon: "👍", label: "Like" },
-  { type: "laugh", icon: "😂", label: "Laugh" },
-  { type: "wow", icon: "😮", label: "Wow" },
-];
-
 const colorRegistry = new Map<string, string>();
 let nextHueIndex = 0;
 
@@ -32,32 +24,8 @@ export default function Message({
   currentUserId,
   isDirector,
   onEdited,
-  onToggleReaction,
-}: {
-  msg: any;
-  currentUserId: string | null;
-  isDirector: boolean;
-  onEdited: (updated: any) => void;
-  onToggleReaction?: (messageId: string, type: ReactionType) => void;
 }) {
   const [editing, setEditing] = useState(false);
-
-  const reactions = (msg.reactions ?? {}) as {
-    like?: number;
-    laugh?: number;
-    wow?: number;
-    myReaction?: ReactionType | null;
-  };
-
-  const likeCount = reactions.like ?? 0;
-  const laughCount = reactions.laugh ?? 0;
-  const wowCount = reactions.wow ?? 0;
-  const myReaction = reactions.myReaction ?? null;
-
-  const handleReactionClick = (type: ReactionType) => {
-    if (!onToggleReaction || !currentUserId) return;
-    onToggleReaction(msg.id, type);
-  };
 
   // SAME PERMISSIONS YOU ALREADY HAVE
   const canEdit =
@@ -123,42 +91,6 @@ export default function Message({
             {/* Content */}
             <div className="mt-1 whitespace-pre-wrap text-sm">
               {msg.content}
-            </div>
-
-            {/* Reactions */}
-            <div className="mt-1 flex gap-2 text-[0.7rem] text-gray-800">
-              {REACTIONS.map(({ type, icon, label }) => {
-                const count =
-                  type === "like"
-                    ? likeCount
-                    : type === "laugh"
-                    ? laughCount
-                    : wowCount;
-                const isActive = myReaction === type;
-
-                return (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => handleReactionClick(type)}
-                    className={[
-                      "inline-flex items-center gap-1 rounded-full border px-2 py-[2px]",
-                      "transition",
-                      isActive
-                        ? "border-yellow-500 bg-yellow-400/30"
-                        : "border-black/20 bg-black/5 hover:bg-black/10",
-                    ].join(" ")}
-                  >
-                    <span aria-hidden="true">{icon}</span>
-                    <span>{label}</span>
-                    {count > 0 && (
-                      <span className="text-[0.65rem] opacity-70">
-                        {count}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
             </div>
 
             {/* Edit */}

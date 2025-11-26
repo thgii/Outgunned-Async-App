@@ -4,16 +4,11 @@ import type { AuthedUser } from "../utils/auth";
 import { getCampaignMembershipByGame } from "../utils/auth";
 import { buildPushHTTPRequest } from "@pushforge/builder";
 
-type ReactionType = "like" | "laugh" | "wow";
-
 export const messages = new Hono<{ Bindings: { DB: D1Database } }>();
 
 messages.get("/games/:id/messages", async (c) => {
   const gameId = c.req.param("id");
   const since = c.req.query("since");
-
-  const user = c.get("user") as AuthedUser | undefined;
-  const userId = user?.id ?? null;
 
   const baseSql = `SELECT m.*, u.name as authorName, c.name as characterName
      FROM messages m
@@ -26,56 +21,8 @@ messages.get("/games/:id/messages", async (c) => {
     : `${baseSql} ORDER BY m.createdAt LIMIT 1000`;
 
   const params = since ? [gameId, since] : [gameId];
-  const rows = await q<any>(c.env.DB, sql, params);
-
-  const results: any[] = [];
-
-  for (const m of rows) {
-    // aggregate counts for this message
-    const counts = await q<{ type: ReactionType; count: number }>(
-      c.env.DB,
-      `SELECT type, COUNT(*) as count
-         FROM message_reactions
-        WHERE messageId = ?
-        GROUP BY type`,
-      [m.id]
-    );
-
-    let like = 0;
-    let laugh = 0;
-    let wow = 0;
-
-    for (const r of counts) {
-      if (r.type === "like") like = Number(r.count);
-      if (r.type === "laugh") laugh = Number(r.count);
-      if (r.type === "wow") wow = Number(r.count);
-    }
-
-    let myReaction: ReactionType | null = null;
-
-    if (userId) {
-      const mine = await one<{ type: ReactionType }>(
-        c.env.DB,
-        `SELECT type
-           FROM message_reactions
-          WHERE messageId = ? AND userId = ?`,
-        [m.id, userId]
-      );
-      myReaction = mine?.type ?? null;
-    }
-
-    results.push({
-      ...m,
-      reactions: {
-        like,
-        laugh,
-        wow,
-        myReaction,
-      },
-    });
-  }
-
-  return c.json(results);
+  const rows = await q(c.env.DB, sql, params);
+  return c.json(rows);
 });
 
 async function notifyGameSubscribers(
@@ -245,106 +192,6 @@ messages.post("/games/:id/messages", async (c) => {
   }
 
   return c.json(row);
-});
-
-messages.post("/games/:gameId/messages/:messageId/reactions", async (c) => {
-  const gameId = c.req.param("gameId");
-  const messageId = c.req.param("messageId");
-
-  const user = c.get("user") as AuthedUser | undefined;
-  if (!user?.id) {
-    return c.json({ error: "Unauthorized" }, 401);
-  }
-  const userId = user.id;
-
-  let body: { type?: ReactionType } = {};
-  try {
-    body = await c.req.json();
-  } catch {
-    // ignore, handled below
-  }
-
-  const type = body.type;
-  if (type !== "like" && type !== "laugh" && type !== "wow") {
-    return c.json({ error: "Invalid reaction type" }, 400);
-  }
-
-  // Make sure the message exists and belongs to this game
-  const msgRow = await one<{ gameId: string }>(
-    c.env.DB,
-    "SELECT gameId FROM messages WHERE id = ?",
-    [messageId]
-  );
-  if (!msgRow || msgRow.gameId !== gameId) {
-    return c.notFound();
-  }
-
-  const existing = await one<{ id: string; type: ReactionType }>(
-    c.env.DB,
-    `SELECT id, type
-       FROM message_reactions
-      WHERE messageId = ? AND userId = ?`,
-    [messageId, userId]
-  );
-
-  if (!existing) {
-    const id = crypto.randomUUID();
-    const createdAt = new Date().toISOString();
-    await c.env.DB
-      .prepare(
-        `INSERT INTO message_reactions (id, messageId, userId, type, createdAt)
-         VALUES (?,?,?,?,?)`
-      )
-      .bind(id, messageId, userId, type, createdAt)
-      .run();
-  } else if (existing.type === type) {
-    // Same reaction → toggle off (delete)
-    await c.env.DB
-      .prepare(`DELETE FROM message_reactions WHERE id = ?`)
-      .bind(existing.id)
-      .run();
-  } else {
-    // Different reaction → update
-    await c.env.DB
-      .prepare(`UPDATE message_reactions SET type = ? WHERE id = ?`)
-      .bind(type, existing.id)
-      .run();
-  }
-
-  // Return updated aggregate for this message (just reactions)
-  const counts = await q<{ type: ReactionType; count: number }>(
-    c.env.DB,
-    `SELECT type, COUNT(*) as count
-       FROM message_reactions
-      WHERE messageId = ?
-      GROUP BY type`,
-    [messageId]
-  );
-
-  let like = 0,
-    laugh = 0,
-    wow = 0;
-
-  for (const r of counts) {
-    if (r.type === "like") like = Number(r.count);
-    if (r.type === "laugh") laugh = Number(r.count);
-    if (r.type === "wow") wow = Number(r.count);
-  }
-
-  const mine = await one<{ type: ReactionType }>(
-    c.env.DB,
-    `SELECT type
-       FROM message_reactions
-      WHERE messageId = ? AND userId = ?`,
-    [messageId, userId]
-  );
-
-  return c.json({
-    like,
-    laugh,
-    wow,
-    myReaction: (mine?.type ?? null) as ReactionType | null,
-  });
 });
 
 messages.patch("/messages/:id", async (c) => {
