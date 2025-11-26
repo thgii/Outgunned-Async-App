@@ -18,7 +18,7 @@ messages.get("/games/:id/messages", async (c) => {
     WHERE m.gameId = ?`;
 
   const sql = since
-    ? `${baseSql} AND m.createdAt > ? ORDER BY m.createdAt`
+    ? `${baseSql} AND m.updatedAt > ? ORDER BY m.createdAt`
     : `${baseSql} ORDER BY m.createdAt LIMIT 1000`;
 
   const params = since ? [gameId, since] : [gameId];
@@ -147,6 +147,7 @@ messages.post("/games/:id/messages", async (c) => {
   const { content } = await c.req.json();
   const id = crypto.randomUUID();
   const createdAt = new Date().toISOString();
+  const updatedAt = createdAt;
 
   // Authenticated user set by requireUser middleware
   const user = c.get("user") as AuthedUser | undefined;
@@ -166,9 +167,9 @@ messages.post("/games/:id/messages", async (c) => {
 
   await c.env.DB
     .prepare(
-      "INSERT INTO messages (id, gameId, authorId, characterId, content, createdAt) VALUES (?,?,?,?,?,?)"
+      "INSERT INTO messages (id, gameId, authorId, characterId, content, createdAt, updatedAt) VALUES (?,?,?,?,?,?,?)"
     )
-    .bind(id, gameId, authorId, characterId, content, createdAt)
+    .bind(id, gameId, authorId, characterId, content, createdAt, updatedAt)
     .run();
 
   const row = await one<any>(
@@ -203,7 +204,6 @@ messages.post("/messages/:id/react", async (c) => {
     return c.json({ error: "Invalid reaction type" }, 400);
   }
 
-  // Column name (safe because type is validated)
   const column =
     type === "like"
       ? "likeCount"
@@ -211,14 +211,18 @@ messages.post("/messages/:id/react", async (c) => {
       ? "laughCount"
       : "wowCount";
 
-  // Atomic increment
-  await c.env.DB.prepare(
-    `UPDATE messages SET ${column} = ${column} + 1 WHERE id = ?`
-  )
-    .bind(messageId)
+  const now = new Date().toISOString();
+
+  await c.env.DB
+    .prepare(
+      `UPDATE messages
+       SET ${column} = ${column} + 1,
+           updatedAt = ?
+       WHERE id = ?`
+    )
+    .bind(now, messageId)
     .run();
 
-  // Return updated counts
   const updated = await one(
     c.env.DB,
     `SELECT likeCount, laughCount, wowCount FROM messages WHERE id = ?`,
@@ -232,6 +236,7 @@ messages.patch("/messages/:id", async (c) => {
   const id = c.req.param("id");
   const { content } = await c.req.json();
   const editedAt = new Date().toISOString();
+  const updatedAt = editedAt; 
 
   // Authenticated user set by requireUser middleware
   const user = c.get("user") as AuthedUser | undefined;
@@ -265,8 +270,8 @@ messages.patch("/messages/:id", async (c) => {
   versions.push({ content: prev.content, editedAt });
 
   await c.env.DB
-    .prepare("UPDATE messages SET content = ?, editedAt = ?, versions = ? WHERE id = ?")
-    .bind(content, editedAt, JSON.stringify(versions), id)
+    .prepare("UPDATE messages SET content = ?, editedAt = ?, versions = ?, updatedAt = ? WHERE id = ?")
+    .bind(content, editedAt, JSON.stringify(versions), updatedAt, id)
     .run();
 
   const row = await one<any>(

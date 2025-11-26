@@ -19,12 +19,10 @@ export default function ChatBox({ gameId, currentUserId, isDirector }: Props) {
   useEffect(() => {
   let timer: number | undefined;
   let interval = 1000; // start at 1s
-  let ids = new Set<string>();
 
   // RESET when gameId changes
   setMessages([]);
   sinceRef.current = null;
-  ids.clear();
 
   const poll = async () => {
     try {
@@ -32,15 +30,29 @@ export default function ChatBox({ gameId, currentUserId, isDirector }: Props) {
       const delta = await api(`/games/${gameId}/messages${qs}`);
 
       if (delta.length) {
-        // de-dupe just in case
-        const fresh = delta.filter((m: any) => {
-          if (ids.has(m.id)) return false;
-          ids.add(m.id);
-          return true;
+        setMessages((prev) => {
+          // Build a map of existing messages by id
+          const byId = new Map<string, any>();
+          for (const m of prev) {
+            byId.set(m.id, m);
+          }
+          // Upsert each message from delta
+          for (const m of delta) {
+            byId.set(m.id, m);
+          }
+          // Return in chronological order by createdAt
+          return Array.from(byId.values()).sort((a, b) =>
+            a.createdAt.localeCompare(b.createdAt)
+          );
         });
-        if (fresh.length) {
-          setMessages((m) => [...m, ...fresh]);
-          sinceRef.current = delta[delta.length - 1].createdAt;
+
+        // use updatedAt from the last message in the delta
+        const last = delta[delta.length - 1];
+        if (last.updatedAt) {
+          sinceRef.current = last.updatedAt;
+        } else {
+          // fallback for older rows that might not have updatedAt
+          sinceRef.current = last.createdAt;
         }
         interval = 1000; // reset on activity
       } else {
