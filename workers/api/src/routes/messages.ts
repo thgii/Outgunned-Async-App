@@ -3,6 +3,7 @@ import { q, one } from "../utils/db";
 import type { AuthedUser } from "../utils/auth";
 import { getCampaignMembershipByGame } from "../utils/auth";
 import { buildPushHTTPRequest } from "@pushforge/builder";
+import type { D1Database } from "@cloudflare/workers-types";
 
 export const messages = new Hono<{ Bindings: { DB: D1Database } }>();
 
@@ -194,6 +195,39 @@ messages.post("/games/:id/messages", async (c) => {
   return c.json(row);
 });
 
+messages.post("/messages/:id/react", async (c) => {
+  const messageId = c.req.param("id");
+  const { type } = await c.req.json().catch(() => ({}));
+
+  if (!["like", "laugh", "wow"].includes(type)) {
+    return c.json({ error: "Invalid reaction type" }, 400);
+  }
+
+  // Column name (safe because type is validated)
+  const column =
+    type === "like"
+      ? "likeCount"
+      : type === "laugh"
+      ? "laughCount"
+      : "wowCount";
+
+  // Atomic increment
+  await c.env.DB.prepare(
+    `UPDATE messages SET ${column} = ${column} + 1 WHERE id = ?`
+  )
+    .bind(messageId)
+    .run();
+
+  // Return updated counts
+  const updated = await one(
+    c.env.DB,
+    `SELECT likeCount, laughCount, wowCount FROM messages WHERE id = ?`,
+    [messageId]
+  );
+
+  return c.json(updated);
+});
+
 messages.patch("/messages/:id", async (c) => {
   const id = c.req.param("id");
   const { content } = await c.req.json();
@@ -249,9 +283,11 @@ messages.patch("/messages/:id", async (c) => {
   if (user?.id && row) {
     try {
       if (c.executionCtx && typeof c.executionCtx.waitUntil === "function") {
-        c.executionCtx.waitUntil(notifyGameSubscribers(c, gameId, user.id, row));
+        c.executionCtx.waitUntil(
+          notifyGameSubscribers(c, prev.gameId, user.id, row)
+        );
       } else {
-        notifyGameSubscribers(c, gameId, user.id, row).catch((err: any) => {
+        notifyGameSubscribers(c, prev.gameId, user.id, row).catch((err: any) => {
           console.error("notifyGameSubscribers failed (no executionCtx)", err);
         });
       }

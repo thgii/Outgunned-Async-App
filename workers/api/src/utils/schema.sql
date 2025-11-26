@@ -64,7 +64,10 @@ CREATE TABLE IF NOT EXISTS messages (
   embeds TEXT,     -- JSON
   versions TEXT,   -- JSON
   editedAt TEXT,
-  createdAt TEXT NOT NULL
+  createdAt TEXT NOT NULL,
+  likeCount INTEGER NOT NULL DEFAULT 0,
+  laughCount INTEGER NOT NULL DEFAULT 0,
+  wowCount INTEGER NOT NULL DEFAULT 0
 );
 
 -- Rolls

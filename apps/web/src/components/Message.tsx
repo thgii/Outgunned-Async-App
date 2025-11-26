@@ -27,6 +27,15 @@ export default function Message({
 }) {
   const [editing, setEditing] = useState(false);
 
+  const updateCounts = async (type: string) => {
+    const updated = await api(`/messages/${msg.id}/react`, {
+      method: "POST",
+      body: JSON.stringify({ type })
+    });
+
+    onEdited({ ...msg, ...updated });
+  };
+
   // SAME PERMISSIONS YOU ALREADY HAVE
   const canEdit =
     isDirector || (currentUserId && msg.authorId === currentUserId);
@@ -91,6 +100,19 @@ export default function Message({
             {/* Content */}
             <div className="mt-1 whitespace-pre-wrap text-sm">
               {msg.content}
+            </div>
+
+            {/* Reactions */}
+            <div className="mt-2 flex gap-3 text-sm">
+              <button onClick={() => updateCounts("like")} className="hover:opacity-80">
+                👍 {msg.likeCount}
+              </button>
+              <button onClick={() => updateCounts("laugh")} className="hover:opacity-80">
+                😂 {msg.laughCount}
+              </button>
+              <button onClick={() => updateCounts("wow")} className="hover:opacity-80">
+                😮 {msg.wowCount}
+              </button>
             </div>
 
             {/* Edit */}
