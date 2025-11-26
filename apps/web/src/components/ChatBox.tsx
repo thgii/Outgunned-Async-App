@@ -9,6 +9,8 @@ type Props = {
   isDirector: boolean;
 };
 
+type ReactionType = "like" | "laugh" | "wow";
+
 export default function ChatBox({ gameId, currentUserId, isDirector }: Props) {
   const [messages, setMessages] = useState<any[]>([]);
   const [content, setContent] = useState("");
@@ -81,6 +83,26 @@ export default function ChatBox({ gameId, currentUserId, isDirector }: Props) {
     el.scrollTop = el.scrollHeight;
   }, [messages.length]);
 
+    const toggleReaction = async (messageId: string, type: ReactionType) => {
+      try {
+        const reactions = await api(
+          `/games/${gameId}/messages/${messageId}/reactions`,
+          {
+            method: "POST",
+            body: JSON.stringify({ type }),
+          }
+        );
+
+        setMessages((arr) =>
+          arr.map((m: any) =>
+            m.id === messageId ? { ...m, reactions } : m
+          )
+        );
+      } catch (err) {
+        console.error("Failed to toggle reaction", err);
+      }
+    };
+
   const send = async () => {
     if (!content.trim()) return;
     const msg = await api(`/games/${gameId}/messages`, {
@@ -100,8 +122,11 @@ export default function ChatBox({ gameId, currentUserId, isDirector }: Props) {
             currentUserId={currentUserId}
             isDirector={isDirector}
             onEdited={(newMsg) => {
-              setMessages((arr) => arr.map((x) => (x.id === newMsg.id ? newMsg : x)));
+              setMessages((arr) =>
+                arr.map((x) => (x.id === newMsg.id ? newMsg : x))
+              );
             }}
+            onToggleReaction={toggleReaction}
           />
         ))}
       </div>
