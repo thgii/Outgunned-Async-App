@@ -5,9 +5,9 @@ import { api } from "../lib/api";
 type ReactionType = "like" | "laugh" | "wow";
 
 const REACTIONS: { type: ReactionType; icon: string; label: string }[] = [
-  { type: "like", icon: "👍", label: "Like" },
-  { type: "laugh", icon: "😂", label: "Laugh" },
-  { type: "wow", icon: "😮", label: "Wow" },
+  { type: "like", icon: "👍", label: "" },
+  { type: "laugh", icon: "😂", label: "" },
+  { type: "wow", icon: "😮", label: "" },
 ];
 
 const colorRegistry = new Map<string, string>();
