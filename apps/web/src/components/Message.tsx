@@ -4,10 +4,10 @@ import { api } from "../lib/api";
 
 type ReactionType = "like" | "laugh" | "wow";
 
-const REACTIONS = [
-  { type: "like", icon: "👍" },
-  { type: "laugh", icon: "😂" },
-  { type: "wow", icon: "😮" },
+const REACTIONS: { type: ReactionType; icon: string; label: string }[] = [
+  { type: "like", icon: "👍", label: "" },
+  { type: "laugh", icon: "😂", label: "" },
+  { type: "wow", icon: "😮", label: "" },
 ];
 
 const colorRegistry = new Map<string, string>();
@@ -150,6 +150,7 @@ export default function Message({
                     ].join(" ")}
                   >
                     <span aria-hidden="true">{icon}</span>
+                    <span>{label}</span>
                     {count > 0 && (
                       <span className="text-[0.65rem] opacity-70">
                         {count}
