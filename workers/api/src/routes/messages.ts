@@ -9,123 +9,73 @@ type ReactionType = "like" | "laugh" | "wow";
 export const messages = new Hono<{ Bindings: { DB: D1Database } }>();
 
 messages.get("/games/:id/messages", async (c) => {
-  try {
-    const gameId = c.req.param("id");
-    const since = c.req.query("since");
+  const gameId = c.req.param("id");
+  const since = c.req.query("since");
 
-    const user = c.get("user") as AuthedUser | undefined;
-    const userId = user?.id ?? null;
+  const user = c.get("user") as AuthedUser | undefined;
+  const userId = user?.id ?? null;
 
-    const baseSql = `SELECT m.*, u.name as authorName, c.name as characterName
-       FROM messages m
-       LEFT JOIN users u ON u.id = m.authorId
-       LEFT JOIN characters c ON c.id = m.characterId
-      WHERE m.gameId = ?`;
+  const baseSql = `SELECT m.*, u.name as authorName, c.name as characterName
+     FROM messages m
+     LEFT JOIN users u ON u.id = m.authorId
+     LEFT JOIN characters c ON c.id = m.characterId
+    WHERE m.gameId = ?`;
 
-    const sql = since
-      ? `${baseSql} AND m.createdAt > ? ORDER BY m.createdAt`
-      : `${baseSql} ORDER BY m.createdAt LIMIT 1000`;
+  const sql = since
+    ? `${baseSql} AND m.createdAt > ? ORDER BY m.createdAt`
+    : `${baseSql} ORDER BY m.createdAt LIMIT 1000`;
 
-    const params = since ? [gameId, since] : [gameId];
+  const params = since ? [gameId, since] : [gameId];
+  const rows = await q<any>(c.env.DB, sql, params);
 
-    // 1) Load all messages
-    const rows = await q<any>(c.env.DB, sql, params);
+  const results: any[] = [];
 
-    // no messages → just return the raw rows (empty array)
-    if (!rows || rows.length === 0) {
-      return c.json(rows);
+  for (const m of rows) {
+    // aggregate counts for this message
+    const counts = await q<{ type: ReactionType; count: number }>(
+      c.env.DB,
+      `SELECT type, COUNT(*) as count
+         FROM message_reactions
+        WHERE messageId = ?
+        GROUP BY type`,
+      [m.id]
+    );
+
+    let like = 0;
+    let laugh = 0;
+    let wow = 0;
+
+    for (const r of counts) {
+      if (r.type === "like") like = Number(r.count);
+      if (r.type === "laugh") laugh = Number(r.count);
+      if (r.type === "wow") wow = Number(r.count);
     }
 
-    const messageIds = rows.map((m: any) => m.id);
-
-    // Build placeholders for IN (...)
-    const placeholders = messageIds.map(() => "?").join(",");
-
-    // 2) Load reaction counts for ALL messages in one query
-    let countsByMessage = new Map<
-      string,
-      { like: number; laugh: number; wow: number }
-    >();
-
-    try {
-      const countRows = await q<{
-        messageId: string;
-        type: ReactionType;
-        count: number;
-      }>(
-        c.env.DB,
-        `SELECT messageId, type, COUNT(*) as count
-           FROM message_reactions
-          WHERE messageId IN (${placeholders})
-          GROUP BY messageId, type`,
-        messageIds
-      );
-
-      countsByMessage = new Map();
-
-      for (const r of countRows) {
-        let entry = countsByMessage.get(r.messageId);
-        if (!entry) {
-          entry = { like: 0, laugh: 0, wow: 0 };
-          countsByMessage.set(r.messageId, entry);
-        }
-        const n = Number(r.count);
-        if (r.type === "like") entry.like = n;
-        if (r.type === "laugh") entry.laugh = n;
-        if (r.type === "wow") entry.wow = n;
-      }
-    } catch (err) {
-      console.error("Failed to aggregate reaction counts", err);
-      // leave countsByMessage empty; we’ll just return 0s
-    }
-
-    // 3) Load *my* reactions for ALL messages in one query (if logged in)
-    let mineByMessage = new Map<string, ReactionType>();
+    let myReaction: ReactionType | null = null;
 
     if (userId) {
-      try {
-        const myRows = await q<{
-          messageId: string;
-          type: ReactionType;
-        }>(
-          c.env.DB,
-          `SELECT messageId, type
-             FROM message_reactions
-            WHERE messageId IN (${placeholders}) AND userId = ?`,
-          [...messageIds, userId]
-        );
-
-        mineByMessage = new Map(
-          myRows.map((r) => [r.messageId, r.type] as const)
-        );
-      } catch (err) {
-        console.error("Failed to load user reactions", err);
-        // leave mineByMessage empty; myReaction will just be null
-      }
+      const mine = await one<{ type: ReactionType }>(
+        c.env.DB,
+        `SELECT type
+           FROM message_reactions
+          WHERE messageId = ? AND userId = ?`,
+        [m.id, userId]
+      );
+      myReaction = mine?.type ?? null;
     }
 
-    // 4) Attach reactions to each message
-    const results = rows.map((m: any) => {
-      const counts =
-        countsByMessage.get(m.id) ?? { like: 0, laugh: 0, wow: 0 };
-      const myReaction = mineByMessage.get(m.id) ?? null;
-
-      return {
-        ...m,
-        reactions: {
-          like: counts.like,
-          laugh: counts.laugh,
-          wow: counts.wow,
-          myReaction,
-        },
-      };
+    results.push({
+      ...m,
+      reactions: {
+        like,
+        laugh,
+        wow,
+        myReaction,
+      },
     });
-
-    return c.json(results);
-  } catch (err) {
-    console.error("GET /games/:id/messages failed", err);
-    return c.json({ error: "Internal error" }, 500);
   }
+
+  return c.json(results);
 });
 
 async function notifyGameSubscribers(
