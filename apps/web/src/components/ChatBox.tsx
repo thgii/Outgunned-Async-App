@@ -71,8 +71,11 @@ type Props = {
 export default function ChatBox({ gameId, currentUserId, isDirector }: Props) {
   const [messages, setMessages] = useState<any[]>([]);
   const [content, setContent] = useState("");
+  const [showCatchup, setShowCatchup] = useState(false);
+  const [catchupText, setCatchupText] = useState("");
   const sinceRef = useRef<string | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
+  
   const handleCatchMeUp = () => {
     const text = buildCatchupText(messages as ChatMessage[], currentUserId);
 
@@ -81,84 +84,20 @@ export default function ChatBox({ gameId, currentUserId, isDirector }: Props) {
       return;
     }
 
-    const win = window.open("", "_blank", "noopener,noreferrer");
+    setCatchupText(text);
+    setShowCatchup(true);
+  };
 
-    if (!win) {
-      // Popup blocked – fall back to clipboard if possible
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(text).then(
-          () => alert("Catch-up text copied. Open ChatGPT and paste."),
-          () => alert("Could not open a new window or copy to clipboard.")
-        );
-      } else {
-        alert("Could not open a new window. Please allow popups or copy manually.");
+  const handleCopyCatchup = async () => {
+    try {
+      if (navigator.clipboard && catchupText) {
+        await navigator.clipboard.writeText(catchupText);
+        alert("Catch-up text copied to clipboard. Open ChatGPT and paste.");
       }
-      return;
+    } catch (err) {
+      console.error(err);
+      alert("Could not copy to clipboard; please select and copy manually.");
     }
-
-    // Escape text so it’s safe to drop into HTML
-    const escaped = text
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
-
-    win.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8" />
-          <title>Catch me up</title>
-          <style>
-            body {
-              font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-              margin: 16px;
-              line-height: 1.4;
-            }
-            a.button {
-              display: inline-block;
-              padding: 8px 14px;
-              border-radius: 999px;
-              border: 1px solid #ccc;
-              text-decoration: none;
-              font-size: 14px;
-              margin-bottom: 12px;
-            }
-            textarea {
-              width: 100%;
-              height: 70vh;
-              box-sizing: border-box;
-              font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-                "Liberation Mono", "Courier New", monospace;
-              font-size: 13px;
-              padding: 8px;
-              white-space: pre-wrap;
-            }
-            small {
-              color: #555;
-            }
-          </style>
-        </head>
-        <body>
-          <h2>Catch me up</h2>
-          <p>
-            1) <a class="button" href="https://chatgpt.com" target="_blank" rel="noopener noreferrer">Open ChatGPT</a><br/>
-            2) Press <strong>Ctrl/Cmd + C</strong> to copy everything below.<br/>
-            3) Paste into ChatGPT and send.
-          </p>
-          <textarea id="catchup-text">${escaped}</textarea>
-          <p><small>Tip: the text is auto-selected when this tab loads.</small></p>
-          <script>
-            const ta = document.getElementById("catchup-text");
-            if (ta) {
-              ta.focus();
-              ta.select();
-            }
-          </script>
-        </body>
-      </html>
-    `);
-
-    win.document.close();
   };
   
   // Simple polling; upgrade to SSE or Durable Objects later
@@ -276,6 +215,7 @@ export default function ChatBox({ gameId, currentUserId, isDirector }: Props) {
           />
         ))}
       </div>
+
       <div className="mt-3 flex gap-2 items-end">
         <textarea
           value={content}
@@ -297,6 +237,64 @@ export default function ChatBox({ gameId, currentUserId, isDirector }: Props) {
           Send
         </button>
       </div>
+
+      {showCatchup && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200">
+              <h3 className="text-sm font-semibold text-gray-900">Catch me up</h3>
+              <button
+                type="button"
+                onClick={() => setShowCatchup(false)}
+                className="text-gray-500 hover:text-gray-700 text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="px-4 py-3 space-y-2 overflow-y-auto">
+              <p className="text-xs text-gray-700">
+                1) Click{" "}
+                <a
+                  href="https://chatgpt.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline font-medium"
+                >
+                  Open ChatGPT
+                </a>
+                .<br />
+                2) Press <strong>Copy text</strong> or manually select and copy everything below.<br />
+                3) Paste into ChatGPT and send.
+              </p>
+
+              <textarea
+                className="w-full max-h-[50vh] min-h-[200px] text-xs font-mono border border-gray-300 rounded-md p-2 resize-vertical"
+                value={catchupText}
+                readOnly
+                onFocus={(e) => e.currentTarget.select()}
+              />
+            </div>
+
+            <div className="flex items-center justify-between px-4 py-2 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={handleCopyCatchup}
+                className="text-xs px-3 py-1 rounded-full bg-gray-900 text-white hover:bg-gray-800"
+              >
+                Copy text
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowCatchup(false)}
+                className="text-xs px-3 py-1 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-100"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
