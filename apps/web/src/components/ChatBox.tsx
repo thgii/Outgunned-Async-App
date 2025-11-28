@@ -42,7 +42,7 @@ Please:
 - Summarize what has happened since my last message.
 - Highlight important decisions, clues, conflicts, and consequences.
 - List anything my character is expected to respond to or decide next.
-- Keep it concise but clear.
+- Keep it very concise.
 
 Here is the conversation from the point I was last active:
   `.trim();
