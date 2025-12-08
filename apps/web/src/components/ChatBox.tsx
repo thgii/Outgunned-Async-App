@@ -118,16 +118,16 @@ export default function ChatBox({ gameId, currentUserId, isDirector }: Props) {
   };
 
     const handleSummarizeAct = () => {
-    const text = buildActSummaryText(messages as ChatMessage[]);
+      const text = buildActSummaryText(messages as ChatMessage[]);
 
-    if (!text) {
-      alert("No conversation to summarize yet.");
-      return;
-    }
+      if (!text) {
+        alert("No conversation to summarize yet.");
+        return;
+      }
 
-    setCatchupText(text);
-    setShowCatchup(true);
-  };
+      setCatchupText(text);
+      setShowCatchup(true);
+    };
 
   const handleCopyCatchup = async () => {
     try {
