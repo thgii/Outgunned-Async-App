@@ -62,6 +62,35 @@ Here is the conversation from the point I was last active:
   return `${promptHeader}\n\n--- Conversation ---\n${transcript}`;
 }
 
+function buildActSummaryText(messages: ChatMessage[]): string {
+  if (!messages.length) return "";
+
+  const promptHeader = `
+You are helping a player catch up on an asynchronous tabletop RPG chat.
+
+Please:
+- Summarize what has happened so far in this act.
+- Highlight important decisions, clues, conflicts, and consequences.
+- Keep it very concise.
+
+Here is the full conversation for this act:
+  `.trim();
+
+  const transcriptLines = messages.map((m) => {
+    const ts = new Date(m.createdAt).toLocaleString();
+    const speaker =
+      m.characterName && m.authorName && m.characterName !== m.authorName
+        ? `${m.characterName} (${m.authorName})`
+        : m.characterName || m.authorName || "Unknown";
+    const content = m.content ?? "";
+    return `[${ts}] ${speaker}: ${content}`;
+  });
+
+  const transcript = transcriptLines.join("\n");
+
+  return `${promptHeader}\n\n--- Conversation ---\n${transcript}`;
+}
+
 type Props = {
   gameId: string;
   currentUserId: string | null;
@@ -81,6 +110,18 @@ export default function ChatBox({ gameId, currentUserId, isDirector }: Props) {
 
     if (!text) {
       alert("Nothing to catch up on yet.");
+      return;
+    }
+
+    setCatchupText(text);
+    setShowCatchup(true);
+  };
+
+    const handleSummarizeAct = () => {
+    const text = buildActSummaryText(messages as ChatMessage[]);
+
+    if (!text) {
+      alert("No conversation to summarize yet.");
       return;
     }
 
@@ -189,18 +230,27 @@ export default function ChatBox({ gameId, currentUserId, isDirector }: Props) {
 
   return (
     <div className="bg-white rounded shadow p-3 h-[78vh] flex flex-col">
-      <div className="mb-2 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-gray-800">Chat</h2>
-        {currentUserId && (
-          <button
-            type="button"
-            onClick={handleCatchMeUp}
-            className="text-xs px-3 py-1 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-100"
-          >
-            Catch me up
-          </button>
-        )}
-      </div>
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-gray-800">Chat</h2>
+            {currentUserId && (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleCatchMeUp}
+                  className="text-xs px-3 py-1 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-100"
+                >
+                  Catch me up
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSummarizeAct}
+                  className="text-xs px-3 py-1 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-100"
+                >
+                  Summarize this act
+                </button>
+              </div>
+            )}
+          </div>
 
       <div ref={listRef} className="flex-1 overflow-y-auto space-y-3">
         {messages.map((m) => (
@@ -254,7 +304,8 @@ export default function ChatBox({ gameId, currentUserId, isDirector }: Props) {
 
             <div className="px-4 py-3 space-y-2 overflow-y-auto">
               <p className="text-xs text-gray-700">
-                1) Click{" "}
+                1) Press <strong>Copy text</strong> or manually select and copy everything below.<br />
+                2) Click{" "}
                 <a
                   href="https://chatgpt.com"
                   target="_blank"
@@ -264,7 +315,6 @@ export default function ChatBox({ gameId, currentUserId, isDirector }: Props) {
                   Open ChatGPT
                 </a>
                 .<br />
-                2) Press <strong>Copy text</strong> or manually select and copy everything below.<br />
                 3) Paste into ChatGPT and send.
               </p>
 
